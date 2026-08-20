@@ -202,6 +202,10 @@ At 10 kHz and 50% duty, the 50 ms generated-C++ references produce:
   MOS-off interval.
 - FSBB with complementary `PWM1/PWM2` and `PWM3/PWM4`, and 1 us deadtime:
   `V(VF1)` tail mean about 3.838 V, with a 3.735--3.938 V range.
+- Single-phase inverter with a 30 V DC bus, 10 kHz centre-aligned bipolar SPWM,
+  a 50 Hz reference at modulation index 0.8, and 1 us deadtime: the differential
+  load voltage `V(2,1)` has a 22.031 V fundamental peak and 15.610 V RMS. Its
+  50 Hz current fundamental peak is 2.203 A.
 
 ## Circuit data and Eigen C++ generation
 
@@ -234,8 +238,8 @@ tb\buck\
 └── test\cpp\               handwritten testbench, CMakeLists and vcpkg.json
 ```
 
-`boost` and `fsbb` follow the same contract. `rectifier` and `sinv` currently
-contain source cases only and will gain language-specific tests when their
+`boost`, `fsbb`, and `sinv` follow the same contract. `rectifier` currently
+contains a source case only and will gain language-specific tests when its
 solver behavior is implemented and validated.
 
 Every BAT entry point resolves the solver and installer through
@@ -264,14 +268,24 @@ The generated `BuckCircuit` exposes `step_short(PWM, VS1)`,
 `step_normal(PWM, VS1)`, `run`, and `operator()`. Probe results are available as
 `circuit.output.VF1` or `circuit["V(VF1)"]`. `FsbbCircuit` similarly exposes
 `PWM1`, `PWM2`, `PWM3`, `PWM4`, and `VS1`. Build and run the handwritten
-10 kHz, 50 ms testbenches with:
+switching testbenches with:
 
 ```bat
 repair_gmp_vcpkg.bat
 tools\cctl_studio\mna_solver\tb\buck\build_test.bat
 tools\cctl_studio\mna_solver\tb\boost\build_test.bat
 tools\cctl_studio\mna_solver\tb\fsbb\build_test.bat
+tools\cctl_studio\mna_solver\tb\sinv\build_test.bat
 ```
+
+The SINV testbench drives `PWM1=PWM3` and `PWM2=PWM4` as the two bipolar-SPWM
+diagonals. It explicitly checks that neither bridge leg overlaps and that each
+carrier period contains the requested 1 us both-off intervals. The netlist
+registers `V(2,1)` because TINA's visual voltage meter is stored only in the
+binary TSC file and is not emitted into the portable CIR netlist. Parallel DC
+link capacitors are stamped additively; regression tests prove that the two
+100 uF branches produce exactly the same 81 descriptor matrices as one 200 uF
+branch.
 
 `generate_code.bat` defines `NETLIST_FILE` near its beginning, so direct
 invocation uses the case's default CIR; an explicit CIR may also be passed as

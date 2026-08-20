@@ -22,6 +22,7 @@ TB_DIR = SOLVER_DIR / "tb"
 BUCK_DIR = TB_DIR / "buck"
 BOOST_DIR = TB_DIR / "boost"
 FSBB_DIR = TB_DIR / "fsbb"
+SINV_DIR = TB_DIR / "sinv"
 
 
 class CircuitDataTests(unittest.TestCase):
@@ -126,6 +127,33 @@ class CircuitDataTests(unittest.TestCase):
         for pwm in ("PWM1", "PWM2", "PWM3", "PWM4"):
             self.assertIn(f"std::uint32_t {pwm}", header)
         self.assertIn("std::array<bool, 4> body_on_", header)
+
+    def test_single_phase_inverter_exports_differential_voltage_probe(self) -> None:
+        source = SINV_DIR / "SINV.CIR"
+        document = data.build_circuit_data(
+            switched.build_piecewise_model(mna.parse_netlist(source)),
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        data.validate_circuit_data(document)
+        self.assertEqual(
+            [port["name"] for port in document["ports"]["inputs"]],
+            ["PWM1", "PWM2", "PWM3", "PWM4", "VS1"],
+        )
+        self.assertEqual(
+            [port["name"] for port in document["ports"]["outputs"]],
+            ["I(VAM1)", "V(2,1)"],
+        )
+        self.assertEqual(document["switching"]["topology_count"], 81)
+
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "SINV.json"
+            data.write_circuit_data(data_path, document)
+            files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
+            header = files["header"].read_text(encoding="utf-8")
+        self.assertIn("class SinvCircuit", header)
+        self.assertIn('name == "V(2,1)"', header)
 
     def test_boost_data_reaches_periodic_boost_waveform(self) -> None:
         source = BOOST_DIR / "BOOST.CIR"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import sys
 import unittest
 from pathlib import Path
@@ -19,6 +20,7 @@ BASIC_DIR = TB_DIR / "basic"
 BUCK_DIR = TB_DIR / "buck"
 BOOST_DIR = TB_DIR / "boost"
 FSBB_DIR = TB_DIR / "fsbb"
+SINV_DIR = TB_DIR / "sinv"
 
 
 class TinaExtendedParserTests(unittest.TestCase):
@@ -186,6 +188,55 @@ class MultiMosfetFsbbTests(unittest.TestCase):
             self.assertEqual(topology.state.A.shape, (5, 5))
             for gate in model.gate_sources:
                 self.assertNotIn(gate.name, topology.state.input_names)
+
+
+class SinglePhaseInverterTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.circuit = mna.parse_netlist(SINV_DIR / "SINV.CIR")
+
+    def test_parallel_dc_link_capacitors_equal_one_summed_capacitor(self) -> None:
+        capacitors = [
+            element
+            for element in self.circuit.elements
+            if element.kind == "C" and set(element.nodes) == {"0", "5"}
+        ]
+        self.assertEqual([element.name for element in capacitors], ["C2", "C1"])
+        self.assertAlmostEqual(
+            sum(mna.parse_spice_value(element.value_text) or 0.0 for element in capacitors),
+            200e-6,
+        )
+
+        equivalent_elements = [
+            replace(element, value_text="200U") if element.name == "C1" else element
+            for element in self.circuit.elements
+            if element.name != "C2"
+        ]
+        equivalent = replace(self.circuit, elements=equivalent_elements)
+        parallel_model = switched.build_piecewise_model(self.circuit)
+        summed_model = switched.build_piecewise_model(equivalent)
+        self.assertEqual(set(parallel_model.topologies), set(summed_model.topologies))
+        for name, parallel in parallel_model.topologies.items():
+            summed = summed_model.topologies[name]
+            np.testing.assert_array_equal(parallel.descriptor.E, summed.descriptor.E)
+            np.testing.assert_array_equal(parallel.descriptor.A, summed.descriptor.A)
+            np.testing.assert_array_equal(parallel.descriptor.B, summed.descriptor.B)
+
+    def test_differential_voltage_probe_is_stamped_between_both_nodes(self) -> None:
+        self.assertEqual(
+            [observation.name for observation in self.circuit.observations],
+            ["I(VAM1)", "V(2,1)"],
+        )
+        model = switched.build_piecewise_model(self.circuit)
+        self.assertIsInstance(model, switched.MultiMosfetLinearModel)
+        self.assertEqual(len(model.topologies), 3**4)
+        topology = next(iter(model.topologies.values()))
+        outputs = mna.assemble_outputs(topology.circuit, topology.descriptor)
+        row = outputs.names.index("V(2,1)")
+        expected = np.zeros(topology.descriptor.A.shape[0])
+        expected[topology.descriptor.node_indices["2"]] = 1.0
+        expected[topology.descriptor.node_indices["1"]] = -1.0
+        np.testing.assert_array_equal(outputs.L[row], expected)
+        self.assertEqual(topology.state.output_names[:2], ["I(VAM1)", "V(2,1)"])
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ SINV (TINA Netlist Editor format)
 .TRAN 2N 1U
 .DC LIN VPWM1 0 1 10M
 
-.PROBE I(VAM1)
+.PROBE I(VAM1) V(2,1)
 
 VPWM1       3 4 DC 0 AC 1 0
 + PULSE ( 0 1 0  0  0  1e19 1e20 )

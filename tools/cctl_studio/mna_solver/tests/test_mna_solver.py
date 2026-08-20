@@ -32,7 +32,12 @@ class NetlistTests(unittest.TestCase):
         paths = sorted(
             {path.resolve() for pattern in ("*.cir", "*.CIR") for path in BASIC_DIR.glob(pattern)}
         )
-        for case_dir in (TB_DIR / "buck", TB_DIR / "boost", TB_DIR / "fsbb"):
+        for case_dir in (
+            TB_DIR / "buck",
+            TB_DIR / "boost",
+            TB_DIR / "fsbb",
+            TB_DIR / "sinv",
+        ):
             paths.extend(
                 sorted(
                     {path.resolve() for pattern in ("*.cir", "*.CIR") for path in case_dir.glob(pattern)}

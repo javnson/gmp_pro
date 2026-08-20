@@ -21,12 +21,10 @@ E z_dot = A z + B u
 
 `z` 包含所有非接地节点电压和 MNA 引入的支路电流。程序采用 SVD
 秩分解并对 index-1 系统执行代数消元，得到：
-
-```text
-x_dot = A x + B u
-y     = C x + D u + F u_dot
-```
-
+$$
+\dot{\bf x} = \bf A \bf x +\bf B \bf u \\
+\bf y = \bf C \bf \bf u + F \dot{\bf u}
+$$
 通常 `F=0`。保留 `F` 是为了正确表示一个特殊情况：当观测电容电流，且
 电容电压被理想输入源直接约束时，输出会依赖输入导数。程序会显式保留该项，
 不会悄悄给出错误的 `C/D` 方程。
@@ -178,6 +176,11 @@ python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
 `3^4=81` 个拓扑。JSON 可以由 `CircuitDataSimulator` 直接仿真，也是 C++
 代码生成器唯一的输入。
 
+单相逆变器案例使用 30 V 直流母线、10 kHz 中心对齐双极性 SPWM、50 Hz
+正弦参考、0.8 调制度和 1 us 死区。100 ms C++ 参考仿真中，差分负载电压
+`V(2,1)` 的基波峰值约 22.031 V、有效值约 15.610 V，50 Hz 电流基波峰值
+约 2.203 A。
+
 ### 测试用例目录约定
 
 全部测试电路位于 `tb` 下。不含开关的基础用例集中在 `tb\basic`，以下脚本
@@ -199,7 +202,7 @@ tb\buck\
 └── test\cpp\               手写 testbench、CMakeLists.txt 和 vcpkg.json
 ```
 
-`boost` 和 `fsbb` 遵守同一约定。`rectifier` 和 `sinv` 当前只保留源用例，
+`boost`、`fsbb` 和 `sinv` 遵守同一约定。`rectifier` 当前只保留源用例，
 等相应求解行为实现并验收后再增加语言相关测试。
 
 所有 BAT 入口都通过 `GMP_PRO_LOCATION` 找到求解器和安装环境，不依赖当前
@@ -224,14 +227,22 @@ tools\cctl_studio\mna_solver\tb\buck\generate_code.bat
 `step_short(PWM, VS1)`、`step_normal(PWM, VS1)`、`run` 和 `operator()`；
 探针既可通过 `circuit.output.VF1`，也可通过 `circuit["V(VF1)"]` 读取。
 
-生成、编译并运行三个已验证案例的手写 C++ 测试：
+生成、编译并运行已验证案例的手写 C++ 测试：
 
 ```bat
 repair_gmp_vcpkg.bat
 tools\cctl_studio\mna_solver\tb\buck\build_test.bat
 tools\cctl_studio\mna_solver\tb\boost\build_test.bat
 tools\cctl_studio\mna_solver\tb\fsbb\build_test.bat
+tools\cctl_studio\mna_solver\tb\sinv\build_test.bat
 ```
+
+SINV testbench 令 `PWM1=PWM3`、`PWM2=PWM4`，作为两组双极性 SPWM 对角
+开关信号，并检查同一桥臂不重叠以及每个载波周期确实包含 1 us 双关断区。
+TINA 的图形化电压表只保存在二进制 TSC 中，CIR 并未导出，因此可移植网表
+显式注册 `V(2,1)` 作为负载两端电势差。直流母线的两个 100 uF 电容会在
+MNA 中自然相加；回归测试进一步逐项验证了全部 81 个拓扑的描述矩阵与单个
+200 uF 电容完全相同。
 
 `build_test.bat` 首先刷新计算头文件，再从 `test\cpp` 配置 CMake。构建脚本
 使用 GMP 安装的 Eigen/vcpkg；私有环境下关闭单项目 manifest 自动恢复，
@@ -261,5 +272,5 @@ tools\cctl_studio\mna_solver\tests\run_tests.bat
 ```
 
 该脚本只使用 `cmd.exe` 语法，成功和失败都会暂停，并执行全部单元测试及
-Basic 验收、命令行冒烟测试及 Buck/Boost/FSBB C++ 测试；自动化环境可使用
+Basic 验收、命令行冒烟测试及 Buck/Boost/FSBB/SINV C++ 测试；自动化环境可使用
 `tests\run_tests.bat --no-pause`。

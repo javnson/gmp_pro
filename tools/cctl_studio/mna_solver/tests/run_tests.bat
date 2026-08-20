@@ -24,20 +24,21 @@ set "BOOST_CSV=%TEMP%\gmp_mna_boost_%VALIDATION_TAG%.csv"
 set "BUCK_JSON=%TEMP%\gmp_mna_buck_%VALIDATION_TAG%.json"
 set "BOOST_JSON=%TEMP%\gmp_mna_boost_%VALIDATION_TAG%.json"
 set "FSBB_JSON=%TEMP%\gmp_mna_fsbb_%VALIDATION_TAG%.json"
+set "SINV_JSON=%TEMP%\gmp_mna_sinv_%VALIDATION_TAG%.json"
 
-echo [1/8] Compiling Python sources...
+echo [1/9] Compiling Python sources...
 python -m py_compile "%SOLVER_DIR%\mna_solver.py" "%SOLVER_DIR%\switched_solver.py" "%SOLVER_DIR%\circuit_data.py" "%SOLVER_DIR%\cpp_codegen.py"
 if errorlevel 1 goto :failed
 
-echo [2/8] Running Python unit tests...
+echo [2/9] Running Python unit tests...
 python -m unittest discover -s "%SOLVER_DIR%\tests" -v
 if errorlevel 1 goto :failed
 
-echo [3/8] Running the basic-netlist acceptance suite...
+echo [3/9] Running the basic-netlist acceptance suite...
 call "%SOLVER_DIR%\tb\basic\run_tests.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [4/8] Checking Buck and Boost switched simulation CLIs...
+echo [4/9] Checking Buck and Boost switched simulation CLIs...
 python "%SOLVER_DIR%\switched_solver.py" analyze "%SOLVER_DIR%\tb\buck\buck.CIR" --dt 1N >nul
 if errorlevel 1 goto :failed
 python "%SOLVER_DIR%\switched_solver.py" analyze "%SOLVER_DIR%\tb\boost\BOOST.CIR" --dt 1N >nul
@@ -49,7 +50,7 @@ python "%SOLVER_DIR%\switched_solver.py" simulate "%SOLVER_DIR%\tb\boost\BOOST.C
 if errorlevel 1 goto :failed
 if not exist "%BOOST_CSV%" goto :missing_output
 
-echo [5/8] Checking portable Buck, Boost, and FSBB data export...
+echo [5/9] Checking portable Buck, Boost, FSBB, and SINV data export...
 python "%SOLVER_DIR%\circuit_data.py" export "%SOLVER_DIR%\tb\buck\buck.CIR" "%BUCK_JSON%" --normal-dt 100N --short-dt 1N >nul
 if errorlevel 1 goto :failed
 if not exist "%BUCK_JSON%" goto :missing_output
@@ -63,17 +64,24 @@ if errorlevel 1 goto :failed
 python "%SOLVER_DIR%\circuit_data.py" export "%SOLVER_DIR%\tb\fsbb\FSBB.CIR" "%FSBB_JSON%" --normal-dt 100N --short-dt 1N >nul
 if errorlevel 1 goto :failed
 if not exist "%FSBB_JSON%" goto :missing_output
+python "%SOLVER_DIR%\circuit_data.py" export "%SOLVER_DIR%\tb\sinv\SINV.CIR" "%SINV_JSON%" --normal-dt 100N --short-dt 1N >nul
+if errorlevel 1 goto :failed
+if not exist "%SINV_JSON%" goto :missing_output
 
-echo [6/8] Generating, compiling, and running the Buck C++ test...
+echo [6/9] Generating, compiling, and running the Buck C++ test...
 call "%SOLVER_DIR%\tb\buck\build_test.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [7/8] Generating, compiling, and running the Boost C++ test...
+echo [7/9] Generating, compiling, and running the Boost C++ test...
 call "%SOLVER_DIR%\tb\boost\build_test.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [8/8] Generating, compiling, and running the FSBB C++ test...
+echo [8/9] Generating, compiling, and running the FSBB C++ test...
 call "%SOLVER_DIR%\tb\fsbb\build_test.bat" --no-pause
+if errorlevel 1 goto :failed
+
+echo [9/9] Generating, compiling, and running the single-phase inverter C++ test...
+call "%SOLVER_DIR%\tb\sinv\build_test.bat" --no-pause
 if errorlevel 1 goto :failed
 
 call :cleanup
@@ -102,4 +110,5 @@ if exist "%BOOST_CSV%" del /q "%BOOST_CSV%" >nul 2>nul
 if exist "%BUCK_JSON%" del /q "%BUCK_JSON%" >nul 2>nul
 if exist "%BOOST_JSON%" del /q "%BOOST_JSON%" >nul 2>nul
 if exist "%FSBB_JSON%" del /q "%FSBB_JSON%" >nul 2>nul
+if exist "%SINV_JSON%" del /q "%SINV_JSON%" >nul 2>nul
 exit /b 0
