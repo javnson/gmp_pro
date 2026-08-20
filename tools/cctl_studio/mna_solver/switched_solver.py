@@ -232,11 +232,11 @@ def _gate_source(circuit: Circuit, mosfet: Element) -> Element:
         for element in circuit.elements
         if element.kind == "V"
         and _key(element.nodes[0]) == _key(gate_node)
-        and _key(element.nodes[1]) in {"0", "GND"}
     ]
     if len(candidates) != 1:
         raise NetlistError(
-            f"{mosfet.name}: expected one voltage source from gate {gate_node} to ground, got {len(candidates)}"
+            f"{mosfet.name}: expected one voltage source whose positive terminal is gate {gate_node}, "
+            f"got {len(candidates)}"
         )
     return candidates[0]
 
@@ -276,17 +276,31 @@ def _expanded_circuit(
 
     drain, _, source, _ = mosfet.nodes
     mosfet_internal = f"__{parameters.mosfet_name}_series"
-    source_is_dc_constrained = any(
-        element.kind == "V"
-        and _key(element.nodes[0]) == _key(source)
-        and _key(element.nodes[1]) in {"0", "GND"}
-        for element in elements
-    )
+    ground_nodes = {"0", "GND"}
+
+    def is_dc_constrained(node: str) -> bool:
+        node_key = _key(node)
+        return node_key in ground_nodes or any(
+            element.kind == "V"
+            and (
+                (_key(element.nodes[0]) == node_key and _key(element.nodes[1]) in ground_nodes)
+                or (_key(element.nodes[1]) == node_key and _key(element.nodes[0]) in ground_nodes)
+            )
+            for element in elements
+        )
+
+    drain_is_dc_constrained = is_dc_constrained(drain)
+    source_is_dc_constrained = is_dc_constrained(source)
     # A capacitor tied to an ideal voltage-source node introduces u_dot into
     # the raw descriptor model.  Switching simulation treats the supply as DC,
     # so its small-signal derivative is zero and Coss can use ground as the
     # dynamic reference without changing the drain-voltage trajectory.
-    coss_nodes = (drain, "0") if source_is_dc_constrained else (drain, source)
+    if source_is_dc_constrained and not drain_is_dc_constrained:
+        coss_nodes = (drain, "0")
+    elif drain_is_dc_constrained and not source_is_dc_constrained:
+        coss_nodes = (source, "0")
+    else:
+        coss_nodes = (drain, source)
     if key.mosfet_path == MosfetPath.CHANNEL:
         mosfet_resistance = parameters.mosfet_on_resistance
         body_drop = 0.0
@@ -501,7 +515,7 @@ def simulate_piecewise(
         body_values[step] = body_on
         topology_names.append(key.name)
         if step < steps:
-            if path == MosfetPath.OFF and fine_dt < dt:
+            if not diode_on and path == MosfetPath.OFF and fine_dt < dt:
                 local_x = X[step].copy()
                 local_vak, local_vsd = terminal_differences(Y[step])
                 local_diode, local_body = diode_on, body_on

@@ -148,11 +148,13 @@ state-space clients.
 ## Diode/MOSFET piecewise-linear simulation
 
 `switched_solver.py` reads TINA continuation lines and `.MODEL` parameters. For
-the supplied `2_buck.CIR`, D1 uses `Vf=VJ`, `Ron=RS`, and a fixed junction
+the supplied Buck and Boost cases, D1 uses `Vf=VJ`, `Ron=RS`, and a fixed junction
 capacitance linearized from the SPICE `CJO/VJ/M/FC` depletion formula. T1 uses
 `Ron=RD+RS+1/(KP*(W/L)*(Vdrive-VTO))`, `Roff=RDS`, `Coss=CBD+CGDO`, and a body
 diode with `Vf=PB`, `Ron=RD+RS`. The MOS gate voltage source is removed from the
-electrical MNA model and becomes an external `uint32_t PWM` command.
+electrical MNA model and becomes an external `uint32_t PWM` command. Gate-source
+discovery requires only the voltage source's positive terminal to be connected
+to the MOS gate; its negative terminal may be ground or the MOS source node.
 
 The four primary equations are:
 
@@ -171,14 +173,14 @@ List all topology matrices and scalar equations:
 
 ```bat
 python tools\cctl_studio\mna_solver\switched_solver.py analyze ^
-  tools\cctl_studio\mna_solver\tb\2_buck.CIR --dt 1N
+  tools\cctl_studio\mna_solver\tb_buck\buck.CIR --dt 1N
 ```
 
 Run the supplied circuit with an external 10 kHz, 50% PWM command:
 
 ```bat
 python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
-  tools\cctl_studio\mna_solver\tb\2_buck.CIR ^
+  tools\cctl_studio\mna_solver\tb_buck\buck.CIR ^
   --dt 50N --transition-substep 500P --duration 50M ^
   --pwm-frequency 10K --duty 0.5 --output-stride 100 ^
   --output buck_10khz.csv
@@ -191,17 +193,13 @@ milliohm conduction paths and picofarad junction capacitances are stiff.
 The transition substep is used only while both possible diode paths are open;
 it prevents a macro-step voltage overshoot while keeping a 50 ms run practical.
 
-The 50 ms parameter-model reference covers five `L/(R1+R2)` time constants and
-500 PWM periods. Because `R1+R2` is only 0.1 ohm while the extracted T1 channel
-resistance is about 0.1979 ohm, its tail mean is about 0.78865 V. This is the
-expected heavy-load conduction loss, not numeric divergence. An explicit ideal
-switch override (`T1.Ron=1M`, `T1.BodyRon=2M`) remains covered by a regression
-test and settles near 2.25 V, close to the ideal half-supply result.
+At 10 kHz and 50% duty, the 50 ms generated-C++ references produce:
 
-The supplied MOS is connected with `D=4` and `S=3`, where node 3 is the +5 V
-supply. Consequently its intrinsic S-to-D body diode catches the switch node
-when the gate turns off; D1 remains off in the reference run. This orientation
-should be checked if ground-diode Buck freewheeling was intended.
+- Buck: `V(VF1)` tail mean about 2.178 V, with a 2.087--2.269 V range. The
+  ground-referenced D1 conducts during the MOS-off interval.
+- Boost with the supplied 100 uF output capacitor: `V(VF1)` tail mean about
+  8.526 V, with an 8.295--8.769 V range. The output diode conducts during the
+  MOS-off interval.
 
 ## Circuit data and Eigen C++ generation
 
@@ -211,25 +209,37 @@ continuous topologies, normal/short-step discrete matrices, affine terms, and
 the terminal indices used for previous-sample mode selection. The JSON can be
 simulated without rebuilding MNA and is the only input to `cpp_codegen.py`.
 
-Generate the reference Buck data and C++ project:
+Each case keeps its portable JSON beside the CIR file and writes C++ artifacts
+under `generated\cpp`:
+
+```text
+tb_buck\buck.CIR
+tb_buck\buck.json
+tb_buck\generated\cpp\...
+```
+
+Generate a case without compiling it:
 
 ```bat
-tools\cctl_studio\mna_solver\generate_buck.bat
+tools\cctl_studio\mna_solver\tb_buck\generate_code.bat buck.CIR
 ```
 
 The generated `BuckCircuit` exposes `step_short(PWM, VS1)`,
 `step_normal(PWM, VS1)`, `run`, and `operator()`. Probe results are available as
 `circuit.output.VF1` or `circuit["V(VF1)"]`. Build and run the 10 kHz, 50%,
-50 ms test bench with:
+50 ms test benches with:
 
 ```bat
 repair_gmp_vcpkg.bat
-tools\cctl_studio\mna_solver\build_buck_testbench.bat
+tools\cctl_studio\mna_solver\tb_buck\build_testbench.bat
+tools\cctl_studio\mna_solver\tb_boost\build_testbench.bat
 ```
 
-The build wrapper disables per-project manifest restoration when using GMP's
-shared installed tree, preserving the aggregate dependency set. The generated
-directory still contains a standalone `vcpkg.json` for copied projects.
+`build_testbench.bat` locates the MNA tools through `GMP_PRO_LOCATION`; when the
+BAT is copied beside another circuit, only its `NETLIST_FILE` variable needs to
+change. The wrapper uses GMP's installed Eigen/vcpkg tree and disables manifest
+restoration in private-environment mode. The generated C++ directory retains a
+standalone `vcpkg.json` for copied projects.
 
 ## `1_OPAMP.CIR` validation
 

@@ -32,7 +32,7 @@ int main() {
         std::cerr << "cannot create buck_cpp_50pct.csv\n";
         return 2;
     }
-    csv << "time_s,PWM,V(VF1),topology_index\n";
+    csv << "time_s,PWM,I(VAM1),V(VF1),topology_index\n";
     csv << std::setprecision(17);
     double tail_sum = 0.0;
     double tail_min = std::numeric_limits<double>::infinity();
@@ -43,7 +43,7 @@ int main() {
         const std::uint32_t pwm = std::fmod(time, period) < duty * period ? 1U : 0U;
         const auto& output = circuit(pwm, supply);
         if (index % 100U == 0U || index + 1U == normal_steps) {
-            csv << time + normal_dt << ',' << pwm << ',' << output.VF1 << ','
+            csv << time + normal_dt << ',' << pwm << ',' << output.VAM1 << ',' << output.VF1 << ','
                 << circuit.last_topology_index() << '\n';
         }
         if (index >= normal_steps * 9U / 10U) {
@@ -58,8 +58,8 @@ int main() {
               << "50% PWM tail mean=V(VF1): " << mean
               << ", min=" << tail_min << ", max=" << tail_max << '\n';
     std::cout << "string access V(VF1)=" << circuit["V(VF1)"] << '\n';
-    if (!std::isfinite(mean) || mean <= 0.0 || mean >= supply) {
-        std::cerr << "Buck output is outside the finite 0..supply range\n";
+    if (!std::isfinite(mean) || mean <= 0.0) {
+        std::cerr << "Circuit output is not finite and positive\n";
         return 3;
     }
     return 0;

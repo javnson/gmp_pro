@@ -1,4 +1,4 @@
-buck (TINA Netlist Editor format)
+BOOST (TINA Netlist Editor format)
 **************************************
 **  This file was created by TINA   **
 **         www.tina.com             ** 
@@ -15,15 +15,17 @@ buck (TINA Netlist Editor format)
 .PROBE I(VAM1) V([VF1])
 
 VAM1        1 2 ; Current Arrow
-VPWM1       3 1 DC 0 AC 1 0
+VPWM1       4 0 DC 0 AC 1 0
 + PULSE ( 0 1 0  0  0  1e19 1e20 )
-VS1         5 0 5
+VS1         3 0 5
+R3          3 1 50M 
+C2          1 0 100U 
 R2          VF1 0 10 
-D1          0 1  D_1N1183_1 
-MT1         5 3 1 1  ME_2N6755_N_1 NRD=0 NRS=0 
-C1          VF1 0 10U 
-R1          6 VF1 50M 
-L1          2 6 1M IC=0 
+D1          6 VF1  D_1N1183_1 
+MT1         6 4 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
+C1          VF1 0 100U 
+R1          7 6 50M 
+L1          2 7 1M IC=0 
 
 .MODEL D_1N1183_1 D( IS=36N N=1.6 BV=50 RZ=10 IBV=5M 
 +      RS=2M CJO=460P VJ=550M M=440M FC=500M 

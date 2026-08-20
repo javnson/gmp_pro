@@ -18,6 +18,14 @@ def _identifier(value: str, default: str = "Circuit") -> str:
     return result
 
 
+def _default_class_name(data_path: str | Path, document: Mapping) -> str:
+    source_file = document.get("circuit", {}).get("source", {}).get("file")
+    stem = Path(source_file).stem if source_file else Path(data_path).stem
+    words = re.findall(r"[A-Za-z0-9]+", stem)
+    base = "".join(word[:1].upper() + word[1:].lower() for word in words) or "Circuit"
+    return _identifier(base + "Circuit")
+
+
 def _number(value: float) -> str:
     text = format(float(value), ".17g")
     return text if any(char in text for char in ".eE") else text + ".0"
@@ -232,8 +240,17 @@ def render_testbench(document: Mapping, class_name: str, header_name: str) -> st
     analog = [port for port in document["ports"]["inputs"] if port["data_type"] == "double"]
     if len(analog) != 1:
         raise ValueError("the generated reference testbench currently requires exactly one analog input")
-    output = document["ports"]["outputs"][0]
-    field = _identifier(output["field"], "output")
+    outputs = document["ports"]["outputs"]
+    if not outputs:
+        raise ValueError("the generated reference testbench requires at least one probe output")
+    measured = next((port for port in outputs if port["name"].upper().startswith("V(")), outputs[0])
+    measured_field = _identifier(measured["field"], "output")
+    output_header = ",".join(port["name"] for port in outputs)
+    output_values = " << ',' << ".join(
+        f"output.{_identifier(port['field'], 'output')}" for port in outputs
+    )
+    source_file = document["circuit"]["source"].get("file") or class_name
+    csv_stem = _identifier(Path(source_file).stem, "circuit").lower()
     supply = _number(analog[0]["default"])
     normal_dt = _number(document["solver"]["normal_step_s"])
     short_dt = _number(document["solver"]["short_step_s"])
@@ -266,12 +283,12 @@ int main() {{
         startup_time += short_dt;
     }}
 
-    std::ofstream csv("buck_cpp_50pct.csv");
+    std::ofstream csv("{csv_stem}_cpp_50pct.csv");
     if (!csv) {{
-        std::cerr << "cannot create buck_cpp_50pct.csv\\n";
+        std::cerr << "cannot create {csv_stem}_cpp_50pct.csv\\n";
         return 2;
     }}
-    csv << "time_s,PWM,{output['name']},topology_index\\n";
+    csv << "time_s,PWM,{output_header},topology_index\\n";
     csv << std::setprecision(17);
     double tail_sum = 0.0;
     double tail_min = std::numeric_limits<double>::infinity();
@@ -282,23 +299,23 @@ int main() {{
         const std::uint32_t pwm = std::fmod(time, period) < duty * period ? 1U : 0U;
         const auto& output = circuit(pwm, supply);
         if (index % 100U == 0U || index + 1U == normal_steps) {{
-            csv << time + normal_dt << ',' << pwm << ',' << output.{field} << ','
+            csv << time + normal_dt << ',' << pwm << ',' << {output_values} << ','
                 << circuit.last_topology_index() << '\\n';
         }}
         if (index >= normal_steps * 9U / 10U) {{
-            tail_sum += output.{field};
-            tail_min = std::min(tail_min, output.{field});
-            tail_max = std::max(tail_max, output.{field});
+            tail_sum += output.{measured_field};
+            tail_min = std::min(tail_min, output.{measured_field});
+            tail_max = std::max(tail_max, output.{measured_field});
             ++tail_count;
         }}
     }}
     const double mean = tail_sum / static_cast<double>(tail_count);
     std::cout << std::setprecision(12)
-              << "50% PWM tail mean={output['name']}: " << mean
+              << "50% PWM tail mean={measured['name']}: " << mean
               << ", min=" << tail_min << ", max=" << tail_max << '\\n';
-    std::cout << "string access {output['name']}=" << circuit[{_cpp_string(output['name'])}] << '\\n';
-    if (!std::isfinite(mean) || mean <= 0.0 || mean >= supply) {{
-        std::cerr << "Buck output is outside the finite 0..supply range\\n";
+    std::cout << "string access {measured['name']}=" << circuit[{_cpp_string(measured['name'])}] << '\\n';
+    if (!std::isfinite(mean) || mean <= 0.0) {{
+        std::cerr << "Circuit output is not finite and positive\\n";
         return 3;
     }}
     return 0;
@@ -316,12 +333,15 @@ find_package(Eigen3 CONFIG REQUIRED)
 add_executable({target} {target}.cpp)
 target_compile_features({target} PRIVATE cxx_std_17)
 target_link_libraries({target} PRIVATE Eigen3::Eigen)
+
+enable_testing()
+add_test(NAME {target} COMMAND {target})
 '''
 
 
 def generate_cpp_project(data_path: str | Path, output_directory: str | Path, class_name: str | None = None) -> dict[str, Path]:
     document = load_circuit_data(data_path)
-    selected_class = _identifier(class_name or document["circuit"]["name"] + "Circuit")
+    selected_class = _identifier(class_name) if class_name else _default_class_name(data_path, document)
     stem = _identifier(selected_class.lower())
     output = Path(output_directory)
     output.mkdir(parents=True, exist_ok=True)

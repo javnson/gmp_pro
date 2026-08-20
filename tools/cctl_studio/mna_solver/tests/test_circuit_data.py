@@ -18,15 +18,17 @@ import mna_solver as mna  # noqa: E402
 import switched_solver as switched  # noqa: E402
 
 
-TB_DIR = SOLVER_DIR / "tb"
+BUCK_DIR = SOLVER_DIR / "tb_buck"
+BOOST_DIR = SOLVER_DIR / "tb_boost"
 
 
 class CircuitDataTests(unittest.TestCase):
     def setUp(self) -> None:
-        circuit = mna.parse_netlist(TB_DIR / "2_buck.CIR")
+        source = BUCK_DIR / "buck.CIR"
+        circuit = mna.parse_netlist(source)
         self.document = data.build_circuit_data(
             switched.build_piecewise_model(circuit),
-            source_path=TB_DIR / "2_buck.CIR",
+            source_path=source,
             normal_step_s=100e-9,
             short_step_s=1e-9,
         )
@@ -35,7 +37,10 @@ class CircuitDataTests(unittest.TestCase):
         data.validate_circuit_data(self.document)
         self.assertEqual(self.document["schema"]["name"], data.SCHEMA_NAME)
         self.assertEqual([port["name"] for port in self.document["ports"]["inputs"]], ["PWM", "VS1"])
-        self.assertEqual([port["name"] for port in self.document["ports"]["outputs"]], ["V(VF1)"])
+        self.assertEqual(
+            [port["name"] for port in self.document["ports"]["outputs"]],
+            ["I(VAM1)", "V(VF1)"],
+        )
         self.assertEqual(len(self.document["topologies"]), 6)
         diode = self.document["devices"]["diode"]
         self.assertAlmostEqual(diode["model"]["parameters"]["VJ"]["value"], 0.55)
@@ -75,6 +80,34 @@ class CircuitDataTests(unittest.TestCase):
         self.assertIn("std::uint32_t PWM", header)
         self.assertIn("double VS1", header)
         self.assertIn("find_package(Eigen3 CONFIG REQUIRED)", cmake)
+        self.assertIn("add_test(NAME buckcircuit_testbench", cmake)
+
+    def test_default_cpp_class_uses_netlist_file_stem(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "buck.json"
+            data.write_circuit_data(data_path, self.document)
+            files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
+            header = files["header"].read_text(encoding="utf-8")
+            testbench = files["testbench"].read_text(encoding="utf-8")
+        self.assertIn("class BuckCircuit", header)
+        self.assertIn('csv << "time_s,PWM,I(VAM1),V(VF1),topology_index', testbench)
+        self.assertIn("tail mean=V(VF1)", testbench)
+
+    def test_boost_data_reaches_periodic_boost_waveform(self) -> None:
+        source = BOOST_DIR / "BOOST.CIR"
+        document = data.build_circuit_data(
+            switched.build_piecewise_model(mna.parse_netlist(source)),
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        result = data.simulate_circuit_data(document, 5e-3, startup_short_steps=20)
+        voltage = result.outputs[:, result.output_names.index("V(VF1)")]
+        last_cycle = voltage[-1000:]
+        self.assertGreater(float(np.mean(last_cycle)), 8.0)
+        self.assertLess(float(np.mean(last_cycle)), 9.0)
+        self.assertLess(float(np.ptp(last_cycle)), 0.6)
+        self.assertIn("D_ON__MOS_OFF", result.topology[-1000:])
 
 
 if __name__ == "__main__":

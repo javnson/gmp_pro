@@ -15,17 +15,19 @@ import switched_solver as switched  # noqa: E402
 
 
 TB_DIR = SOLVER_DIR / "tb"
+BUCK_DIR = SOLVER_DIR / "tb_buck"
+BOOST_DIR = SOLVER_DIR / "tb_boost"
 
 
 class TinaExtendedParserTests(unittest.TestCase):
     def test_buck_models_and_continuations(self) -> None:
-        circuit = mna.parse_netlist(TB_DIR / "2_buck.CIR")
+        circuit = mna.parse_netlist(BUCK_DIR / "buck.CIR")
         diode = circuit.element("D1")
         mosfet = circuit.element("MT1")
         self.assertEqual(diode.kind, "D")
-        self.assertEqual(diode.nodes, ("0", "4"))
+        self.assertEqual(diode.nodes, ("0", "1"))
         self.assertEqual(mosfet.kind, "M")
-        self.assertEqual(mosfet.nodes, ("4", "1", "3", "3"))
+        self.assertEqual(mosfet.nodes, ("5", "3", "1", "1"))
         self.assertAlmostEqual(circuit.models["D_1N1183_1"].numeric("CJO"), 460e-12)
         self.assertAlmostEqual(circuit.models["ME_2N6755_N_1"].numeric("RDS"), 600e3)
 
@@ -47,7 +49,7 @@ class TinaExtendedParserTests(unittest.TestCase):
 
 class PiecewiseBuckTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.circuit = mna.parse_netlist(TB_DIR / "2_buck.CIR")
+        self.circuit = mna.parse_netlist(BUCK_DIR / "buck.CIR")
         self.model = switched.build_piecewise_model(self.circuit)
 
     def test_four_primary_and_two_body_diode_topologies(self) -> None:
@@ -83,7 +85,7 @@ class PiecewiseBuckTests(unittest.TestCase):
         just_after = switched.linearized_junction_capacitance(cjo, vj, grading, fc, fc * vj + 1e-12)
         self.assertAlmostEqual(at_boundary, just_after, places=18)
 
-    def test_10khz_pwm_uses_previous_voltage_and_detects_reverse_conduction(self) -> None:
+    def test_10khz_pwm_uses_previous_voltage_and_ground_diode(self) -> None:
         result = switched.simulate_piecewise(
             self.model,
             duration=110e-6,
@@ -95,13 +97,10 @@ class PiecewiseBuckTests(unittest.TestCase):
         self.assertTrue(np.all(np.isfinite(result.outputs)))
         self.assertTrue(np.any(result.gate))
         self.assertTrue(np.any(~result.gate))
-        self.assertTrue(np.any(result.body_diode_on))
+        self.assertFalse(np.any(result.body_diode_on))
         self.assertIn("D_OFF__MOS_CHANNEL", result.topology)
-        self.assertIn("D_OFF__MOS_BODY_DIODE", result.topology)
-        # In the supplied netlist S is tied to +5 V and D is the switch node;
-        # the intrinsic S->D body diode therefore catches the falling node
-        # before the ground-referenced D1 freewheel diode turns on.
-        self.assertFalse(np.any(result.diode_on))
+        self.assertIn("D_ON__MOS_OFF", result.topology)
+        self.assertTrue(np.any(result.diode_on))
         output = result.outputs[:, result.output_names.index("V(VF1)")]
         self.assertGreater(output[-1], 0.0)
 
@@ -117,12 +116,9 @@ class PiecewiseBuckTests(unittest.TestCase):
         )
         output = result.outputs[:, result.output_names.index("V(VF1)")]
         tail = output[int(0.9 * len(output)) :]
-        # The netlist has an unusually heavy 0.1-ohm DC load.  Using the
-        # LEVEL=3 extracted ~0.198-ohm channel resistance therefore produces
-        # substantial conduction loss instead of the ideal-switch 2.5 V.
-        self.assertGreater(float(np.mean(tail)), 0.75)
-        self.assertLess(float(np.mean(tail)), 0.85)
-        self.assertLess(float(np.ptp(tail)), 0.03)
+        self.assertGreater(float(np.mean(tail)), 2.1)
+        self.assertLess(float(np.mean(tail)), 2.25)
+        self.assertLess(float(np.ptp(tail)), 0.2)
 
     def test_ideal_switch_override_still_reaches_half_supply_region(self) -> None:
         model = switched.build_piecewise_model(
@@ -140,7 +136,37 @@ class PiecewiseBuckTests(unittest.TestCase):
         output = result.outputs[:, result.output_names.index("V(VF1)")]
         tail = output[int(0.9 * len(output)) :]
         self.assertGreater(float(np.mean(tail)), 2.15)
-        self.assertLess(float(np.mean(tail)), 2.4)
+        self.assertLess(float(np.mean(tail)), 2.3)
+
+
+class PiecewiseBoostTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.circuit = mna.parse_netlist(BOOST_DIR / "BOOST.CIR")
+        self.model = switched.build_piecewise_model(self.circuit)
+
+    def test_boost_gate_and_topologies(self) -> None:
+        self.assertEqual(self.model.gate_source_name, "VPWM1")
+        self.assertEqual(self.model.mosfet.nodes, ("6", "4", "0", "0"))
+        reference = next(iter(self.model.topologies.values())).state
+        self.assertEqual(reference.A.shape, (4, 4))
+        self.assertEqual(reference.output_names[:2], ["I(VAM1)", "V(VF1)"])
+
+    def test_10khz_boost_uses_channel_and_output_diode(self) -> None:
+        result = switched.simulate_piecewise(
+            self.model,
+            duration=5e-3,
+            dt=100e-9,
+            pwm_frequency=10e3,
+            pwm_duty=0.5,
+            transition_substep=1e-9,
+            method="backward_euler",
+        )
+        voltage = result.outputs[:, result.output_names.index("V(VF1)")]
+        self.assertTrue(np.all(np.isfinite(voltage)))
+        self.assertGreater(float(np.mean(voltage[-1000:])), 8.0)
+        self.assertLess(float(np.mean(voltage[-1000:])), 9.0)
+        self.assertIn("D_OFF__MOS_CHANNEL", result.topology[-1000:])
+        self.assertIn("D_ON__MOS_OFF", result.topology[-1000:])
 
 
 if __name__ == "__main__":
