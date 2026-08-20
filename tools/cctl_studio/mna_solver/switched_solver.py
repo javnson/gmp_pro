@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import itertools
 import math
 from dataclasses import dataclass
 from enum import Enum
@@ -59,6 +60,18 @@ class SwitchParameters:
 
 
 @dataclass(frozen=True)
+class MosfetSwitchParameters:
+    instance_name: str
+    public_name: str
+    on_resistance: float
+    off_resistance: float
+    output_capacitance: float
+    body_forward_voltage: float
+    body_on_resistance: float
+    gate_drive_voltage: float
+
+
+@dataclass(frozen=True)
 class TopologyKey:
     diode_on: bool
     mosfet_path: MosfetPath
@@ -69,9 +82,20 @@ class TopologyKey:
         return f"{diode}__MOS_{self.mosfet_path.value.upper()}"
 
 
+@dataclass(frozen=True)
+class MultiMosfetTopologyKey:
+    paths: tuple[MosfetPath, ...]
+
+    @property
+    def name(self) -> str:
+        return "__".join(
+            f"MOS{index + 1}_{path.value.upper()}" for index, path in enumerate(self.paths)
+        )
+
+
 @dataclass
 class LinearTopology:
-    key: TopologyKey
+    key: TopologyKey | MultiMosfetTopologyKey
     circuit: Circuit
     descriptor: DescriptorModel
     state: StateSpaceModel
@@ -96,6 +120,15 @@ class PiecewiseLinearModel:
             for key, value in self.topologies.items()
             if key.mosfet_path in {MosfetPath.OFF, MosfetPath.CHANNEL}
         }
+
+
+@dataclass
+class MultiMosfetLinearModel:
+    source_circuit: Circuit
+    mosfets: list[Element]
+    gate_sources: list[Element]
+    parameters: list[MosfetSwitchParameters]
+    topologies: dict[MultiMosfetTopologyKey, LinearTopology]
 
 
 @dataclass
@@ -214,6 +247,48 @@ def derive_switch_parameters(
         gate_drive,
     )
     return diode, mosfet, parameters
+
+
+def derive_mosfet_parameters(
+    circuit: Circuit,
+    mosfet: Element,
+    overrides: Mapping[str, float] | None = None,
+) -> MosfetSwitchParameters:
+    """Derive the three-path PWL model for one NMOS instance."""
+
+    selected = overrides or {}
+    model = _model_for(circuit, mosfet)
+    public_name = mosfet.name[1:] if _key(mosfet.name).startswith("MT") else mosfet.name
+    rd = model.numeric("RD", 0.0) or 0.0
+    rs = model.numeric("RS", 0.0) or 0.0
+    series_resistance = max(rd + rs, 1e-6)
+    gate_drive = _override(selected, f"{public_name}.Vdrive", 10.0)
+    vto = model.numeric("VTO", 0.0) or 0.0
+    kp = model.numeric("KP", 0.0) or 0.0
+    width = model.numeric("W", 1.0) or 1.0
+    length = max(model.numeric("L", 1.0) or 1.0, np.finfo(float).tiny)
+    overdrive = max(gate_drive - vto, np.finfo(float).eps)
+    channel_conductance = kp * width / length * overdrive
+    extracted_ron = series_resistance + (
+        1.0 / channel_conductance if channel_conductance > 0.0 else 0.0
+    )
+    estimated_coss = (model.numeric("CBD", 0.0) or 0.0) + (
+        model.numeric("CGDO", 0.0) or 0.0
+    )
+    return MosfetSwitchParameters(
+        instance_name=mosfet.name,
+        public_name=public_name,
+        on_resistance=_override(selected, f"{public_name}.Ron", max(extracted_ron, 1e-6)),
+        off_resistance=_override(
+            selected, f"{public_name}.Roff", max(model.numeric("RDS", 1e9) or 1e9, 1.0)
+        ),
+        output_capacitance=_override(selected, f"{public_name}.Coss", max(estimated_coss, 0.0)),
+        body_forward_voltage=_override(
+            selected, f"{public_name}.BodyVf", max(model.numeric("PB", 0.7) or 0.7, 0.0)
+        ),
+        body_on_resistance=_override(selected, f"{public_name}.BodyRon", series_resistance),
+        gate_drive_voltage=gate_drive,
+    )
 
 
 def _nodes(elements: Sequence[Element]) -> list[str]:
@@ -354,11 +429,147 @@ def _expanded_circuit(
     )
 
 
+def _expanded_multi_mosfet_circuit(
+    circuit: Circuit,
+    mosfets: Sequence[Element],
+    gate_sources: Sequence[Element],
+    parameters: Sequence[MosfetSwitchParameters],
+    key: MultiMosfetTopologyKey,
+) -> Circuit:
+    """Replace every MOSFET by its selected R/C/V PWL path."""
+
+    removed = set(mosfets) | set(gate_sources)
+    elements = [element for element in circuit.elements if element not in removed]
+    ground_nodes = {"0", "GND"}
+
+    def is_dc_constrained(node: str) -> bool:
+        node_key = _key(node)
+        return node_key in ground_nodes or any(
+            element.kind == "V"
+            and (
+                (_key(element.nodes[0]) == node_key and _key(element.nodes[1]) in ground_nodes)
+                or (_key(element.nodes[1]) == node_key and _key(element.nodes[0]) in ground_nodes)
+            )
+            for element in elements
+        )
+
+    for mosfet, item, path in zip(mosfets, parameters, key.paths):
+        drain, _, source, _ = mosfet.nodes
+        internal = f"__{item.public_name}_series"
+        drain_constrained = is_dc_constrained(drain)
+        source_constrained = is_dc_constrained(source)
+        if source_constrained and not drain_constrained:
+            coss_nodes = (drain, "0")
+        elif drain_constrained and not source_constrained:
+            coss_nodes = (source, "0")
+        else:
+            coss_nodes = (drain, source)
+        if path == MosfetPath.CHANNEL:
+            resistance = item.on_resistance
+            body_drop = 0.0
+        elif path == MosfetPath.BODY_DIODE:
+            resistance = item.body_on_resistance
+            body_drop = item.body_forward_voltage
+        else:
+            resistance = item.off_resistance
+            body_drop = 0.0
+        elements.extend(
+            [
+                Element(
+                    f"C__{item.public_name}_oss",
+                    "C",
+                    coss_nodes,
+                    f"{item.output_capacitance:.17g}",
+                ),
+                Element(
+                    f"V__{item.public_name}_drop",
+                    "V",
+                    (source, internal),
+                    f"{body_drop:.17g}",
+                ),
+                Element(
+                    f"R__{item.public_name}_path",
+                    "R",
+                    (internal, drain),
+                    f"{resistance:.17g}",
+                ),
+            ]
+        )
+
+    observations = list(circuit.observations)
+    existing = {_key(item.name) for item in observations}
+    for mosfet, item in zip(mosfets, parameters):
+        drain, _, source, _ = mosfet.nodes
+        for observation in (
+            Observation("V", drain, label=f"V({item.public_name}.D)"),
+            Observation("V", source, label=f"V({item.public_name}.S)"),
+        ):
+            if _key(observation.name) not in existing:
+                observations.append(observation)
+                existing.add(_key(observation.name))
+    return Circuit(
+        title=f"{circuit.title} [{key.name}]",
+        elements=elements,
+        observations=observations,
+        nodes=_nodes(elements),
+        models=circuit.models,
+        ignored_directives=circuit.ignored_directives,
+    )
+
+
+def build_multi_mosfet_model(
+    circuit: Circuit,
+    device_overrides: Mapping[str, float] | None = None,
+) -> MultiMosfetLinearModel:
+    """Build all 3**N channel/off/body-diode topologies for an NMOS network."""
+
+    mosfets = [element for element in circuit.elements if element.kind == "M"]
+    diodes = [element for element in circuit.elements if element.kind == "D"]
+    if not mosfets or diodes:
+        raise NetlistError(
+            "multi-MOS mode requires one or more MOSFETs and no independent diode devices"
+        )
+    gate_sources = [_gate_source(circuit, mosfet) for mosfet in mosfets]
+    if len({_key(source.name) for source in gate_sources}) != len(gate_sources):
+        raise NetlistError("each MOSFET must have a distinct gate voltage source")
+    parameters = [
+        derive_mosfet_parameters(circuit, mosfet, device_overrides) for mosfet in mosfets
+    ]
+    topologies: dict[MultiMosfetTopologyKey, LinearTopology] = {}
+    choices = (MosfetPath.OFF, MosfetPath.CHANNEL, MosfetPath.BODY_DIODE)
+    for paths in itertools.product(choices, repeat=len(mosfets)):
+        key = MultiMosfetTopologyKey(paths)
+        expanded = _expanded_multi_mosfet_circuit(
+            circuit, mosfets, gate_sources, parameters, key
+        )
+        descriptor = assemble_mna(expanded)
+        outputs = assemble_outputs(expanded, descriptor)
+        state = reduce_to_state_space(descriptor, outputs)
+        topologies[key] = LinearTopology(key, expanded, descriptor, state)
+
+    reference = next(iter(topologies.values())).state
+    for topology in topologies.values():
+        if (
+            topology.state.state_names != reference.state_names
+            or topology.state.input_names != reference.input_names
+            or topology.state.output_names != reference.output_names
+        ):
+            raise NetlistError("multi-MOS expansion produced incompatible topology coordinates")
+    return MultiMosfetLinearModel(
+        circuit, mosfets, gate_sources, parameters, topologies
+    )
+
+
 def build_piecewise_model(
     circuit: Circuit,
     device_overrides: Mapping[str, float] | None = None,
-) -> PiecewiseLinearModel:
+) -> PiecewiseLinearModel | MultiMosfetLinearModel:
     """Build four primary and two body-diode PWL state-space topologies."""
+
+    diodes = [element for element in circuit.elements if element.kind == "D"]
+    mosfets = [element for element in circuit.elements if element.kind == "M"]
+    if not diodes and mosfets:
+        return build_multi_mosfet_model(circuit, device_overrides)
 
     diode, mosfet, parameters = derive_switch_parameters(circuit, device_overrides)
     gate_source = _gate_source(circuit, mosfet)

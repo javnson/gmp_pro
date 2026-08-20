@@ -20,6 +20,7 @@ import switched_solver as switched  # noqa: E402
 
 BUCK_DIR = SOLVER_DIR / "tb_buck"
 BOOST_DIR = SOLVER_DIR / "tb_boost"
+FSBB_DIR = SOLVER_DIR / "tb_fsbb"
 
 
 class CircuitDataTests(unittest.TestCase):
@@ -70,7 +71,7 @@ class CircuitDataTests(unittest.TestCase):
             data.write_circuit_data(data_path, self.document)
             files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp", "BuckCircuit")
             header = files["header"].read_text(encoding="utf-8")
-            cmake = files["cmake"].read_text(encoding="utf-8")
+        self.assertEqual(set(files), {"header"})
         self.assertIn("class BuckCircuit", header)
         self.assertIn("step_short", header)
         self.assertIn("step_normal", header)
@@ -79,8 +80,6 @@ class CircuitDataTests(unittest.TestCase):
         self.assertIn("operator[](std::string_view", header)
         self.assertIn("std::uint32_t PWM", header)
         self.assertIn("double VS1", header)
-        self.assertIn("find_package(Eigen3 CONFIG REQUIRED)", cmake)
-        self.assertIn("add_test(NAME buckcircuit_testbench", cmake)
 
     def test_default_cpp_class_uses_netlist_file_stem(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -88,10 +87,44 @@ class CircuitDataTests(unittest.TestCase):
             data.write_circuit_data(data_path, self.document)
             files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
             header = files["header"].read_text(encoding="utf-8")
-            testbench = files["testbench"].read_text(encoding="utf-8")
         self.assertIn("class BuckCircuit", header)
-        self.assertIn('csv << "time_s,PWM,I(VAM1),V(VF1),topology_index', testbench)
-        self.assertIn("tail mean=V(VF1)", testbench)
+        self.assertEqual(set(files), {"header"})
+
+    def test_fsbb_exports_four_pwm_ports_and_81_mosfet_topologies(self) -> None:
+        source = FSBB_DIR / "FSBB.CIR"
+        model = switched.build_piecewise_model(mna.parse_netlist(source))
+        self.assertIsInstance(model, switched.MultiMosfetLinearModel)
+        self.assertEqual(len(model.mosfets), 4)
+        self.assertEqual(len(model.topologies), 81)
+
+        document = data.build_circuit_data(
+            model,
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        data.validate_circuit_data(document)
+        self.assertEqual(
+            [port["name"] for port in document["ports"]["inputs"]],
+            ["PWM1", "PWM2", "PWM3", "PWM4", "VS1"],
+        )
+        self.assertEqual(document["switching"]["kind"], "multi_mosfet")
+        self.assertEqual(document["switching"]["topology_count"], 81)
+        self.assertEqual(
+            [(item["instance"], item["pwm_port"]) for item in document["switching"]["switches"]],
+            [("MT4", "PWM1"), ("MT3", "PWM2"), ("MT2", "PWM4"), ("MT1", "PWM3")],
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "FSBB.json"
+            data.write_circuit_data(data_path, document)
+            files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
+            header = files["header"].read_text(encoding="utf-8")
+        self.assertIn("class FsbbCircuit", header)
+        self.assertIn("static constexpr std::size_t topology_count = 81", header)
+        for pwm in ("PWM1", "PWM2", "PWM3", "PWM4"):
+            self.assertIn(f"std::uint32_t {pwm}", header)
+        self.assertIn("std::array<bool, 4> body_on_", header)
 
     def test_boost_data_reaches_periodic_boost_waveform(self) -> None:
         source = BOOST_DIR / "BOOST.CIR"

@@ -19,8 +19,9 @@ set "BUCK_CSV=%TEMP%\gmp_mna_buck_%VALIDATION_TAG%.csv"
 set "BOOST_CSV=%TEMP%\gmp_mna_boost_%VALIDATION_TAG%.csv"
 set "BUCK_JSON=%TEMP%\gmp_mna_buck_%VALIDATION_TAG%.json"
 set "BOOST_JSON=%TEMP%\gmp_mna_boost_%VALIDATION_TAG%.json"
+set "FSBB_JSON=%TEMP%\gmp_mna_fsbb_%VALIDATION_TAG%.json"
 
-echo [1/11] Compiling Python sources...
+echo [1/12] Compiling Python sources...
 python -m py_compile "%SOLVER_DIR%mna_solver.py"
 if errorlevel 1 goto :failed
 python -m py_compile "%SOLVER_DIR%switched_solver.py"
@@ -30,31 +31,31 @@ if errorlevel 1 goto :failed
 python -m py_compile "%SOLVER_DIR%cpp_codegen.py"
 if errorlevel 1 goto :failed
 
-echo [2/11] Running unit and supplied-netlist tests...
+echo [2/12] Running unit and supplied-netlist tests...
 python -m unittest discover -s "%SOLVER_DIR%tests" -v
 if errorlevel 1 goto :failed
 
-echo [3/11] Checking discrete-equation generation...
+echo [3/12] Checking discrete-equation generation...
 python "%SOLVER_DIR%mna_solver.py" discretize "%SOLVER_DIR%tb\example6.cir" --dt 1N >nul
 if errorlevel 1 goto :failed
 
-echo [4/11] Checking time-domain CSV generation...
+echo [4/12] Checking time-domain CSV generation...
 python "%SOLVER_DIR%mna_solver.py" simulate "%SOLVER_DIR%tb\example6.cir" --dt 1N --duration 100N --input Vin=1 --output "%SIM_CSV%" >nul
 if errorlevel 1 goto :failed
 if not exist "%SIM_CSV%" goto :missing_output
 
-echo [5/11] Checking frequency-response CSV generation...
+echo [5/12] Checking frequency-response CSV generation...
 python "%SOLVER_DIR%mna_solver.py" frequency "%SOLVER_DIR%tb\example6.cir" --start 10 --stop 1MEG --points 5 --output "%FREQ_CSV%" >nul
 if errorlevel 1 goto :failed
 if not exist "%FREQ_CSV%" goto :missing_output
 
-echo [6/11] Checking Buck and Boost topology generation...
+echo [6/12] Checking Buck and Boost topology generation...
 python "%SOLVER_DIR%switched_solver.py" analyze "%SOLVER_DIR%tb_buck\buck.CIR" --dt 1N >nul
 if errorlevel 1 goto :failed
 python "%SOLVER_DIR%switched_solver.py" analyze "%SOLVER_DIR%tb_boost\BOOST.CIR" --dt 1N >nul
 if errorlevel 1 goto :failed
 
-echo [7/11] Checking 10 kHz Buck and Boost piecewise simulation...
+echo [7/12] Checking 10 kHz Buck and Boost piecewise simulation...
 python "%SOLVER_DIR%switched_solver.py" simulate "%SOLVER_DIR%tb_buck\buck.CIR" --dt 1N --duration 60U --pwm-frequency 10K --duty 0.5 --output "%BUCK_CSV%" >nul
 if errorlevel 1 goto :failed
 if not exist "%BUCK_CSV%" goto :missing_output
@@ -62,7 +63,7 @@ python "%SOLVER_DIR%switched_solver.py" simulate "%SOLVER_DIR%tb_boost\BOOST.CIR
 if errorlevel 1 goto :failed
 if not exist "%BOOST_CSV%" goto :missing_output
 
-echo [8/11] Exporting and simulating portable Buck and Boost data...
+echo [8/12] Exporting portable Buck, Boost, and FSBB data...
 python "%SOLVER_DIR%circuit_data.py" export "%SOLVER_DIR%tb_buck\buck.CIR" "%BUCK_JSON%" --normal-dt 100N --short-dt 1N >nul
 if errorlevel 1 goto :failed
 if not exist "%BUCK_JSON%" goto :missing_output
@@ -73,19 +74,28 @@ if errorlevel 1 goto :failed
 if not exist "%BOOST_JSON%" goto :missing_output
 python "%SOLVER_DIR%circuit_data.py" simulate "%BOOST_JSON%" --duration 1M --pwm-frequency 10K --duty 0.5 >nul
 if errorlevel 1 goto :failed
+python "%SOLVER_DIR%circuit_data.py" export "%SOLVER_DIR%tb_fsbb\FSBB.CIR" "%FSBB_JSON%" --normal-dt 100N --short-dt 1N >nul
+if errorlevel 1 goto :failed
+if not exist "%FSBB_JSON%" goto :missing_output
 
-echo [9/11] Regenerating Buck and Boost C++ projects...
+echo [9/12] Regenerating Buck, Boost, and FSBB calculation classes...
 call "%SOLVER_DIR%tb_buck\generate_code.bat" buck.CIR --no-pause
 if errorlevel 1 goto :failed
 call "%SOLVER_DIR%tb_boost\generate_code.bat" BOOST.CIR --no-pause
 if errorlevel 1 goto :failed
+call "%SOLVER_DIR%tb_fsbb\generate_code.bat" --no-pause
+if errorlevel 1 goto :failed
 
-echo [10/11] Compiling and running the Buck Eigen C++ test bench...
+echo [10/12] Compiling and running the Buck Eigen C++ testbench...
 call "%SOLVER_DIR%tb_buck\build_testbench.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [11/11] Compiling and running the Boost Eigen C++ test bench...
+echo [11/12] Compiling and running the Boost Eigen C++ testbench...
 call "%SOLVER_DIR%tb_boost\build_testbench.bat" --no-pause
+if errorlevel 1 goto :failed
+
+echo [12/12] Compiling and running the handwritten FSBB Eigen C++ testbench...
+call "%SOLVER_DIR%tb_fsbb\build_testbench.bat" --no-pause
 if errorlevel 1 goto :failed
 
 call :cleanup
@@ -114,4 +124,5 @@ if exist "%BUCK_CSV%" del /q "%BUCK_CSV%" >nul 2>nul
 if exist "%BOOST_CSV%" del /q "%BOOST_CSV%" >nul 2>nul
 if exist "%BUCK_JSON%" del /q "%BUCK_JSON%" >nul 2>nul
 if exist "%BOOST_JSON%" del /q "%BOOST_JSON%" >nul 2>nul
+if exist "%FSBB_JSON%" del /q "%FSBB_JSON%" >nul 2>nul
 exit /b 0

@@ -43,13 +43,14 @@ echo [1/2] Exporting portable circuit data...
 python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method backward_euler
 if errorlevel 1 goto :failed
 
-echo [2/2] Generating Eigen C++ sources and test bench...
+echo [2/2] Generating the Eigen C++ calculation class...
 python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%CPP_DIR%"
 if errorlevel 1 goto :failed
 
 echo.
 echo Circuit data: %JSON_PATH%
-echo C++ project:  %CPP_DIR%
+echo Calculation header: %CPP_DIR%
+echo Testbench:           handwritten files in %CPP_DIR%
 if "%NO_PAUSE%"=="0" pause
 exit /b 0
 

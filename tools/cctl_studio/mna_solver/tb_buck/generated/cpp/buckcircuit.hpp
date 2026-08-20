@@ -18,6 +18,8 @@ public:
     static constexpr std::size_t state_count = 3;
     static constexpr std::size_t signal_count = 6;
     static constexpr std::size_t analog_input_count = 1;
+    static constexpr std::size_t pwm_input_count = 1;
+    static constexpr std::size_t topology_count = 6;
     static constexpr double normal_step_s = 1.0000000000000001e-07;
     static constexpr double short_step_s = 1.0000000000000001e-09;
 
@@ -94,8 +96,8 @@ private:
         SignalVector output_bias;
     };
 
-    static const std::array<Topology, 6>& topologies() {
-        static const std::array<Topology, 6> value{{
+    static const std::array<Topology, topology_count>& topologies() {
+        static const std::array<Topology, topology_count> value{{
             Topology{
                 ([] { StateMatrix value; value << 0.99509634059789898, -9.9410223835953948e-05, 9.950146634573336e-05, 0.009941022383595394, 0.99900000589186977, 9.940206428145368e-07, -48.976898181598983, 0.00489279702113876, 0.99502063255132489; return value; }()),
                 ([] { InputMatrix value; value << 8.1628163635996171e-09, 8.1546617018977408e-11, 8.1628653323433505e-05; return value; }()),
@@ -166,7 +168,7 @@ private:
         return value;
     }
 
-    std::size_t select_topology(std::uint32_t PWM) {
+    std::size_t select_topology(const Inputs& inputs) {
         const double diode_voltage = signals_(4) - signals_(5);
         const double reverse_mosfet_voltage = signals_(3) - signals_(2);
         constexpr double hysteresis = 9.9999999999999995e-07;
@@ -174,7 +176,7 @@ private:
         constexpr double body_threshold = 0.80000000000000004;
         diode_on_ = diode_voltage >= diode_threshold + (diode_on_ ? -hysteresis : hysteresis);
         std::size_t path = 0;
-        if (PWM != 0U) {
+        if (inputs.PWM != 0U) {
             body_on_ = false;
             path = 1;
         } else {
@@ -185,7 +187,7 @@ private:
     }
 
     const Outputs& step(const Inputs& inputs, bool use_short_step) {
-        last_topology_index_ = select_topology(inputs.PWM);
+        last_topology_index_ = select_topology(inputs);
         const auto& topology = topologies()[last_topology_index_];
         InputVector input_vector;
         input_vector << inputs.VS1;

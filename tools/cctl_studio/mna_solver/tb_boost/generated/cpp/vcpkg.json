@@ -1,5 +1,5 @@
 {
-  "name": "gmp-generated-boostcircuit",
+  "name": "gmp-boostcircuit-testbench",
   "version-string": "1.0.0",
   "dependencies": [
     "eigen3"

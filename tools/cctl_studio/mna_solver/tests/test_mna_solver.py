@@ -29,7 +29,7 @@ class ValueParserTests(unittest.TestCase):
 class NetlistTests(unittest.TestCase):
     def test_all_supplied_netlists_parse_and_build_symbolic_mna(self) -> None:
         paths = sorted(TB_DIR.glob("*.cir")) + sorted(TB_DIR.glob("*.CIR"))
-        for case_dir in (SOLVER_DIR / "tb_buck", SOLVER_DIR / "tb_boost"):
+        for case_dir in (SOLVER_DIR / "tb_buck", SOLVER_DIR / "tb_boost", SOLVER_DIR / "tb_fsbb"):
             paths.extend(sorted(case_dir.glob("*.cir")))
             paths.extend(sorted(case_dir.glob("*.CIR")))
         self.assertGreaterEqual(len(paths), 10)

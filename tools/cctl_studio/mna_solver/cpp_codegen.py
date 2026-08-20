@@ -66,17 +66,21 @@ def _topology_initializer(topology: Mapping) -> str:
 def render_header(document: Mapping, class_name: str) -> str:
     state_count = len(document["state"]["names"])
     signal_count = len(document["signals"]["names"])
+    pwm_ports = [port for port in document["ports"]["inputs"] if port["data_type"] == "uint32_t"]
     input_ports = [port for port in document["ports"]["inputs"] if port["data_type"] == "double"]
     outputs = document["ports"]["outputs"]
     input_count = len(input_ports)
+    topology_count = len(document["topologies"])
     switching = document["switching"]
-    terminal = document["signals"]["switch_terminal_indices"]
+    pwm_fields = [_identifier(port["name"], "PWM") for port in pwm_ports]
     input_fields = [_identifier(port["name"], "input") for port in input_ports]
     output_fields = [_identifier(port["field"], "output") for port in outputs]
     topology_values = ",\n            ".join(_topology_initializer(item) for item in document["topologies"])
     input_vector = ", ".join(f"inputs.{name}" for name in input_fields)
-    input_parameters = ", ".join(f"double {name}" for name in input_fields)
-    input_arguments = ", ".join(input_fields)
+    function_parameters = ", ".join(
+        [*(f"std::uint32_t {name}" for name in pwm_fields), *(f"double {name}" for name in input_fields)]
+    )
+    function_arguments = ", ".join([*pwm_fields, *input_fields])
     output_updates = "\n".join(
         f"        output.{field} = signals_({port['signal_index']});"
         for field, port in zip(output_fields, outputs)
@@ -90,7 +94,56 @@ def render_header(document: Mapping, class_name: str) -> str:
         f"        double {field}{{{_number(port['default'])}}};"
         for field, port in zip(input_fields, input_ports)
     )
-    default_arguments = ", ".join(_number(port["default"]) for port in input_ports)
+    pwm_members = "\n".join(f"        std::uint32_t {field}{{0U}};" for field in pwm_fields)
+    if switching.get("kind") == "multi_mosfet":
+        switch_lines: list[str] = []
+        pwm_field_by_name = {
+            str(port["name"]).upper(): field for port, field in zip(pwm_ports, pwm_fields)
+        }
+        for index, switch in enumerate(switching["switches"]):
+            field = pwm_field_by_name[str(switch["pwm_port"]).upper()]
+            switch_lines.append(
+                f'''        topology_index *= 3U;
+        if (inputs.{field} != 0U) {{
+            body_on_[{index}] = false;
+            topology_index += 1U;
+        }} else {{
+            const double reverse_voltage_{index} = signals_({switch['source_signal_index']}) - signals_({switch['drain_signal_index']});
+            constexpr double body_threshold_{index} = {_number(switch['body_forward_threshold_V'])};
+            body_on_[{index}] = reverse_voltage_{index} >= body_threshold_{index} + (body_on_[{index}] ? -hysteresis : hysteresis);
+            topology_index += body_on_[{index}] ? 2U : 0U;
+        }}'''
+            )
+        reset_switch_state = "        body_on_.fill(false);"
+        selection_body = "\n".join(
+            [
+                f"        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};",
+                "        std::size_t topology_index = 0U;",
+                *switch_lines,
+                "        return topology_index;",
+            ]
+        )
+        switch_state_members = f"    std::array<bool, {len(switching['switches'])}> body_on_{{}};"
+    else:
+        terminal = document["signals"]["switch_terminal_indices"]
+        pwm_field = pwm_fields[0]
+        reset_switch_state = "        diode_on_ = false;\n        body_on_ = false;"
+        selection_body = f'''        const double diode_voltage = signals_({terminal['diode_anode']}) - signals_({terminal['diode_cathode']});
+        const double reverse_mosfet_voltage = signals_({terminal['mosfet_source']}) - signals_({terminal['mosfet_drain']});
+        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};
+        constexpr double diode_threshold = {_number(switching['diode_forward_threshold_V'])};
+        constexpr double body_threshold = {_number(switching['body_forward_threshold_V'])};
+        diode_on_ = diode_voltage >= diode_threshold + (diode_on_ ? -hysteresis : hysteresis);
+        std::size_t path = 0;
+        if (inputs.{pwm_field} != 0U) {{
+            body_on_ = false;
+            path = 1;
+        }} else {{
+            body_on_ = reverse_mosfet_voltage >= body_threshold + (body_on_ ? -hysteresis : hysteresis);
+            path = body_on_ ? 2 : 0;
+        }}
+        return (diode_on_ ? 3U : 0U) + path;'''
+        switch_state_members = "    bool diode_on_{false};\n    bool body_on_{false};"
     source_name = document["circuit"]["source"].get("file") or "<unknown>"
     source_hash = document["circuit"]["source"].get("sha256") or "<unknown>"
     return f'''#pragma once
@@ -113,11 +166,13 @@ public:
     static constexpr std::size_t state_count = {state_count};
     static constexpr std::size_t signal_count = {signal_count};
     static constexpr std::size_t analog_input_count = {input_count};
+    static constexpr std::size_t pwm_input_count = {len(pwm_ports)};
+    static constexpr std::size_t topology_count = {topology_count};
     static constexpr double normal_step_s = {_number(document['solver']['normal_step_s'])};
     static constexpr double short_step_s = {_number(document['solver']['short_step_s'])};
 
     struct Inputs {{
-        std::uint32_t PWM{{0U}};
+{pwm_members}
 {input_members}
     }};
 
@@ -137,8 +192,7 @@ public:
     void reset() {{
         state_.setZero();
         signals_.setZero();
-        diode_on_ = false;
-        body_on_ = false;
+{reset_switch_state}
         last_topology_index_ = 0;
         output = Outputs{{}};
     }}
@@ -146,20 +200,20 @@ public:
     const Outputs& step_short(const Inputs& inputs) {{ return step(inputs, true); }}
     const Outputs& step_normal(const Inputs& inputs) {{ return step(inputs, false); }}
 
-    const Outputs& step_short(std::uint32_t PWM, {input_parameters}) {{
-        return step_short(Inputs{{PWM, {input_arguments}}});
+    const Outputs& step_short({function_parameters}) {{
+        return step_short(Inputs{{{function_arguments}}});
     }}
 
-    const Outputs& step_normal(std::uint32_t PWM, {input_parameters}) {{
-        return step_normal(Inputs{{PWM, {input_arguments}}});
+    const Outputs& step_normal({function_parameters}) {{
+        return step_normal(Inputs{{{function_arguments}}});
     }}
 
-    const Outputs& run(std::uint32_t PWM, {input_parameters}) {{
-        return step_normal(PWM, {input_arguments});
+    const Outputs& run({function_parameters}) {{
+        return step_normal({function_arguments});
     }}
 
-    const Outputs& operator()(std::uint32_t PWM, {input_parameters}) {{
-        return run(PWM, {input_arguments});
+    const Outputs& operator()({function_parameters}) {{
+        return run({function_arguments});
     }}
 
     double operator[](std::string_view name) const {{ return output[name]; }}
@@ -187,33 +241,19 @@ private:
         SignalVector output_bias;
     }};
 
-    static const std::array<Topology, 6>& topologies() {{
-        static const std::array<Topology, 6> value{{{{
+    static const std::array<Topology, topology_count>& topologies() {{
+        static const std::array<Topology, topology_count> value{{{{
             {topology_values}
         }}}};
         return value;
     }}
 
-    std::size_t select_topology(std::uint32_t PWM) {{
-        const double diode_voltage = signals_({terminal['diode_anode']}) - signals_({terminal['diode_cathode']});
-        const double reverse_mosfet_voltage = signals_({terminal['mosfet_source']}) - signals_({terminal['mosfet_drain']});
-        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};
-        constexpr double diode_threshold = {_number(switching['diode_forward_threshold_V'])};
-        constexpr double body_threshold = {_number(switching['body_forward_threshold_V'])};
-        diode_on_ = diode_voltage >= diode_threshold + (diode_on_ ? -hysteresis : hysteresis);
-        std::size_t path = 0;
-        if (PWM != 0U) {{
-            body_on_ = false;
-            path = 1;
-        }} else {{
-            body_on_ = reverse_mosfet_voltage >= body_threshold + (body_on_ ? -hysteresis : hysteresis);
-            path = body_on_ ? 2 : 0;
-        }}
-        return (diode_on_ ? 3U : 0U) + path;
+    std::size_t select_topology(const Inputs& inputs) {{
+{selection_body}
     }}
 
     const Outputs& step(const Inputs& inputs, bool use_short_step) {{
-        last_topology_index_ = select_topology(inputs.PWM);
+        last_topology_index_ = select_topology(inputs);
         const auto& topology = topologies()[last_topology_index_];
         InputVector input_vector;
         input_vector << {input_vector};
@@ -229,113 +269,9 @@ private:
 
     StateVector state_{{StateVector::Zero()}};
     SignalVector signals_{{SignalVector::Zero()}};
-    bool diode_on_{{false}};
-    bool body_on_{{false}};
+{switch_state_members}
     std::size_t last_topology_index_{{0}};
 }};
-'''
-
-
-def render_testbench(document: Mapping, class_name: str, header_name: str) -> str:
-    analog = [port for port in document["ports"]["inputs"] if port["data_type"] == "double"]
-    if len(analog) != 1:
-        raise ValueError("the generated reference testbench currently requires exactly one analog input")
-    outputs = document["ports"]["outputs"]
-    if not outputs:
-        raise ValueError("the generated reference testbench requires at least one probe output")
-    measured = next((port for port in outputs if port["name"].upper().startswith("V(")), outputs[0])
-    measured_field = _identifier(measured["field"], "output")
-    output_header = ",".join(port["name"] for port in outputs)
-    output_values = " << ',' << ".join(
-        f"output.{_identifier(port['field'], 'output')}" for port in outputs
-    )
-    source_file = document["circuit"]["source"].get("file") or class_name
-    csv_stem = _identifier(Path(source_file).stem, "circuit").lower()
-    supply = _number(analog[0]["default"])
-    normal_dt = _number(document["solver"]["normal_step_s"])
-    short_dt = _number(document["solver"]["short_step_s"])
-    return f'''#include "{header_name}"
-
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <limits>
-
-int main() {{
-    {class_name} circuit;
-    constexpr double supply = {supply};
-    constexpr double pwm_frequency = 10000.0;
-    constexpr double duty = 0.5;
-    constexpr double duration = 0.05;
-    constexpr double normal_dt = {normal_dt};
-    constexpr double short_dt = {short_dt};
-    constexpr std::size_t startup_short_steps = 200;
-    constexpr std::size_t normal_steps = static_cast<std::size_t>(duration / normal_dt);
-    const double period = 1.0 / pwm_frequency;
-
-    double startup_time = 0.0;
-    for (std::size_t index = 0; index < startup_short_steps; ++index) {{
-        const std::uint32_t pwm = std::fmod(startup_time, period) < duty * period ? 1U : 0U;
-        circuit.step_short(pwm, supply);
-        startup_time += short_dt;
-    }}
-
-    std::ofstream csv("{csv_stem}_cpp_50pct.csv");
-    if (!csv) {{
-        std::cerr << "cannot create {csv_stem}_cpp_50pct.csv\\n";
-        return 2;
-    }}
-    csv << "time_s,PWM,{output_header},topology_index\\n";
-    csv << std::setprecision(17);
-    double tail_sum = 0.0;
-    double tail_min = std::numeric_limits<double>::infinity();
-    double tail_max = -std::numeric_limits<double>::infinity();
-    std::size_t tail_count = 0;
-    for (std::size_t index = 0; index < normal_steps; ++index) {{
-        const double time = static_cast<double>(index) * normal_dt;
-        const std::uint32_t pwm = std::fmod(time, period) < duty * period ? 1U : 0U;
-        const auto& output = circuit(pwm, supply);
-        if (index % 100U == 0U || index + 1U == normal_steps) {{
-            csv << time + normal_dt << ',' << pwm << ',' << {output_values} << ','
-                << circuit.last_topology_index() << '\\n';
-        }}
-        if (index >= normal_steps * 9U / 10U) {{
-            tail_sum += output.{measured_field};
-            tail_min = std::min(tail_min, output.{measured_field});
-            tail_max = std::max(tail_max, output.{measured_field});
-            ++tail_count;
-        }}
-    }}
-    const double mean = tail_sum / static_cast<double>(tail_count);
-    std::cout << std::setprecision(12)
-              << "50% PWM tail mean={measured['name']}: " << mean
-              << ", min=" << tail_min << ", max=" << tail_max << '\\n';
-    std::cout << "string access {measured['name']}=" << circuit[{_cpp_string(measured['name'])}] << '\\n';
-    if (!std::isfinite(mean) || mean <= 0.0) {{
-        std::cerr << "Circuit output is not finite and positive\\n";
-        return 3;
-    }}
-    return 0;
-}}
-'''
-
-
-def render_cmake(class_name: str) -> str:
-    target = _identifier(class_name.lower() + "_testbench")
-    return f'''cmake_minimum_required(VERSION 3.21)
-project(gmp_generated_{target} LANGUAGES CXX)
-
-find_package(Eigen3 CONFIG REQUIRED)
-
-add_executable({target} {target}.cpp)
-target_compile_features({target} PRIVATE cxx_std_17)
-target_link_libraries({target} PRIVATE Eigen3::Eigen)
-
-enable_testing()
-add_test(NAME {target} COMMAND {target})
 '''
 
 
@@ -346,25 +282,12 @@ def generate_cpp_project(data_path: str | Path, output_directory: str | Path, cl
     output = Path(output_directory)
     output.mkdir(parents=True, exist_ok=True)
     header = output / f"{stem}.hpp"
-    testbench = output / f"{stem}_testbench.cpp"
-    cmake = output / "CMakeLists.txt"
-    vcpkg = output / "vcpkg.json"
     header.write_text(render_header(document, selected_class), encoding="utf-8")
-    testbench.write_text(render_testbench(document, selected_class, header.name), encoding="utf-8")
-    cmake.write_text(render_cmake(selected_class), encoding="utf-8")
-    vcpkg.write_text(
-        json.dumps(
-            {"name": f"gmp-generated-{stem.lower()}", "version-string": "1.0.0", "dependencies": ["eigen3"]},
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    return {"header": header, "testbench": testbench, "cmake": cmake, "vcpkg": vcpkg}
+    return {"header": header}
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Generate an Eigen C++ circuit class")
+    parser = argparse.ArgumentParser(description="Generate an Eigen C++ circuit calculation class")
     parser.add_argument("data")
     parser.add_argument("output_directory")
     parser.add_argument("--class-name")

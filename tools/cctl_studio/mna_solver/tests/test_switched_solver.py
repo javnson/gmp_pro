@@ -17,6 +17,7 @@ import switched_solver as switched  # noqa: E402
 TB_DIR = SOLVER_DIR / "tb"
 BUCK_DIR = SOLVER_DIR / "tb_buck"
 BOOST_DIR = SOLVER_DIR / "tb_boost"
+FSBB_DIR = SOLVER_DIR / "tb_fsbb"
 
 
 class TinaExtendedParserTests(unittest.TestCase):
@@ -167,6 +168,23 @@ class PiecewiseBoostTests(unittest.TestCase):
         self.assertLess(float(np.mean(voltage[-1000:])), 9.0)
         self.assertIn("D_OFF__MOS_CHANNEL", result.topology[-1000:])
         self.assertIn("D_ON__MOS_OFF", result.topology[-1000:])
+
+
+class MultiMosfetFsbbTests(unittest.TestCase):
+    def test_four_mosfets_expand_to_three_paths_each(self) -> None:
+        circuit = mna.parse_netlist(FSBB_DIR / "FSBB.CIR")
+        self.assertEqual(circuit.title, "FSBB (TINA Netlist Editor format)")
+        self.assertNotIn("FSBB", [element.name for element in circuit.elements])
+
+        model = switched.build_piecewise_model(circuit)
+        self.assertIsInstance(model, switched.MultiMosfetLinearModel)
+        self.assertEqual([item.name for item in model.mosfets], ["MT4", "MT3", "MT2", "MT1"])
+        self.assertEqual([item.name for item in model.gate_sources], ["VPWM1", "VPWM2", "VPWM4", "VPWM3"])
+        self.assertEqual(len(model.topologies), 3**4)
+        for topology in model.topologies.values():
+            self.assertEqual(topology.state.A.shape, (5, 5))
+            for gate in model.gate_sources:
+                self.assertNotIn(gate.name, topology.state.input_names)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 
 rem Change only this variable when copying the BAT beside another netlist.
-set "NETLIST_FILE=BOOST.CIR"
+set "NETLIST_FILE=FSBB.CIR"
 
 set "NO_PAUSE=0"
 if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
@@ -32,6 +32,12 @@ set "BUILD_DIR=%TEMP%\gmp_mna_%NETLIST_STEM%_cpp_build"
 
 if not exist "%NETLIST_PATH%" (
     echo [ERROR] Netlist does not exist: %NETLIST_PATH%
+    set "RESULT=1"
+    goto :failed_with_result
+)
+if not exist "%CPP_DIR%\fsbbcircuit_testbench.cpp" (
+    echo [ERROR] Handwritten FSBB testbench was not found:
+    echo         %CPP_DIR%\fsbbcircuit_testbench.cpp
     set "RESULT=1"
     goto :failed_with_result
 )
@@ -70,11 +76,11 @@ cmake --fresh -S "%CPP_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Releas
 if errorlevel 1 goto :failed
 
 :build
-echo [4/5] Compiling the handwritten testbench...
+echo [4/5] Compiling the handwritten FSBB testbench...
 cmake --build "%BUILD_DIR%" --config Release
 if errorlevel 1 goto :failed
 
-echo [5/5] Running 50%% duty, 10 kHz, 50 ms simulation...
+echo [5/5] Running 10 kHz, 50%% complementary PWM with 1 us deadtime...
 ctest --test-dir "%BUILD_DIR%" -C Release --output-on-failure
 if errorlevel 1 goto :failed
 
@@ -90,6 +96,6 @@ set "RESULT=%ERRORLEVEL%"
 if "%RESULT%"=="0" set "RESULT=1"
 :failed_with_result
 echo.
-echo Handwritten testbench failed with exit code %RESULT%.
+echo Handwritten FSBB testbench failed with exit code %RESULT%.
 if "%NO_PAUSE%"=="0" pause
 exit /b %RESULT%

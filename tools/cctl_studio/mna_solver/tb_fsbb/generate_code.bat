@@ -1,16 +1,11 @@
 @echo off
 setlocal EnableExtensions
 
-rem Generate circuit data and Eigen C++ sources for a netlist beside this BAT.
-set "NETLIST_FILE=%~1"
-set "NO_PAUSE=0"
-if /I "%~2"=="--no-pause" set "NO_PAUSE=1"
+rem Change only this variable when copying the BAT beside another netlist.
+set "NETLIST_FILE=FSBB.CIR"
 
-if not defined NETLIST_FILE (
-    echo [ERROR] Usage: generate_code.bat ^<netlist.CIR^> [--no-pause]
-    set "RESULT=1"
-    goto :failed_with_result
-)
+set "NO_PAUSE=0"
+if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
 if not defined GMP_PRO_LOCATION (
     echo [ERROR] GMP_PRO_LOCATION is not defined. Run a GMP installer first.
     set "RESULT=1"
@@ -48,7 +43,7 @@ python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%CPP_DIR%"
 if errorlevel 1 goto :failed
 
 echo.
-echo Circuit data: %JSON_PATH%
+echo Circuit data:       %JSON_PATH%
 echo Calculation header: %CPP_DIR%
 echo Testbench:           handwritten files in %CPP_DIR%
 if "%NO_PAUSE%"=="0" pause

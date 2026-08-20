@@ -1,5 +1,5 @@
 {
-  "name": "gmp-buckcircuit-testbench",
+  "name": "gmp-fsbbcircuit-testbench",
   "version-string": "1.0.0",
   "dependencies": [
     "eigen3"

@@ -200,14 +200,19 @@ At 10 kHz and 50% duty, the 50 ms generated-C++ references produce:
 - Boost with the supplied 100 uF output capacitor: `V(VF1)` tail mean about
   8.526 V, with an 8.295--8.769 V range. The output diode conducts during the
   MOS-off interval.
+- FSBB with complementary `PWM1/PWM2` and `PWM3/PWM4`, and 1 us deadtime:
+  `V(VF1)` tail mean about 3.838 V, with a 3.735--3.938 V range.
 
 ## Circuit data and Eigen C++ generation
 
 `circuit_data.py` exports a versioned JSON boundary containing external ports,
-probes, raw model values and extraction provenance, state/signal names, all six
+probes, raw model values and extraction provenance, state/signal names, all
 continuous topologies, normal/short-step discrete matrices, affine terms, and
 the terminal indices used for previous-sample mode selection. The JSON can be
 simulated without rebuilding MNA and is the only input to `cpp_codegen.py`.
+One diode plus one MOS produces six topologies. A MOS-only switching circuit
+uses three paths per device (`OFF`, channel, body diode), so the four-switch
+FSBB exports `3^4 = 81` topologies.
 
 Each case keeps its portable JSON beside the CIR file and writes C++ artifacts
 under `generated\cpp`:
@@ -224,22 +229,29 @@ Generate a case without compiling it:
 tools\cctl_studio\mna_solver\tb_buck\generate_code.bat buck.CIR
 ```
 
+Only the Eigen calculation header is generated. Testbench source, CMake files,
+waveform scheduling, CSV policy, and acceptance limits are deliberately
+handwritten per circuit because those are application- and topology-specific.
+Regenerating a calculation class therefore never overwrites its testbench.
+
 The generated `BuckCircuit` exposes `step_short(PWM, VS1)`,
 `step_normal(PWM, VS1)`, `run`, and `operator()`. Probe results are available as
-`circuit.output.VF1` or `circuit["V(VF1)"]`. Build and run the 10 kHz, 50%,
-50 ms test benches with:
+`circuit.output.VF1` or `circuit["V(VF1)"]`. `FsbbCircuit` similarly exposes
+`PWM1`, `PWM2`, `PWM3`, `PWM4`, and `VS1`. Build and run the handwritten
+10 kHz, 50 ms testbenches with:
 
 ```bat
 repair_gmp_vcpkg.bat
 tools\cctl_studio\mna_solver\tb_buck\build_testbench.bat
 tools\cctl_studio\mna_solver\tb_boost\build_testbench.bat
+tools\cctl_studio\mna_solver\tb_fsbb\build_testbench.bat
 ```
 
 `build_testbench.bat` locates the MNA tools through `GMP_PRO_LOCATION`; when the
 BAT is copied beside another circuit, only its `NETLIST_FILE` variable needs to
 change. The wrapper uses GMP's installed Eigen/vcpkg tree and disables manifest
 restoration in private-environment mode. The generated C++ directory retains a
-standalone `vcpkg.json` for copied projects.
+standalone handwritten `CMakeLists.txt` and `vcpkg.json` for copied projects.
 
 ## `1_OPAMP.CIR` validation
 
@@ -256,9 +268,10 @@ verify both the DC transfer and `A=-1000` state matrix.
   singular.
 - Initial conditions are state-coordinate values. Mapping physical capacitor
   voltages/inductor currents to initial state coordinates is future work.
-- The C++ generator currently targets the six topologies of one diode plus one
-  NMOS. A Verilog/fixed-point backend over the same data file remains future
-  work.
+- MOS-only multi-switch circuits are supported and grow as `3^N` topologies.
+  Mixed circuits with multiple independent diodes and multiple MOSFETs still
+  need the general combinational device expansion. A Verilog/fixed-point
+  backend over the same data file remains future work.
 
 Run validation with:
 

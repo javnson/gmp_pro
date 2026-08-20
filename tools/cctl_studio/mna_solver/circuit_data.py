@@ -20,6 +20,7 @@ import numpy as np
 
 from mna_solver import NetlistError, StateSpaceModel, discretize, parse_netlist, parse_spice_value
 from switched_solver import (
+    MultiMosfetLinearModel,
     MosfetPath,
     PiecewiseLinearModel,
     TopologyKey,
@@ -111,8 +112,165 @@ def _model_document(model) -> dict:
     }
 
 
+def _pwm_port_name(source_name: str) -> str:
+    return source_name[1:] if _key(source_name).startswith("V") else source_name
+
+
+def _build_multi_mosfet_circuit_data(
+    model: MultiMosfetLinearModel,
+    *,
+    source_path: str | Path | None,
+    normal_step_s: float,
+    short_step_s: float,
+    method: str,
+    voltage_hysteresis: float,
+) -> dict:
+    reference = next(iter(model.topologies.values())).state
+    gate_names = {_key(source.name) for source in model.gate_sources}
+    source_names = [
+        element.name
+        for element in model.source_circuit.elements
+        if element.kind in {"V", "I"} and _key(element.name) not in gate_names
+    ]
+    external_inputs = [
+        name for name in reference.input_names if _key(name) in {_key(item) for item in source_names}
+    ]
+    source_elements = {_key(element.name): element for element in model.source_circuit.elements}
+    input_ports = sorted([
+        {
+            "name": _pwm_port_name(source.name),
+            "source_element": source.name,
+            "data_type": "uint32_t",
+            "role": "mosfet_gate_command",
+            "switch_index": index,
+            "default": 0,
+        }
+        for index, source in enumerate(model.gate_sources)
+    ], key=lambda port: _key(port["name"]))
+    input_ports.extend(
+        {
+            "name": name,
+            "source_element": name,
+            "data_type": "double",
+            "default": float(source_elements[_key(name)].numeric_value({})),
+        }
+        for name in external_inputs
+    )
+
+    public_names = [observation.name for observation in model.source_circuit.observations]
+    fields = _unique_output_fields(public_names)
+    signal_indices = {_key(name): index for index, name in enumerate(reference.output_names)}
+    output_ports = [
+        {
+            "name": name,
+            "field": field,
+            "data_type": "double",
+            "signal_index": signal_indices[_key(name)],
+        }
+        for name, field in zip(public_names, fields)
+    ]
+
+    mosfet_documents = []
+    switch_documents = []
+    for index, (mosfet, gate_source, item) in enumerate(
+        zip(model.mosfets, model.gate_sources, model.parameters)
+    ):
+        device_model = model.source_circuit.models[_key(mosfet.model_name or "")]
+        rd = device_model.numeric("RD", 0.0) or 0.0
+        rs = device_model.numeric("RS", 0.0) or 0.0
+        mosfet_documents.append(
+            {
+                "instance": mosfet.name,
+                "public_name": item.public_name,
+                "model": _model_document(device_model),
+                "reduced": {
+                    "channel_on_resistance_ohm": item.on_resistance,
+                    "off_resistance_ohm": item.off_resistance,
+                    "output_capacitance_F": item.output_capacitance,
+                    "body_forward_voltage_V": item.body_forward_voltage,
+                    "body_on_resistance_ohm": item.body_on_resistance,
+                    "gate_drive_voltage_V": item.gate_drive_voltage,
+                },
+                "extraction": {
+                    "channel_on_resistance": "RD+RS+1/(KP*(W/L)*(Vdrive-VTO))",
+                    "off_resistance": "RDS",
+                    "output_capacitance": "CBD+CGDO",
+                    "body_forward_voltage": "PB",
+                    "body_on_resistance": "RD+RS",
+                    "series_resistance_ohm": rd + rs,
+                },
+            }
+        )
+        switch_documents.append(
+            {
+                "index": index,
+                "instance": mosfet.name,
+                "public_name": item.public_name,
+                "pwm_port": _pwm_port_name(gate_source.name),
+                "gate_source_ignored": gate_source.name,
+                "drain_signal_index": signal_indices[_key(f"V({item.public_name}.D)")],
+                "source_signal_index": signal_indices[_key(f"V({item.public_name}.S)")],
+                "body_forward_threshold_V": item.body_forward_voltage,
+            }
+        )
+
+    topology_documents = []
+    topology_order = []
+    for key, topology in model.topologies.items():
+        topology_order.append(key.name)
+        continuous = _affine_model(topology.state, external_inputs)
+        continuous["reconstruction_x"] = _matrix(topology.state.reconstruction_x)
+        continuous["reconstruction_u"] = _matrix(topology.state.reconstruction_u)
+        continuous["unknown_names"] = list(topology.state.unknown_names)
+        continuous["raw_input_names"] = list(topology.state.input_names)
+        continuous["raw_input_defaults"] = _vector(topology.state.input_defaults)
+        topology_documents.append(
+            {
+                "index": len(topology_documents),
+                "name": key.name,
+                "mosfet_paths": [path.value for path in key.paths],
+                "continuous": continuous,
+                "discrete": {
+                    "normal": _affine_model(
+                        topology.state, external_inputs, discrete_dt=normal_step_s, method=method
+                    ),
+                    "short": _affine_model(
+                        topology.state, external_inputs, discrete_dt=short_step_s, method=method
+                    ),
+                },
+            }
+        )
+
+    source = {"file": None, "sha256": None}
+    if source_path is not None:
+        path = Path(source_path)
+        source = {"file": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+    return {
+        "schema": {"name": SCHEMA_NAME, "version": SCHEMA_VERSION},
+        "circuit": {"name": model.source_circuit.title, "source": source},
+        "ports": {"inputs": input_ports, "outputs": output_ports},
+        "state": {"names": list(reference.state_names), "initial": [0.0] * len(reference.state_names)},
+        "signals": {"names": list(reference.output_names)},
+        "devices": {"diodes": [], "mosfets": mosfet_documents},
+        "switching": {
+            "kind": "multi_mosfet",
+            "switches": switch_documents,
+            "voltage_hysteresis_V": voltage_hysteresis,
+            "selection_uses_previous_terminal_voltage": True,
+            "topology_order": topology_order,
+            "topology_count": len(topology_documents),
+        },
+        "solver": {
+            "method": method,
+            "normal_step_s": normal_step_s,
+            "short_step_s": short_step_s,
+        },
+        "topologies": topology_documents,
+    }
+
+
 def build_circuit_data(
-    model: PiecewiseLinearModel,
+    model: PiecewiseLinearModel | MultiMosfetLinearModel,
     *,
     source_path: str | Path | None = None,
     normal_step_s: float = 100e-9,
@@ -120,10 +278,19 @@ def build_circuit_data(
     method: str = "backward_euler",
     voltage_hysteresis: float = 1e-6,
 ) -> dict:
-    """Convert all six PWL topologies to a self-contained JSON-compatible dict."""
+    """Convert PWL topologies to a self-contained JSON-compatible dict."""
 
     if normal_step_s <= 0.0 or short_step_s <= 0.0:
         raise ValueError("normal and short simulation steps must be positive")
+    if isinstance(model, MultiMosfetLinearModel):
+        return _build_multi_mosfet_circuit_data(
+            model,
+            source_path=source_path,
+            normal_step_s=normal_step_s,
+            short_step_s=short_step_s,
+            method=method,
+            voltage_hysteresis=voltage_hysteresis,
+        )
     reference = next(iter(model.topologies.values())).state
     source_names = [
         element.name
@@ -279,8 +446,14 @@ def validate_circuit_data(document: Mapping) -> None:
     if schema.get("name") != SCHEMA_NAME or schema.get("version") != SCHEMA_VERSION:
         raise ValueError(f"unsupported circuit-data schema: {schema!r}")
     topologies = document.get("topologies", [])
-    if len(topologies) != 6:
-        raise ValueError(f"switched circuit data must contain six topologies, got {len(topologies)}")
+    expected_topologies = int(document.get("switching", {}).get("topology_count", 6))
+    if len(topologies) != expected_topologies:
+        raise ValueError(
+            f"switched circuit data must contain {expected_topologies} topologies, got {len(topologies)}"
+        )
+    switches = document.get("switching", {}).get("switches", [])
+    if switches and expected_topologies != 3 ** len(switches):
+        raise ValueError("multi-MOS topology count must be 3**number_of_switches")
     state_count = len(document["state"]["names"])
     signal_count = len(document["signals"]["names"])
     input_count = sum(port["data_type"] == "double" for port in document["ports"]["inputs"])
@@ -322,13 +495,23 @@ class CircuitDataSimulator:
     def __init__(self, document: Mapping):
         validate_circuit_data(document)
         self.document = document
-        self.topologies = {(item["diode_on"], item["mosfet_path"]): item for item in document["topologies"]}
+        self.multi_mosfet = document["switching"].get("kind") == "multi_mosfet"
+        if self.multi_mosfet:
+            self.topologies = {
+                tuple(item["mosfet_paths"]): item for item in document["topologies"]
+            }
+        else:
+            self.topologies = {
+                (item["diode_on"], item["mosfet_path"]): item
+                for item in document["topologies"]
+            }
         self.external_inputs = [port for port in document["ports"]["inputs"] if port["data_type"] == "double"]
+        self.pwm_ports = [port for port in document["ports"]["inputs"] if port["data_type"] == "uint32_t"]
         self.x = np.asarray(document["state"]["initial"], dtype=float)
         self.signals = np.zeros(len(document["signals"]["names"]), dtype=float)
         self.diode_on = False
-        self.body_on = False
-        self.last_topology = "D_OFF__MOS_OFF"
+        self.body_on = [False] * len(document["switching"].get("switches", [])) if self.multi_mosfet else False
+        self.last_topology = document["topologies"][0]["name"]
 
     def reset(self, state: Sequence[float] | None = None) -> None:
         self.x = np.asarray(self.document["state"]["initial"] if state is None else state, dtype=float).copy()
@@ -336,10 +519,39 @@ class CircuitDataSimulator:
             raise ValueError("initial state has the wrong dimension")
         self.signals.fill(0.0)
         self.diode_on = False
-        self.body_on = False
-        self.last_topology = "D_OFF__MOS_OFF"
+        self.body_on = [False] * len(self.document["switching"].get("switches", [])) if self.multi_mosfet else False
+        self.last_topology = self.document["topologies"][0]["name"]
 
-    def _select(self, pwm: int) -> tuple[bool, str]:
+    def _select(self, pwm: int | Mapping[str, int]) -> tuple:
+        if self.multi_mosfet:
+            supplied = (
+                {_key(name): int(value) for name, value in pwm.items()}
+                if isinstance(pwm, Mapping)
+                else {_key(port["name"]): int(pwm) for port in self.pwm_ports}
+            )
+            unknown = set(supplied) - {_key(port["name"]) for port in self.pwm_ports}
+            if unknown:
+                raise ValueError("unknown PWM input(s): " + ", ".join(sorted(unknown)))
+            paths: list[str] = []
+            hysteresis = self.document["switching"]["voltage_hysteresis_V"]
+            for index, switch in enumerate(self.document["switching"]["switches"]):
+                command = supplied.get(_key(switch["pwm_port"]), 0)
+                if command:
+                    self.body_on[index] = False
+                    paths.append(MosfetPath.CHANNEL.value)
+                    continue
+                vsd = (
+                    self.signals[switch["source_signal_index"]]
+                    - self.signals[switch["drain_signal_index"]]
+                )
+                threshold = switch["body_forward_threshold_V"]
+                self.body_on[index] = vsd >= threshold + (
+                    -hysteresis if self.body_on[index] else hysteresis
+                )
+                paths.append(
+                    MosfetPath.BODY_DIODE.value if self.body_on[index] else MosfetPath.OFF.value
+                )
+            return tuple(paths)
         indices = self.document["signals"]["switch_terminal_indices"]
         vak = self.signals[indices["diode_anode"]] - self.signals[indices["diode_cathode"]]
         vsd = self.signals[indices["mosfet_source"]] - self.signals[indices["mosfet_drain"]]
@@ -354,7 +566,12 @@ class CircuitDataSimulator:
         self.body_on = vsd >= body_threshold + (-hysteresis if self.body_on else hysteresis)
         return self.diode_on, MosfetPath.BODY_DIODE.value if self.body_on else MosfetPath.OFF.value
 
-    def step(self, pwm: int, inputs: Mapping[str, float] | None = None, profile: str = "normal") -> dict[str, float]:
+    def step(
+        self,
+        pwm: int | Mapping[str, int],
+        inputs: Mapping[str, float] | None = None,
+        profile: str = "normal",
+    ) -> dict[str, float]:
         if profile not in {"normal", "short"}:
             raise ValueError("profile must be 'normal' or 'short'")
         supplied = {_key(name): float(value) for name, value in (inputs or {}).items()}
@@ -374,10 +591,10 @@ class CircuitDataSimulator:
             for port in self.document["ports"]["outputs"]
         }
 
-    def step_short(self, pwm: int, inputs: Mapping[str, float] | None = None) -> dict[str, float]:
+    def step_short(self, pwm: int | Mapping[str, int], inputs: Mapping[str, float] | None = None) -> dict[str, float]:
         return self.step(pwm, inputs, "short")
 
-    def step_normal(self, pwm: int, inputs: Mapping[str, float] | None = None) -> dict[str, float]:
+    def step_normal(self, pwm: int | Mapping[str, int], inputs: Mapping[str, float] | None = None) -> dict[str, float]:
         return self.step(pwm, inputs, "normal")
 
 
@@ -387,6 +604,7 @@ def simulate_circuit_data(
     pwm_frequency_hz: float = 10_000.0,
     pwm_duty: float = 0.5,
     inputs: Mapping[str, float | Callable[[float], float]] | None = None,
+    pwm_inputs: Mapping[str, int | Callable[[float], int]] | None = None,
     startup_short_steps: int = 0,
 ) -> DataSimulationResult:
     if duration_s < 0 or pwm_frequency_hz <= 0 or not 0.0 <= pwm_duty <= 1.0 or startup_short_steps < 0:
@@ -400,14 +618,26 @@ def simulate_circuit_data(
     output_ports = document["ports"]["outputs"]
     output_names = [port["name"] for port in output_ports]
     outputs = np.zeros((steps + 1, len(output_ports)))
-    pwm_values = np.zeros(steps + 1, dtype=np.uint32)
+    pwm_count = len(simulator.pwm_ports)
+    pwm_values = np.zeros(
+        (steps + 1, pwm_count) if pwm_count > 1 else (steps + 1,), dtype=np.uint32
+    )
     topology = [simulator.last_topology]
     supplied = inputs or {}
 
-    def gate(time_value: float) -> int:
+    def gate(time_value: float) -> int | dict[str, int]:
+        if pwm_inputs is not None:
+            return {
+                name: int(value(time_value) if callable(value) else value)
+                for name, value in pwm_inputs.items()
+            }
         if pwm_duty in {0.0, 1.0}:
-            return int(pwm_duty)
-        return int((time_value % (1.0 / pwm_frequency_hz)) < pwm_duty / pwm_frequency_hz)
+            value = int(pwm_duty)
+        else:
+            value = int((time_value % (1.0 / pwm_frequency_hz)) < pwm_duty / pwm_frequency_hz)
+        if pwm_count > 1:
+            return {port["name"]: value for port in simulator.pwm_ports}
+        return value
 
     def sampled_inputs(time_value: float) -> dict[str, float]:
         return {name: float(value(time_value) if callable(value) else value) for name, value in supplied.items()}
@@ -421,7 +651,17 @@ def simulate_circuit_data(
         values = simulator.step_normal(current_pwm, sampled_inputs(float(times[index])))
         states[index + 1] = simulator.x
         outputs[index + 1] = [values[name] for name in output_names]
-        pwm_values[index + 1] = current_pwm
+        if pwm_count > 1:
+            assert isinstance(current_pwm, Mapping)
+            pwm_values[index + 1] = [
+                int(current_pwm.get(port["name"], 0)) for port in simulator.pwm_ports
+            ]
+        else:
+            pwm_values[index + 1] = (
+                int(current_pwm.get(simulator.pwm_ports[0]["name"], 0))
+                if isinstance(current_pwm, Mapping)
+                else int(current_pwm)
+            )
         topology.append(simulator.last_topology)
     return DataSimulationResult(times, pwm_values, topology, states, outputs, output_names)
 

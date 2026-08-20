@@ -40,7 +40,7 @@ echo [1/5] Exporting portable circuit data...
 python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method backward_euler
 if errorlevel 1 goto :failed
 
-echo [2/5] Generating Eigen C++ sources and test bench...
+echo [2/5] Generating the Eigen C++ calculation class...
 python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%CPP_DIR%"
 if errorlevel 1 goto :failed
 
@@ -51,7 +51,7 @@ if not exist "%VCPKG_INSTALLED_DIR%\x64-windows\include\eigen3\Eigen\Dense" (
     set "RESULT=1"
     goto :failed_with_result
 )
-echo [3/5] Configuring generated test bench with GMP's private vcpkg...
+echo [3/5] Configuring the handwritten testbench with GMP's private vcpkg...
 cmake --fresh -S "%CPP_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%CMAKE_TOOLCHAIN_FILE%" -DVCPKG_INSTALLED_DIR="%VCPKG_INSTALLED_DIR%" -DVCPKG_MANIFEST_MODE=OFF
 if errorlevel 1 goto :failed
 goto :build
@@ -65,12 +65,12 @@ if errorlevel 1 (
 )
 for /f "delims=" %%I in ('where vcpkg.exe') do if not defined SYSTEM_VCPKG_EXE set "SYSTEM_VCPKG_EXE=%%I"
 for %%I in ("%SYSTEM_VCPKG_EXE%") do set "SYSTEM_VCPKG_ROOT=%%~dpI"
-echo [3/5] Configuring generated test bench with system vcpkg...
+echo [3/5] Configuring the handwritten testbench with system vcpkg...
 cmake --fresh -S "%CPP_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%SYSTEM_VCPKG_ROOT%scripts\buildsystems\vcpkg.cmake"
 if errorlevel 1 goto :failed
 
 :build
-echo [4/5] Compiling generated test bench...
+echo [4/5] Compiling the handwritten testbench...
 cmake --build "%BUILD_DIR%" --config Release
 if errorlevel 1 goto :failed
 
@@ -90,6 +90,6 @@ set "RESULT=%ERRORLEVEL%"
 if "%RESULT%"=="0" set "RESULT=1"
 :failed_with_result
 echo.
-echo Generated test bench failed with exit code %RESULT%.
+echo Handwritten testbench failed with exit code %RESULT%.
 if "%NO_PAUSE%"=="0" pause
 exit /b %RESULT%

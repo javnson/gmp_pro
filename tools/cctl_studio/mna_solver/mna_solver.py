@@ -219,6 +219,9 @@ def parse_netlist(path: str | Path) -> Circuit:
             continue
         name = tokens[0]
         kind = name[0].upper()
+        if not seen_element and "TINA NETLIST EDITOR FORMAT" in stripped.upper():
+            title = stripped
+            continue
         if kind not in {"R", "L", "C", "V", "I", "O", "E", "G", "F", "H", "D", "M", "X"}:
             if not seen_element:
                 title = stripped
