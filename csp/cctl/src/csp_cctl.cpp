@@ -16,11 +16,34 @@
 #include <utility>
 #include <vector>
 
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
 namespace gmp::csp::cctl
 {
 namespace
 {
 using clock_type = std::chrono::steady_clock;
+
+bool enable_in_place_console_refresh() noexcept
+{
+#if defined(_WIN32)
+    const HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD mode = 0U;
+    if (output == nullptr || output == INVALID_HANDLE_VALUE ||
+        !GetConsoleMode(output, &mode))
+        return false;
+    return SetConsoleMode(output, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
+#else
+    return ::isatty(STDOUT_FILENO) != 0;
+#endif
+}
 } // namespace
 
 class simulation_runtime::implementation
@@ -36,7 +59,8 @@ class simulation_runtime::implementation
             !std::isfinite(requested_config.plant_step_s) ||
             requested_config.record_size == 0U ||
             requested_config.output_path.empty() ||
-            !requested_callbacks.step || !requested_callbacks.write_record)
+            (!requested_callbacks.step && !requested_callbacks.step_range) ||
+            !requested_callbacks.write_record)
             throw std::invalid_argument("invalid CCTL simulation configuration");
 
         config_ = std::move(requested_config);
@@ -71,6 +95,21 @@ class simulation_runtime::implementation
         return index + 1U < config_.total_steps;
     }
 
+    bool step_range(simulation_runtime &owner)
+    {
+        const std::size_t begin =
+            completed_steps_.load(std::memory_order_relaxed);
+        if (begin >= config_.total_steps ||
+            stop_requested_.load(std::memory_order_acquire))
+            return false;
+        const std::size_t end = std::min(
+            config_.total_steps,
+            begin + std::max<std::size_t>(config_.step_chunk_size, 1U));
+        callbacks_.step_range(begin, end, owner);
+        completed_steps_.store(end, std::memory_order_release);
+        return end < config_.total_steps;
+    }
+
     bool interface_transfer(const void *record, std::size_t record_size)
     {
         if (!record || record_size != config_.record_size)
@@ -92,6 +131,7 @@ class simulation_runtime::implementation
             throw std::logic_error("CCTL simulation is already running");
 
         running_ = true;
+        configure_process_priority();
         start_time_ = clock_type::now();
         try
         {
@@ -122,6 +162,8 @@ class simulation_runtime::implementation
         if (!running_)
             return;
 
+        restore_process_priority();
+
         const double wall = std::chrono::duration<double>(clock_type::now() - start_time_).count();
         summary_.completed_steps = completed_steps_.load(std::memory_order_acquire);
         summary_.queued_records = queued_records_.load(std::memory_order_acquire);
@@ -145,9 +187,14 @@ class simulation_runtime::implementation
         {
             if (callbacks_.initialize)
                 callbacks_.initialize();
-            while (step(owner))
-            {
-            }
+            if (callbacks_.step_range)
+                while (step_range(owner))
+                {
+                }
+            else
+                while (step(owner))
+                {
+                }
             if (callbacks_.finalize)
                 callbacks_.finalize();
         }
@@ -222,6 +269,16 @@ class simulation_runtime::implementation
     {
         const std::chrono::milliseconds interval(
             std::max<std::uint32_t>(config_.progress_interval_ms, 1U));
+        interactive_console_ = enable_in_place_console_refresh();
+        std::cout << config_.console_title << "\n\n"
+                  << std::fixed << std::setprecision(6)
+                  << "total_time="
+                  << static_cast<double>(config_.total_steps) * config_.plant_step_s
+                  << "s  step=" << std::scientific << config_.plant_step_s
+                  << "s  total_steps=" << std::fixed << config_.total_steps
+                  << (config_.execution_label.empty() ? "" : "  backend=")
+                  << config_.execution_label << "\npriority="
+                  << summary_.priority_message << "\n\n";
         for (;;)
         {
             const std::size_t completed = completed_steps_.load(std::memory_order_acquire);
@@ -231,12 +288,14 @@ class simulation_runtime::implementation
                 break;
             std::this_thread::sleep_for(interval);
         }
-        std::cout << '\n';
+        if (interactive_console_)
+            std::cout << '\n';
     }
 
     void print_progress(std::size_t completed, bool done) const
     {
-        constexpr std::size_t width = 30U;
+        const std::size_t width =
+            std::max<std::size_t>(config_.console_bar_width, 20U);
         const double ratio = std::min(1.0, static_cast<double>(completed) /
                                               static_cast<double>(config_.total_steps));
         const std::size_t fill = static_cast<std::size_t>(ratio * width);
@@ -245,17 +304,81 @@ class simulation_runtime::implementation
                                ? elapsed * static_cast<double>(config_.total_steps - completed) /
                                      static_cast<double>(completed)
                                : 0.0;
-        std::cout << '\r' << "CCTL simulation [";
+        std::ostringstream status;
+        status << "elapsed=" << std::fixed << std::setprecision(1) << elapsed
+               << "s  ETA=" << (done ? 0.0 : eta)
+               << "s  queue=" << ring_.size() << '/' << ring_.capacity()
+               << "  dropped=" << dropped_records_.load(std::memory_order_relaxed);
+        std::ostringstream progress;
+        progress << '[';
         for (std::size_t index = 0U; index < width; ++index)
-            std::cout << (index < fill ? '#' : '-');
-        std::cout << "] " << std::fixed << std::setprecision(1) << ratio * 100.0
-                  << "%  sim=" << std::setprecision(3)
-                  << static_cast<double>(completed) * config_.plant_step_s << "s"
-                  << "  elapsed=" << std::setprecision(1) << elapsed << "s"
-                  << "  ETA=" << (done ? 0.0 : eta) << "s"
-                  << "  queue=" << ring_.size() << '/' << ring_.capacity()
-                  << "  dropped=" << dropped_records_.load(std::memory_order_relaxed)
-                  << std::flush;
+        {
+            if (index < fill)
+                progress << '=';
+            else if (index == fill && !done)
+                progress << '>';
+            else
+                progress << ' ';
+        }
+        progress << "] " << std::fixed << std::setprecision(1) << ratio * 100.0
+                 << "%  sim=" << std::setprecision(3)
+                 << static_cast<double>(completed) * config_.plant_step_s << "s";
+        if (!interactive_console_ && !done)
+            return;
+        if (interactive_console_ && progress_drawn_)
+            std::cout << "\x1b[2F";
+        if (interactive_console_)
+            std::cout << "\r\x1b[2K" << status.str() << '\n'
+                      << "\r\x1b[2K" << progress.str() << '\n' << std::flush;
+        else
+            std::cout << status.str() << '\n' << progress.str() << '\n' << std::flush;
+        progress_drawn_ = true;
+    }
+
+    void configure_process_priority() noexcept
+    {
+        summary_.realtime_priority_requested = config_.request_realtime_priority;
+        summary_.realtime_priority_applied = false;
+        if (!config_.request_realtime_priority)
+        {
+            summary_.priority_message = "normal (realtime disabled)";
+            return;
+        }
+#if defined(_WIN32)
+        const HANDLE process = GetCurrentProcess();
+        original_priority_class_ = static_cast<std::uint32_t>(GetPriorityClass(process));
+        if (original_priority_class_ == 0U)
+        {
+            summary_.priority_message =
+                "normal (cannot query process priority, error=" +
+                std::to_string(GetLastError()) + ')';
+            return;
+        }
+        if (!SetPriorityClass(process, REALTIME_PRIORITY_CLASS))
+        {
+            summary_.priority_message =
+                "normal (realtime request denied, error=" +
+                std::to_string(GetLastError()) + ')';
+            return;
+        }
+        summary_.realtime_priority_applied = true;
+        summary_.priority_message = "realtime (applied for simulation)";
+#else
+        summary_.priority_message = "normal (realtime priority unsupported on this host)";
+#endif
+    }
+
+    void restore_process_priority() noexcept
+    {
+#if defined(_WIN32)
+        if (!summary_.realtime_priority_applied || original_priority_class_ == 0U ||
+            original_priority_class_ == REALTIME_PRIORITY_CLASS)
+            return;
+        if (!SetPriorityClass(GetCurrentProcess(),
+                              static_cast<DWORD>(original_priority_class_)))
+            summary_.priority_message +=
+                "; restore failed, error=" + std::to_string(GetLastError());
+#endif
     }
 
     void fail(const std::string &message) noexcept
@@ -286,6 +409,9 @@ class simulation_runtime::implementation
     std::atomic<bool> simulation_done_{false};
     std::atomic<bool> failed_{false};
     std::mutex error_mutex_;
+    std::uint32_t original_priority_class_{};
+    bool interactive_console_{};
+    bool progress_drawn_{};
     bool initialized_{};
     bool running_{};
 };
@@ -354,6 +480,7 @@ void simulation_runtime::print_summary(std::ostream &stream) const
            << value.message << ")\n"
            << "  simulated/wall: " << value.simulated_time_s << " s / "
            << value.wall_time_s << " s, realtime factor=" << value.realtime_factor
+           << "\n  priority: " << value.priority_message
            << "\n  steps: " << value.completed_steps << '/' << value.total_steps
            << "\n  output: queued=" << value.queued_records
            << ", written=" << value.written_records

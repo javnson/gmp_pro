@@ -1,0 +1,7 @@
+{
+  "name": "gmp-mcs-pmsm-nt-cctl",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "eigen3"
+  ]
+}

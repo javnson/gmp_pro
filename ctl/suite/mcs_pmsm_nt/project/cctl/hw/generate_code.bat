@@ -3,7 +3,6 @@ setlocal EnableExtensions
 
 set "NETLIST_FILE=PMSM.CIR"
 set "MATRIX_TOLERANCE=1E-12"
-set "MATRIX_BACKEND=fixed"
 rem Default netlist and matrix precision for this case.
 
 set "NO_PAUSE=0"
@@ -29,6 +28,8 @@ set "CASE_DIR=%~dp0"
 for %%I in ("%NETLIST_FILE%") do set "NETLIST_STEM=%%~nI"
 set "NETLIST_PATH=%CASE_DIR%%NETLIST_FILE%"
 set "GENERATED_DIR=%CASE_DIR%generated"
+set "FIXED_DIR=%GENERATED_DIR%\fixed"
+set "EIGEN_DIR=%GENERATED_DIR%\eigen"
 set "JSON_PATH=%GENERATED_DIR%\%NETLIST_STEM%.json"
 if not exist "%NETLIST_PATH%" (
     echo [ERROR] Netlist does not exist: %NETLIST_PATH%
@@ -36,17 +37,23 @@ if not exist "%NETLIST_PATH%" (
     goto :failed_with_result
 )
 if not exist "%GENERATED_DIR%" mkdir "%GENERATED_DIR%"
+if not exist "%FIXED_DIR%" mkdir "%FIXED_DIR%"
+if not exist "%EIGEN_DIR%" mkdir "%EIGEN_DIR%"
 
-echo [1/2] Exporting portable PMSM-inverter circuit data...
+echo [1/3] Exporting portable PMSM-inverter circuit data...
 python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method backward_euler --matrix-tolerance "%MATRIX_TOLERANCE%"
 if errorlevel 1 goto :failed
-echo [2/2] Generating the %MATRIX_BACKEND% matrix-backend C++ calculation class...
-python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%GENERATED_DIR%" --backend "%MATRIX_BACKEND%"
+echo [2/3] Generating the fixed-matrix C++ calculation class...
+python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%FIXED_DIR%" --backend fixed
+if errorlevel 1 goto :failed
+echo [3/3] Generating the Eigen C++ calculation class...
+python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%EIGEN_DIR%" --backend eigen
 if errorlevel 1 goto :failed
 
 echo.
 echo Circuit data:       %JSON_PATH%
-echo Generated code:     %GENERATED_DIR%
+echo Fixed solver:       %FIXED_DIR%
+echo Eigen solver:       %EIGEN_DIR%
 echo Handwritten tests:  %CASE_DIR%test
 if "%NO_PAUSE%"=="0" pause
 exit /b 0

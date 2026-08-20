@@ -34,7 +34,8 @@
       "requirements": [
         "Plant Step", "Control Frequency", "Simulation Duration", "Simulation DC Bus",
         "Load Torque Start", "Load Torque", "Startup Short Steps", "Output Ring Bytes",
-        "Output Batch Bytes", "Progress Interval", "Pause On Exit", "Output Filename"
+        "Output Batch Bytes", "Progress Interval", "Simulation Chunk Steps",
+        "Pause On Exit", "Output Filename"
       ]
     },
     {
@@ -88,6 +89,7 @@
     { "role": "Output Ring Bytes", "macro": "CCTL_SIM_OUTPUT_RING_BYTES", "binding": { "number": "33554432" } },
     { "role": "Output Batch Bytes", "macro": "CCTL_SIM_OUTPUT_BATCH_BYTES", "binding": { "number": "1048576" } },
     { "role": "Progress Interval", "macro": "CCTL_SIM_PROGRESS_INTERVAL_MS", "binding": { "number": "1000" } },
+    { "role": "Simulation Chunk Steps", "macro": "CCTL_SIM_STEP_CHUNK_STEPS", "binding": { "number": "4096" } },
     { "role": "Pause On Exit", "macro": "CCTL_SIM_PAUSE_ON_EXIT", "binding": { "number": "1" } },
     { "role": "Output Filename", "macro": "CCTL_SIM_OUTPUT_FILENAME", "binding": { "string": "mcs_pmsm_nt_cctl.csv" } },
 

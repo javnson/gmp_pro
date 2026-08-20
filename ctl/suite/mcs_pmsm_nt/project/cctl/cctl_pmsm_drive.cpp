@@ -18,6 +18,10 @@
 #include <type_traits>
 #include <utility>
 
+#ifndef CCTL_SIM_MATRIX_BACKEND_NAME
+#define CCTL_SIM_MATRIX_BACKEND_NAME "unknown"
+#endif
+
 namespace
 {
 
@@ -275,8 +279,8 @@ class pmsm_drive_topology
     {
         stream << std::setprecision(10)
                << "PMSM drive topology:\n"
-               << "  main circuit: hw/generated/pmsmcircuit.hpp, DC bus="
-               << CCTL_SIM_DC_BUS_V << " V\n"
+               << "  main circuit backend=" << PmsmCircuit::matrix_backend
+               << ", DC bus=" << CCTL_SIM_DC_BUS_V << " V\n"
                << "  plant/control step: " << kPlantStepS << " s / "
                << kControlStepS << " s, divider=" << controller_divider_.division()
                << "\n  controller steps=" << controller_steps_
@@ -378,15 +382,22 @@ int main(int argc, char **argv)
         config.output_ring_bytes = CCTL_SIM_OUTPUT_RING_BYTES;
         config.output_batch_bytes = CCTL_SIM_OUTPUT_BATCH_BYTES;
         config.progress_interval_ms = CCTL_SIM_PROGRESS_INTERVAL_MS;
+        config.step_chunk_size = CCTL_SIM_STEP_CHUNK_STEPS;
         config.output_path = output_path;
         config.output_header = kCsvHeader;
+        config.console_title = "GMP CCTL Motor Simulation Kit";
+        config.execution_label = CCTL_SIM_MATRIX_BACKEND_NAME;
+        config.console_bar_width = 64U;
         config.pause_on_exit = CCTL_SIM_PAUSE_ON_EXIT != 0;
 
         gmp::csp::cctl::simulation_callbacks callbacks;
         callbacks.initialize = [&topology] { topology.initialize(); };
-        callbacks.step = [&topology](std::size_t index, double time_s,
-                                     gmp::csp::cctl::simulation_runtime &host) {
-            topology.step(index, time_s, host);
+        callbacks.step_range = [&topology](
+                                   std::size_t begin, std::size_t end,
+                                   gmp::csp::cctl::simulation_runtime &host) {
+            for (std::size_t index = begin; index < end; ++index)
+                topology.step(index, static_cast<double>(index) * kPlantStepS,
+                              host);
         };
         callbacks.finalize = [&topology] { topology.finalize(); };
         callbacks.write_record = write_record;

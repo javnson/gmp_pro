@@ -18,6 +18,7 @@ struct simulation_callbacks
 {
     std::function<void()> initialize;
     std::function<void(std::size_t, double, simulation_runtime &)> step;
+    std::function<void(std::size_t, std::size_t, simulation_runtime &)> step_range;
     std::function<void()> finalize;
     std::function<void(const void *, std::ostream &)> write_record;
 };
@@ -31,8 +32,13 @@ struct simulation_config
     std::size_t output_ring_bytes{32U * 1024U * 1024U};
     std::size_t output_batch_bytes{1024U * 1024U};
     std::uint32_t progress_interval_ms{1000U};
+    std::size_t step_chunk_size{4096U};
     std::string output_path{"cctl_simulation.csv"};
     std::string output_header;
+    std::string console_title{"GMP CCTL Simulation Kit"};
+    std::string execution_label;
+    std::size_t console_bar_width{64U};
+    bool request_realtime_priority{false};
     bool pause_on_exit{true};
 };
 
@@ -50,6 +56,9 @@ struct simulation_summary
     double simulated_time_s{};
     double wall_time_s{};
     double realtime_factor{};
+    bool realtime_priority_requested{};
+    bool realtime_priority_applied{};
+    std::string priority_message;
 };
 
 /**

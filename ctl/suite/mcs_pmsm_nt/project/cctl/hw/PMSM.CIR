@@ -12,37 +12,92 @@ PMSM (TINA Netlist Editor format)
 .TRAN 2N 1U
 .DC LIN VPWM3 0 1 10M
 
-.PROBE I(VAM3) I(VAM2) I(VAM1)
+.PROBE V([VADC_VDC]) V([VADC_VC]) V([VADC_VB]) V([VADC_VA]) V([VADC_IC])
+.PROBE V([VADC_IB]) V([VADC_IA]) I(VAM3) I(VAM2) I(VAM1)
 
-IPMSM1_C    1 2 10M
-IPMSM1_B    3 2 10M
-IPMSM1_A    4 2 10M
-VAM3        5 4 ; Current Arrow
-VAM2        6 3 ; Current Arrow
-VAM1        7 1 ; Current Arrow
-VPWM3       8 6 DC 0 AC 1 0
+VS4         13 0 1.65
+VS3         20 0 1.65
+VS2         27 0 1.65
+IPMSM1_C    UC 33 10M
+IPMSM1_B    UB 33 10M
+IPMSM1_A    UA 33 10M
+VAM3        34 UA ; Current Arrow
+VAM2        35 UB ; Current Arrow
+VAM1        36 UC ; Current Arrow
+VPWM3       37 35 DC 0 AC 1 0
 + PULSE ( 0 1 0  0  0  1e19 1e20 )
-VPWM4       10 0 DC 0 AC 1 0
+VPWM4       38 IB_SENSOR DC 0 AC 1 0
 + PULSE ( 0 1 0  0  0  1e19 1e20 )
-VPWM1       11 7 DC 0 AC 1 0
+VPWM1       39 36 DC 0 AC 1 0
 + PULSE ( 0 1 0  0  0  1e19 1e20 )
-VPWM2       12 0 DC 0 AC 1 0
+VPWM2       40 IA_SENSOR DC 0 AC 1 0
 + PULSE ( 0 1 0  0  0  1e19 1e20 )
-VPWM5       13 5 DC 0 AC 1 0
+VPWM5       41 34 DC 0 AC 1 0
 + PULSE ( 0 1 0  0  0  1e19 1e20 )
-VPWM6       15 0 DC 0 AC 1 0
+VPWM6       43 IC_SENSOR DC 0 AC 1 0
 + PULSE ( 0 1 0  0  0  1e19 1e20 )
-VS1         14 0 5
-R11         2 0 1MEG 
-MT6         9 8 6 6  ME_2N6755_N_1 NRD=0 NRS=0 
-MT5         6 10 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
-MT4         9 11 7 7  ME_2N6755_N_1 NRD=0 NRS=0 
-MT3         7 12 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
-MT2         9 13 5 5  ME_2N6755_N_1 NRD=0 NRS=0 
-R3          14 9 50M 
-C2          9 0 100U 
-MT1         5 15 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
-C1          9 0 100U 
+VS1         42 0 5
+C18         VADC_VDC 0 470N 
+R34         UBUS VADC_VDC 47K 
+R33         VADC_VDC 0 1K 
+C17         VADC_VC 0 470N 
+R32         UC VADC_VC 47K 
+R31         VADC_VC 0 1K 
+C16         VADC_VB 0 470N 
+R30         UB VADC_VB 47K 
+R29         VADC_VB 0 1K 
+C15         VADC_VA 0 470N 
+R28         UA VADC_VA 47K 
+R27         VADC_VA 0 1K 
+C14         13 14 220P 
+R26         14 13 22K 
+C13         0 VADC_IC 220P 
+R25         15 VADC_IC 1K 
+C12         15 16 220P 
+R24         16 15 22K 
+C11         17 18 220P 
+R23         18 14 1K 
+R22         0 18 1K 
+R21         17 16 1K 
+R20         IC_SENSOR 17 1K 
+XIOP3        14 16 15 IdOpamp
+C10         20 21 220P 
+R19         21 20 22K 
+C9          0 VADC_IB 220P 
+R18         22 VADC_IB 1K 
+C8          22 23 220P 
+R17         23 22 22K 
+C7          24 25 220P 
+R16         25 21 1K 
+R15         0 25 1K 
+R14         24 23 1K 
+R13         IB_SENSOR 24 1K 
+XIOP2        21 23 22 IdOpamp
+C6          27 28 220P 
+R12         28 27 22K 
+C5          0 VADC_IA 220P 
+R10         29 VADC_IA 1K 
+C4          29 30 220P 
+R9          30 29 22K 
+C3          31 32 220P 
+R8          32 28 1K 
+R7          0 32 1K 
+R6          31 30 1K 
+R5          IA_SENSOR 31 1K 
+XIOP1        28 30 29 IdOpamp
+R4          IC_SENSOR 0 5M 
+R2          IB_SENSOR 0 5M 
+R1          IA_SENSOR 0 5M 
+R11         33 0 1MEG 
+MT6         UBUS 37 35 35  ME_2N6755_N_1 NRD=0 NRS=0 
+MT5         35 38 IB_SENSOR IB_SENSOR  ME_2N6755_N_1 NRD=0 NRS=0 
+MT4         UBUS 39 36 36  ME_2N6755_N_1 NRD=0 NRS=0 
+MT3         36 40 IA_SENSOR IA_SENSOR  ME_2N6755_N_1 NRD=0 NRS=0 
+MT2         UBUS 41 34 34  ME_2N6755_N_1 NRD=0 NRS=0 
+R3          42 UBUS 50M 
+C2          UBUS 0 100U 
+MT1         34 43 IC_SENSOR IC_SENSOR  ME_2N6755_N_1 NRD=0 NRS=0 
+C1          UBUS 0 100U 
 
 .MODEL ME_2N6755_N_1 NMOS( LEVEL=3 VTO=3.128 KP=21.14U PHI=600M GAMMA=0 TOX=100N 
 +      UO=600 VMAX=0 DELTA=0 THETA=0 ETA=0 

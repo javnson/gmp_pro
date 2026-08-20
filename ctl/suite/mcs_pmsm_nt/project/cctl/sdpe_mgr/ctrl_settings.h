@@ -234,6 +234,11 @@ extern "C"
 #define CCTL_SIM_PROGRESS_INTERVAL_MS (1000)
 
 /**
+ * @brief Simulation Chunk Steps
+ */
+#define CCTL_SIM_STEP_CHUNK_STEPS (4096)
+
+/**
  * @brief Pause On Exit
  */
 #define CCTL_SIM_PAUSE_ON_EXIT (1)
