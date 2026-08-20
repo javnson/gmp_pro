@@ -51,8 +51,10 @@ initialization. The `csp/cctl` host runtime exposes `initialize`, `step`,
 `interface_transfer`, `run`, and `finalize`, and owns simulation, batched file
 output, and one-second console progress workers. The SDPE defaults are a 32 MB
 ring and 1 MB output batches. A full ring drops observations instead of blocking
-the numerical solver, and the final summary reports queued, written, and dropped
-records, wall time, and realtime factor.
+the numerical solver. The final summary reports queued, written, dropped, peak
+ring occupancy, and the output worker's actual formatting/writing busy time.
+That busy time occurs on the independent output thread rather than being added
+to the numerical hot path.
 
 The console begins with `GMP CCTL Motor Simulation Kit`, then prints simulation
 configuration and the applied process-priority policy. In an interactive terminal,
@@ -70,18 +72,55 @@ falls back to normal priority without failing the run. The original process clas
 is restored after simulation. CTest explicitly selects normal priority so an
 automated run cannot starve unrelated work on the host.
 
+`queue=0` means only that the SPSC ring was empty at the instant of the console
+snapshot; the adjacent `staged` value reports records already held in the output
+worker's private batch. Neither means the simulation thread writes synchronously.
+`--profile` enables
+sparse hot-path timing for peripherals, the circuit, motor, housekeeping, and
+controller ISR without timing every plant step.
+
 ## Matrix backend selection
 
-The unsuffixed `mcs_pmsm_nt_cctl` target and `build_test.bat` now use Eigen by
-default. On the current 23-state, 729-topology model, an earlier three-run normal
-priority measurement was 16.141034 s for Eigen and 22.135849 s for fixed, so the
-daily generation, build, and regression path no longer pays for both backends.
+The unsuffixed `mcs_pmsm_nt_cctl` target and `build_test.bat` use Eigen by
+default. Startup now reports `build=Release optimized=yes`. An IDE-built
+Debug/`/Od` executable prints an immediate performance warning because Eigen's
+small fixed-size expressions can be tens of times slower without optimization.
+Performance regressions must use `build_test.bat` or an explicit CMake Release
+configuration.
+
+When Visual Studio opens this directory, it reads `CMakePresets.json`. Select
+`Windows MSVC Release (recommended)` for performance runs or `Windows MSVC
+Debug` for a genuine `/Od` diagnostic build, then build/start
+`mcs_pmsm_nt_cctl.exe`. Visual Studio remembers the last workspace selection,
+so an existing workspace may remain on the legacy `x64-Debug` entry until
+Release is selected once. `mcs_pmsm_nt_cctl.exe --build-info` reports the
+configuration without running 40 million steps: Release must say
+`build=Release optimized=yes`, while Debug must say `build=Debug optimized=no`.
+With a Visual Studio multi-config generator the toolbar configuration is
+authoritative; `CMAKE_BUILD_TYPE` does not select it. CMake also deploys the
+Eigen archive beside the executable for each selected configuration and uses
+that directory as the Visual Studio debugger working directory.
+
+The reusable PMSM supports Euler, midpoint RK2, and classical RK4, retaining RK4
+as its general default. Project SDPE owns `CCTL_SIM_PMSM_INTEGRATION_ORDER`.
+Because the 100 ns plant step is tiny relative to the millisecond-scale
+electrical time constants, this project selects Euler while still updating the
+motor every circuit step; it adds no multirate hold or extra coupling delay.
+Values 2 and 4 remain available for accuracy comparisons.
+
+On the current machine, the 4 s, 40,000,000-step, 23-state/729-topology Release
+Eigen regression takes 9.55 s. A profiled run to `NUL` takes about 9.11 s at
+4.39 Mstep/s, versus 12.15 s with RK4. The last-50-ms mean-speed difference from
+RK4 is about 0.003 rpm and the closed-loop regression passes. Formatting and
+writing 80,000 records (about 22.45 MB) keeps the asynchronous output worker busy
+for only about 0.57 s, so it cannot explain a run lasting hundreds of seconds.
 
 Fixed support remains opt-in. `build_test.bat --with-fixed` additionally
 generates the fixed header, configures `CCTL_BUILD_FIXED_BACKEND=ON`, builds
 `mcs_pmsm_nt_cctl_fixed`, and runs its independent closed-loop test. Fixed pools
 retain C++17 constant initialization and optional AVX2 for explicit static-storage,
-Eigen-free embedded/FPGA-oriented work.
+Eigen-free embedded/FPGA-oriented work. Its same-configuration regression is
+about 12.6 s, so Eigen remains the default.
 
 The Eigen archive is read and validated only while constructing `PmsmCircuit`;
 simulation steps perform no file I/O. For the current 23-state, 729-topology

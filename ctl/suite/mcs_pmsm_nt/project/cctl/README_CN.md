@@ -60,7 +60,9 @@ testbench 按实际接线重新排列后再写入控制器 IA/IB/IC 通道。
 `finalize`，并启动仿真、文件输出、控制台进度三个线程。仿真线程只进行一次
 非阻塞记录拷贝；32 MB 环满时丢弃新记录而不阻塞求解器。文件线程按 1 MB
 批量格式化和写入，控制台线程每 1 s 更新进度、ETA、已完成仿真时间、瞬时
-求解吞吐率（Mstep/s）、队列占用和丢弃数。交互终端中的状态行和进度条会在
+求解吞吐率（Mstep/s）、队列占用和丢弃数。最终摘要还会给出环形队列峰值及
+文件线程实际用于格式化/写入的 `writer_busy` 时间；该时间发生在独立线程，
+不会直接累加到求解器热路径。交互终端中的状态行和进度条会在
 固定光标锚点原位刷新，不会不断追加新行；进度条会读取当前控制台可视宽度，
 在扣除百分比后尽量撑满整行，并在窗口缩放后自动调整。输出重定向到文件或
 CTest 时只打印最终状态，避免日志中出现控制序列和逐秒输出。
@@ -71,20 +73,48 @@ Windows 下由 SDPE 的 `CCTL_SIM_REALTIME_PRIORITY` 决定是否在仿真期间
 在启动信息和最终摘要中；权限不足时自动使用普通优先级，仿真结束后恢复原
 优先级。CTest 显式使用普通优先级，避免自动化任务影响同机其他进程。
 
-仿真结束会打印模拟时间/墙钟时间、实时倍率、步数、写入量、丢弃量以及电机
+`queue=0` 只表示打印瞬间 SPSC 环已经被文件线程取空；旁边的 `staged` 显示
+文件线程私有批缓冲中的记录数。二者都不表示仿真线程同步写文件。仿真结束会
+打印模拟时间/墙钟时间、实时倍率、步数、写入量、丢弃量以及电机
 稳态结果。直接运行可执行文件时按 SDPE 默认执行 `system("@pause")`；自动化
-测试使用 `--no-pause`。也可用 `--output <文件>` 覆盖 CSV 路径。
+测试使用 `--no-pause`。也可用 `--output <文件>` 覆盖 CSV 路径。传入
+`--profile` 会稀疏采样外设、主电路、电机和维护逻辑的热路径耗时，并统计每次
+控制 ISR 的平均耗时。
 
 ## 矩阵后端选择
 
-无后缀目标 `mcs_pmsm_nt_cctl` 和 `build_test.bat` 均默认使用 Eigen。此前对新
-23 状态、729 拓扑网表的三轮普通优先级测量为 Eigen 16.141034 s、fixed
-22.135849 s，因此不再让日常生成、编译和回归承担 fixed 的额外成本。
+无后缀目标 `mcs_pmsm_nt_cctl` 和 `build_test.bat` 均默认使用 Eigen。启动信息
+会明确显示 `build=Release optimized=yes`；若从 IDE 误运行 Debug/`/Od` 版本，
+程序会立即打印性能警告。Eigen 的小型固定维表达式在未优化构建下可能慢数十倍，
+性能回归必须通过 `build_test.bat` 或显式的 CMake Release 配置运行。
+
+Visual Studio 打开本目录时会读取 `CMakePresets.json`。配置选择器中
+`Windows MSVC Release (recommended)` 是默认推荐的性能配置，`Windows MSVC
+Debug` 保留真正的 `/Od` 调试语义；选择配置后再构建/启动
+`mcs_pmsm_nt_cctl.exe`。Visual Studio 会记住上次选择，因此已经打开过本工程的
+工作区可能仍显示旧的 `x64-Debug`，此时只需在配置选择器中改选一次 Release。
+命令行可用 `mcs_pmsm_nt_cctl.exe --build-info` 瞬间确认配置，而不运行 4000 万步：
+Release 应显示 `build=Release optimized=yes`，Debug 应显示
+`build=Debug optimized=no`。对于 Visual Studio 多配置生成器，工具栏配置才是
+有效选择，`CMAKE_BUILD_TYPE` 不参与选择。CMake 还会把 Eigen archive 复制到
+所选配置的可执行文件目录，并将该目录设为 VS 调试工作目录。
+
+电机模型仍支持 Euler、二阶中点 RK 和经典 RK4，通用模型默认 RK4。本工程的
+`CCTL_SIM_PMSM_INTEGRATION_ORDER` 由 SDPE 管理；100 ns 步长相对于约毫秒级
+电气时间常数足够小，因此默认取 1 阶 Euler，仍保持每个电路步更新一次电机，
+没有引入多速率保持或额外一拍延迟。设为 2 或 4 可进行精度对照。
+
+当前机器上 4 s、40,000,000 步、23 状态/729 拓扑的 Release Eigen 回归为
+9.55 s；直接输出到 `NUL` 的剖析运行约 9.11 s、4.39 Mstep/s。此前同一离散
+耦合使用 RK4 时为 12.15 s。Euler 与 RK4 的末 50 ms 平均转速差约 0.003 rpm，
+闭环回归全部通过。80,000 条、约 22.45 MB CSV 的文件线程忙碌时间约 0.57 s，
+且与 9.11 s 求解并行，因此不是数百秒运行时间的原因。
 
 fixed 能力没有删除：运行 `build_test.bat --with-fixed` 会额外生成 fixed 头、
 以 `CCTL_BUILD_FIXED_BACKEND=ON` 构建 `mcs_pmsm_nt_cctl_fixed`，并执行独立
 闭环测试。fixed 系数池继续使用 C++17 `constexpr` 常量初始化和可选 AVX2，
-适合作为静态存储、无 Eigen 运行依赖以及后续嵌入式/FPGA 演进的显式后端。
+适合作为静态存储、无 Eigen 运行依赖以及后续嵌入式/FPGA 演进的显式后端；
+本次同配置回归约为 12.6 s，因此默认仍使用 Eigen。
 
 Eigen 归档只在 `PmsmCircuit` 构造时读取和校验，仿真步进期间没有文件 I/O。
 当前 23 状态、729 拓扑模型的 JSON 为 181,466,029 字节；原内嵌 Eigen 头约

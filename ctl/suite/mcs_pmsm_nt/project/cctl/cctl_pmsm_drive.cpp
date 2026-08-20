@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -21,6 +22,12 @@
 #ifndef CCTL_SIM_MATRIX_BACKEND_NAME
 #define CCTL_SIM_MATRIX_BACKEND_NAME "unknown"
 #endif
+#ifndef CCTL_SIM_BUILD_CONFIGURATION
+#define CCTL_SIM_BUILD_CONFIGURATION "unknown"
+#endif
+#ifndef CCTL_SIM_OPTIMIZED_BUILD
+#define CCTL_SIM_OPTIMIZED_BUILD 0
+#endif
 
 namespace
 {
@@ -28,6 +35,10 @@ namespace
 constexpr double kPlantStepS = CCTL_SIM_PLANT_STEP_S;
 constexpr double kControlStepS = 1.0 / CCTL_SIM_CONTROL_FREQUENCY_HZ;
 constexpr double kSimulationDurationS = CCTL_SIM_DURATION_S;
+constexpr double kTbclkCountsPerPlantStepExact =
+    kPlantStepS * CCTL_SIM_EPWM_TBCLK_HZ;
+constexpr std::uint64_t kTbclkCountsPerPlantStep =
+    static_cast<std::uint64_t>(kTbclkCountsPerPlantStepExact + 0.5);
 
 static_assert(PmsmCircuit::normal_step_s > kPlantStepS * 0.999999999 &&
                   PmsmCircuit::normal_step_s < kPlantStepS * 1.000000001,
@@ -38,6 +49,18 @@ static_assert(CTRL_POS_ENC_FS == CCTL_SIM_EQEP_COUNTS_PER_REV,
               "controller and eQEP resolutions must match");
 static_assert(CCTL_ADC_COUNT == 7,
               "the generated VADC contract requires seven ADC channels");
+static_assert(CCTL_SIM_PMSM_INTEGRATION_ORDER == 1 ||
+                  CCTL_SIM_PMSM_INTEGRATION_ORDER == 2 ||
+                  CCTL_SIM_PMSM_INTEGRATION_ORDER == 4,
+              "PMSM integration order must be 1, 2, or 4");
+static_assert(kTbclkCountsPerPlantStep > 0U &&
+                  kTbclkCountsPerPlantStepExact -
+                          static_cast<double>(kTbclkCountsPerPlantStep) <
+                      1.0e-9 &&
+                  static_cast<double>(kTbclkCountsPerPlantStep) -
+                          kTbclkCountsPerPlantStepExact <
+                      1.0e-9,
+              "plant step must contain an integer number of ePWM TBCLK counts");
 
 struct simulation_record
 {
@@ -72,6 +95,8 @@ cctl::pmsm_cs_parameters<double> motor_parameters()
     /* SDPE motor presets store g*cm^2 and uN*m*s/rad; the plant uses SI. */
     parameters.inertia_kg_m2 = MOTOR_PARAM_INERTIA * 1.0e-7;
     parameters.viscous_friction_nm_s = MOTOR_PARAM_FRICTION * 1.0e-6;
+    parameters.integration_method = static_cast<cctl::pmsm_cs_integration_method>(
+        CCTL_SIM_PMSM_INTEGRATION_ORDER);
     return parameters;
 }
 
@@ -118,14 +143,21 @@ bool verify_peripheral_models()
         return false;
 
     cctl::ti_epwm<double> epwm(epwm_config(true));
+    cctl::ti_epwm<double> count_epwm(epwm_config(true));
     epwm.set_enabled(true);
+    count_epwm.set_enabled(true);
     epwm.set_compare_a(CCTL_SIM_EPWM_PERIOD_COUNT / 2U);
+    count_epwm.set_compare_a(CCTL_SIM_EPWM_PERIOD_COUNT / 2U);
     std::size_t adc_triggers = 0U;
     for (std::size_t index = 0U;
          index < 2U * (CCTL_SIM_EPWM_PERIOD_COUNT + 1U); ++index)
     {
         const auto gate = epwm.sample(
             static_cast<double>(index) / CCTL_SIM_EPWM_TBCLK_HZ);
+        const auto count_gate = count_epwm.sample_time_base_count(index);
+        if (gate.upper != count_gate.upper || gate.lower != count_gate.lower ||
+            gate.adc_trigger != count_gate.adc_trigger)
+            return false;
         if (gate.upper != 0U && gate.lower != 0U)
             return false;
         if (gate.adc_trigger)
@@ -160,10 +192,11 @@ void stage_adc_inputs(cctl::ti_adc<double, 8U> &adc,
 using epwm_outputs = std::array<cctl::ti_epwm_gate_pair, 3U>;
 
 epwm_outputs sample_epwm(std::array<cctl::ti_epwm<double>, 3U> &epwm,
-                         double time_s)
+                         std::uint64_t absolute_tbclk_count)
 {
-    return {epwm[0].sample(time_s), epwm[1].sample(time_s),
-            epwm[2].sample(time_s)};
+    return {epwm[0].sample_time_base_count(absolute_tbclk_count),
+            epwm[1].sample_time_base_count(absolute_tbclk_count),
+            epwm[2].sample_time_base_count(absolute_tbclk_count)};
 }
 
 void set_gate_inputs(PmsmCircuit::Inputs &input, const epwm_outputs &output)
@@ -187,12 +220,13 @@ bool all_low_sides_conducting(const epwm_outputs &output) noexcept
 class pmsm_drive_topology
 {
   public:
-    pmsm_drive_topology()
+    explicit pmsm_drive_topology(bool profile_enabled = false)
         : motor_(motor_parameters()), adc_(adc_config()),
           eqep_(CCTL_SIM_EQEP_COUNTS_PER_REV),
           epwm_{cctl::ti_epwm<double>(epwm_config(true)),
                 cctl::ti_epwm<double>(epwm_config()),
-                cctl::ti_epwm<double>(epwm_config())}
+                cctl::ti_epwm<double>(epwm_config())},
+          profile_enabled_(profile_enabled)
     {
     }
 
@@ -215,10 +249,16 @@ class pmsm_drive_topology
         }
     }
 
-    void step(std::size_t, double time_s,
+    void step(std::size_t step_index, double time_s,
               gmp::csp::cctl::simulation_runtime &runtime)
     {
-        const epwm_outputs pwm_output = sample_epwm(epwm_, time_s);
+        const bool sample_profile =
+            profile_enabled_ && step_index % kProfileSamplePeriod == 0U;
+        const auto profile_begin = sample_profile ? profile_clock::now()
+                                                  : profile_clock::time_point{};
+        const epwm_outputs pwm_output = sample_epwm(
+            epwm_, static_cast<std::uint64_t>(step_index) *
+                       kTbclkCountsPerPlantStep);
         PmsmCircuit::Inputs inverter_input;
         set_gate_inputs(inverter_input, pwm_output);
         if ((inverter_input.PWM1 && inverter_input.PWM2) ||
@@ -229,7 +269,11 @@ class pmsm_drive_topology
         inverter_input.IPMSM1_B = motor_.output.phase_current_a[1];
         inverter_input.IPMSM1_C = motor_.output.phase_current_a[2];
         inverter_input.VS1 = CCTL_SIM_DC_BUS_V;
+        const auto profile_after_peripheral =
+            sample_profile ? profile_clock::now() : profile_clock::time_point{};
         inverter_output_ = inverter_.step_normal(inverter_input);
+        const auto profile_after_circuit =
+            sample_profile ? profile_clock::now() : profile_clock::time_point{};
 
         const double load_torque = time_s >= CCTL_SIM_LOAD_TORQUE_START_S
                                        ? CCTL_SIM_LOAD_TORQUE_NM
@@ -237,6 +281,8 @@ class pmsm_drive_topology
         const auto &motor_output = motor_.step(
             inverter_output_.VPMSM1_A, inverter_output_.VPMSM1_B,
             inverter_output_.VPMSM1_C, load_torque);
+        const auto profile_after_motor =
+            sample_profile ? profile_clock::now() : profile_clock::time_point{};
         for (double current : motor_output.phase_current_a)
         {
             if (!std::isfinite(current))
@@ -264,6 +310,19 @@ class pmsm_drive_topology
             adc_.trigger([this, time_s, &runtime] {
                 adc_interrupt(time_s, runtime);
             });
+        }
+        if (sample_profile)
+        {
+            const auto profile_end = profile_clock::now();
+            profile_peripheral_ns_ += elapsed_ns(profile_begin,
+                                                 profile_after_peripheral);
+            profile_circuit_ns_ += elapsed_ns(profile_after_peripheral,
+                                              profile_after_circuit);
+            profile_motor_ns_ += elapsed_ns(profile_after_circuit,
+                                            profile_after_motor);
+            profile_housekeeping_ns_ += elapsed_ns(profile_after_motor,
+                                                   profile_end);
+            ++profile_samples_;
         }
     }
 
@@ -293,6 +352,8 @@ class pmsm_drive_topology
                << "  main circuit backend=" << PmsmCircuit::matrix_backend
                << '/' << PmsmCircuit::matrix_storage
                << ", DC bus=" << CCTL_SIM_DC_BUS_V << " V\n"
+               << "  motor integration order="
+               << CCTL_SIM_PMSM_INTEGRATION_ORDER << " at plant step\n"
                << "  plant/control step: " << kPlantStepS << " s / "
                << kControlStepS << " s, ADC SOC CMPB="
                << CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT
@@ -304,12 +365,32 @@ class pmsm_drive_topology
                << " rpm\n  maximum phase current=" << maximum_current_a_
                << " A, final torque=" << motor_.output.electromagnetic_torque_nm
                << " N*m\n";
+        if (profile_enabled_ && profile_samples_ != 0U)
+        {
+            const double samples = static_cast<double>(profile_samples_);
+            const double peripheral = profile_peripheral_ns_ / samples;
+            const double circuit = profile_circuit_ns_ / samples;
+            const double motor = profile_motor_ns_ / samples;
+            const double housekeeping = profile_housekeeping_ns_ / samples;
+            const double total = peripheral + circuit + motor + housekeeping;
+            stream << "  sampled profile: peripheral=" << peripheral
+                   << " ns, circuit=" << circuit << " ns, motor=" << motor
+                   << " ns, housekeeping=" << housekeeping << " ns\n"
+                   << "  controller profile: "
+                   << (profile_controller_samples_ == 0U
+                           ? 0.0
+                           : static_cast<double>(profile_controller_ns_) /
+                                 static_cast<double>(profile_controller_samples_))
+                   << " ns/ISR; sampled plant total=" << total << " ns\n";
+        }
     }
 
   private:
     void adc_interrupt(double time_s,
                        gmp::csp::cctl::simulation_runtime &runtime)
     {
+        const auto profile_begin = profile_enabled_ ? profile_clock::now()
+                                                    : profile_clock::time_point{};
         if (!adc_.interrupt_pending())
             throw std::runtime_error("ADC interrupt dispatched without completion");
         for (std::size_t channel = 0U; channel < CCTL_ADC_COUNT; ++channel)
@@ -333,6 +414,11 @@ class pmsm_drive_topology
 
         const simulation_record record = make_record(time_s);
         runtime.interface_transfer(&record, sizeof(record));
+        if (profile_enabled_)
+        {
+            profile_controller_ns_ += elapsed_ns(profile_begin, profile_clock::now());
+            ++profile_controller_samples_;
+        }
     }
 
     simulation_record make_record(double time_s) const
@@ -374,6 +460,23 @@ class pmsm_drive_topology
     std::size_t final_window_count_{};
     std::size_t controller_steps_{};
     bool ever_enabled_{};
+    using profile_clock = std::chrono::steady_clock;
+    static constexpr std::size_t kProfileSamplePeriod = 4096U; // sparse hot-path sampling
+    static std::uint64_t elapsed_ns(profile_clock::time_point begin,
+                                    profile_clock::time_point end) noexcept
+    {
+        return static_cast<std::uint64_t>(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin)
+                .count());
+    }
+    bool profile_enabled_{};
+    std::uint64_t profile_peripheral_ns_{};
+    std::uint64_t profile_circuit_ns_{};
+    std::uint64_t profile_motor_ns_{};
+    std::uint64_t profile_housekeeping_ns_{};
+    std::uint64_t profile_controller_ns_{};
+    std::size_t profile_samples_{};
+    std::size_t profile_controller_samples_{};
 };
 
 void write_record(const void *data, std::ostream &stream)
@@ -405,6 +508,8 @@ int main(int argc, char **argv)
 {
     bool suppress_pause = false;
     bool request_realtime_priority = CCTL_SIM_REALTIME_PRIORITY != 0;
+    bool profile_enabled = false;
+    bool print_build_info = false;
     std::string output_path = CCTL_SIM_OUTPUT_FILENAME;
     gmp::csp::cctl::simulation_runtime runtime;
     bool runtime_initialized = false;
@@ -421,13 +526,28 @@ int main(int argc, char **argv)
             else if (argument == "--normal-priority" ||
                      argument == "--no-realtime-priority")
                 request_realtime_priority = false;
+            else if (argument == "--profile")
+                profile_enabled = true;
+            else if (argument == "--build-info")
+                print_build_info = true;
             else if (argument == "--output" && index + 1 < argc)
                 output_path = argv[++index];
             else
                 throw std::invalid_argument("unknown or incomplete argument: " + argument);
         }
 
-        pmsm_drive_topology topology;
+        if (print_build_info)
+        {
+            std::cout << "backend=" << CCTL_SIM_MATRIX_BACKEND_NAME
+                      << '/' << PmsmCircuit::matrix_storage
+                      << " build=" << CCTL_SIM_BUILD_CONFIGURATION
+                      << " optimized="
+                      << (CCTL_SIM_OPTIMIZED_BUILD != 0 ? "yes" : "no")
+                      << '\n';
+            return 0;
+        }
+
+        pmsm_drive_topology topology(profile_enabled);
         gmp::csp::cctl::simulation_config config;
         config.total_steps = static_cast<std::size_t>(
             kSimulationDurationS / kPlantStepS + 0.5);
@@ -440,7 +560,16 @@ int main(int argc, char **argv)
         config.output_path = output_path;
         config.output_header = kCsvHeader;
         config.console_title = "GMP CCTL Motor Simulation Kit";
-        config.execution_label = CCTL_SIM_MATRIX_BACKEND_NAME;
+        if (CCTL_SIM_OPTIMIZED_BUILD == 0)
+            config.console_title +=
+                "\n\n[PERFORMANCE WARNING] This is an unoptimized "
+                CCTL_SIM_BUILD_CONFIGURATION
+                " build. Use build_test.bat or configure CMake with Release.";
+        config.execution_label =
+            std::string(CCTL_SIM_MATRIX_BACKEND_NAME) + "/" +
+            PmsmCircuit::matrix_storage + "  build=" +
+            CCTL_SIM_BUILD_CONFIGURATION + "  optimized=" +
+            (CCTL_SIM_OPTIMIZED_BUILD != 0 ? "yes" : "no");
         config.console_bar_width = 64U;
         config.request_realtime_priority = request_realtime_priority;
         config.pause_on_exit = CCTL_SIM_PAUSE_ON_EXIT != 0;

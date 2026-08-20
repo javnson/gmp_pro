@@ -10,6 +10,13 @@
 namespace cctl
 {
 
+enum class pmsm_cs_integration_method
+{
+    forward_euler = 1,
+    midpoint_rk2 = 2,
+    classical_rk4 = 4,
+};
+
 /** Parameters for a three-wire PMSM represented as three controlled current sources. */
 template <typename T> struct pmsm_cs_parameters
 {
@@ -21,12 +28,14 @@ template <typename T> struct pmsm_cs_parameters
     std::uint16_t pole_pairs;
     T inertia_kg_m2;
     T viscous_friction_nm_s;
+    pmsm_cs_integration_method integration_method;
 
     pmsm_cs_parameters()
         : sample_period_s(T(100e-9)), stator_resistance_ohm(T(0.165)),
           d_axis_inductance_h(T(0.45e-3)), q_axis_inductance_h(T(0.45e-3)),
           permanent_magnet_flux_wb(T(0.0066843949493427743)), pole_pairs(4U),
-          inertia_kg_m2(T(497e-7)), viscous_friction_nm_s(T(755e-6))
+          inertia_kg_m2(T(497e-7)), viscous_friction_nm_s(T(755e-6)),
+          integration_method(pmsm_cs_integration_method::classical_rk4)
     {
     }
 };
@@ -71,7 +80,8 @@ template <typename T> struct pmsm_cs_output
  * Positive phase current flows from each inverter terminal into the motor neutral,
  * matching the SPICE direction of IPMSMx_A/B/C. The input voltages are measured
  * from the corresponding phase terminal to that common neutral. One call advances
- * the motor by the initialized sample period using a fixed-step RK4 update.
+ * the motor by the initialized sample period using the configured Euler, RK2,
+ * or RK4 update. RK4 remains the reusable model default.
  */
 template <typename T = double> class pmsm_cs
 {
@@ -134,10 +144,23 @@ template <typename T = double> class pmsm_cs
     const output_type &step(const input_type &input)
     {
         const state_type k1 = derivative(state_, input);
-        const state_type k2 = derivative(state_ + k1 * half_step_s_, input);
-        const state_type k3 = derivative(state_ + k2 * half_step_s_, input);
-        const state_type k4 = derivative(state_ + k3 * parameters_.sample_period_s, input);
-        state_ += (k1 + k2 * T(2) + k3 * T(2) + k4) * step_over_six_s_;
+        if (parameters_.integration_method ==
+            pmsm_cs_integration_method::forward_euler)
+            state_ += k1 * parameters_.sample_period_s;
+        else if (parameters_.integration_method ==
+                 pmsm_cs_integration_method::midpoint_rk2)
+        {
+            const state_type k2 = derivative(state_ + k1 * half_step_s_, input);
+            state_ += k2 * parameters_.sample_period_s;
+        }
+        else
+        {
+            const state_type k2 = derivative(state_ + k1 * half_step_s_, input);
+            const state_type k3 = derivative(state_ + k2 * half_step_s_, input);
+            const state_type k4 =
+                derivative(state_ + k3 * parameters_.sample_period_s, input);
+            state_ += (k1 + k2 * T(2) + k3 * T(2) + k4) * step_over_six_s_;
+        }
         output = observe(input);
         return output;
     }
@@ -304,7 +327,13 @@ template <typename T = double> class pmsm_cs
             parameters.pole_pairs == 0U || !(parameters.inertia_kg_m2 > T(0)) ||
             !std::isfinite(parameters.inertia_kg_m2) ||
             !(parameters.viscous_friction_nm_s >= T(0)) ||
-            !std::isfinite(parameters.viscous_friction_nm_s))
+            !std::isfinite(parameters.viscous_friction_nm_s) ||
+            (parameters.integration_method !=
+                 pmsm_cs_integration_method::forward_euler &&
+             parameters.integration_method !=
+                 pmsm_cs_integration_method::midpoint_rk2 &&
+             parameters.integration_method !=
+                 pmsm_cs_integration_method::classical_rk4))
             throw std::invalid_argument("invalid PMSM current-source model parameters");
     }
 

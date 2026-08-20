@@ -79,6 +79,8 @@ template <typename T = double> class ti_epwm
         config_ = config;
         half_cycle_count_ = T(config_.period_count) + T(1);
         full_cycle_count_ = T(2) * half_cycle_count_;
+        full_cycle_count_integer_ =
+            std::uint64_t(2) * (std::uint64_t(config_.period_count) + 1U);
         compare_a_ = config_.period_count / 2U;
         enabled_ = false;
         last_adc_trigger_cycle_ = std::numeric_limits<std::int64_t>::min();
@@ -120,6 +122,36 @@ template <typename T = double> class ti_epwm
         if (!std::isfinite(time_s))
             throw std::invalid_argument("non-finite TI ePWM sample time");
         const bool adc_trigger = sample_adc_trigger(time_s);
+        T phase_count = std::fmod(time_s * config_.time_base_clock_hz,
+                                  full_cycle_count_);
+        if (phase_count < T(0))
+            phase_count += full_cycle_count_;
+        return sample_phase_count(phase_count, adc_trigger);
+    }
+
+    /**
+     * Sample from an exact absolute TBCLK count.
+     *
+     * Fixed-step host simulations should prefer this overload. It preserves the
+     * same carrier and SOC semantics as sample(time), while avoiding floating
+     * point fmod/floor operations in every plant step.
+     */
+    output_type sample_time_base_count(std::uint64_t absolute_count) noexcept
+    {
+        const bool adc_trigger = sample_adc_trigger_count(absolute_count);
+        const T phase_count =
+            T(absolute_count % full_cycle_count_integer_);
+        return sample_phase_count(phase_count, adc_trigger);
+    }
+
+    const config_type &config() const noexcept
+    {
+        return config_;
+    }
+
+  private:
+    output_type sample_phase_count(T phase_count, bool adc_trigger) const noexcept
+    {
         if (!enabled_)
             return output_type{0U, 0U, adc_trigger};
 
@@ -128,10 +160,6 @@ template <typename T = double> class ti_epwm
             return active_pair(true, adc_trigger);
         if (compare >= half_cycle_count_ - T(1))
             return active_pair(false, adc_trigger);
-
-        T phase_count = std::fmod(time_s * config_.time_base_clock_hz, full_cycle_count_);
-        if (phase_count < T(0))
-            phase_count += full_cycle_count_;
 
         const T upper_rise = compare + T(config_.rising_edge_delay_count);
         const T upper_fall = full_cycle_count_ - compare;
@@ -146,12 +174,6 @@ template <typename T = double> class ti_epwm
                            adc_trigger};
     }
 
-    const config_type &config() const noexcept
-    {
-        return config_;
-    }
-
-  private:
     bool sample_adc_trigger(T time_s) noexcept
     {
         if (config_.adc_trigger_event == ti_epwm_trigger_event::disabled)
@@ -172,6 +194,26 @@ template <typename T = double> class ti_epwm
         return true;
     }
 
+    bool sample_adc_trigger_count(std::uint64_t absolute_count) noexcept
+    {
+        if (config_.adc_trigger_event == ti_epwm_trigger_event::disabled)
+            return false;
+        const std::uint64_t event_count =
+            config_.adc_trigger_event == ti_epwm_trigger_event::compare_b_up
+                ? std::uint64_t(config_.adc_trigger_compare_count)
+                : full_cycle_count_integer_ -
+                      std::uint64_t(config_.adc_trigger_compare_count);
+        if (absolute_count < event_count)
+            return false;
+        const std::uint64_t cycle =
+            (absolute_count - event_count) / full_cycle_count_integer_;
+        if (last_adc_trigger_cycle_ >= 0 &&
+            std::uint64_t(last_adc_trigger_cycle_) == cycle)
+            return false;
+        last_adc_trigger_cycle_ = static_cast<std::int64_t>(cycle);
+        return true;
+    }
+
     output_type active_pair(bool above_compare_active,
                             bool adc_trigger) const noexcept
     {
@@ -182,6 +224,7 @@ template <typename T = double> class ti_epwm
     config_type config_;
     T half_cycle_count_{};
     T full_cycle_count_{};
+    std::uint64_t full_cycle_count_integer_{};
     std::uint32_t compare_a_{};
     std::int64_t last_adc_trigger_cycle_{};
     bool enabled_{};

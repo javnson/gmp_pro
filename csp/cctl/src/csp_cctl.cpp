@@ -93,7 +93,10 @@ class simulation_runtime::implementation
         queued_records_.store(0U, std::memory_order_relaxed);
         written_records_.store(0U, std::memory_order_relaxed);
         dropped_records_.store(0U, std::memory_order_relaxed);
+        peak_queued_records_.store(0U, std::memory_order_relaxed);
+        staged_records_.store(0U, std::memory_order_relaxed);
         output_bytes_.store(0U, std::memory_order_relaxed);
+        output_worker_busy_ns_ = 0U;
         stop_requested_.store(false, std::memory_order_relaxed);
         simulation_done_.store(false, std::memory_order_relaxed);
         failed_.store(false, std::memory_order_relaxed);
@@ -147,6 +150,14 @@ class simulation_runtime::implementation
             return false;
         }
         queued_records_.fetch_add(1U, std::memory_order_relaxed);
+        const std::size_t queued = std::max<std::size_t>(ring_.size(), 1U);
+        std::size_t peak = peak_queued_records_.load(std::memory_order_relaxed);
+        while (queued > peak &&
+               !peak_queued_records_.compare_exchange_weak(
+                   peak, queued, std::memory_order_relaxed,
+                   std::memory_order_relaxed))
+        {
+        }
         return true;
     }
 
@@ -196,7 +207,11 @@ class simulation_runtime::implementation
         summary_.queued_records = queued_records_.load(std::memory_order_acquire);
         summary_.written_records = written_records_.load(std::memory_order_acquire);
         summary_.dropped_records = dropped_records_.load(std::memory_order_acquire);
+        summary_.peak_queued_records =
+            peak_queued_records_.load(std::memory_order_acquire);
         summary_.output_bytes = output_bytes_.load(std::memory_order_acquire);
+        summary_.output_worker_busy_time_s =
+            static_cast<double>(output_worker_busy_ns_) * 1.0e-9;
         summary_.simulated_time_s =
             static_cast<double>(summary_.completed_steps) * config_.plant_step_s;
         summary_.wall_time_s = wall;
@@ -256,6 +271,7 @@ class simulation_runtime::implementation
                 while (count < target_records &&
                        ring_.try_pop(records.data() + count * config_.record_size))
                     ++count;
+                staged_records_.store(count, std::memory_order_relaxed);
                 const bool drained =
                     simulation_done_.load(std::memory_order_acquire) && ring_.size() == 0U;
                 if (count < target_records && !drained)
@@ -264,6 +280,7 @@ class simulation_runtime::implementation
                     continue;
                 }
 
+                const clock_type::time_point busy_begin = clock_type::now();
                 std::ostringstream batch;
                 batch << std::setprecision(17);
                 for (std::size_t index = 0U; index < count; ++index)
@@ -276,9 +293,19 @@ class simulation_runtime::implementation
                 written_records_.fetch_add(count, std::memory_order_relaxed);
                 output_bytes_.fetch_add(static_cast<std::uint64_t>(payload.size()),
                                         std::memory_order_relaxed);
+                output_worker_busy_ns_ += static_cast<std::uint64_t>(
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        clock_type::now() - busy_begin)
+                        .count());
                 count = 0U;
+                staged_records_.store(0U, std::memory_order_relaxed);
             }
+            const clock_type::time_point flush_begin = clock_type::now();
             output.flush();
+            output_worker_busy_ns_ += static_cast<std::uint64_t>(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    clock_type::now() - flush_begin)
+                    .count());
             if (!output)
                 throw std::runtime_error("failed while flushing simulation output");
         }
@@ -362,6 +389,7 @@ class simulation_runtime::implementation
                << "s rate=" << std::setprecision(2) << step_rate / 1.0e6
                << "Mstep/s"
                << " queue=" << ring_.size() << '/' << ring_.capacity()
+               << " staged=" << staged_records_.load(std::memory_order_relaxed)
                << " drop=" << dropped_records_.load(std::memory_order_relaxed);
         std::ostringstream progress;
         progress << '[';
@@ -462,7 +490,10 @@ class simulation_runtime::implementation
     std::atomic<std::size_t> queued_records_{0U};
     std::atomic<std::size_t> written_records_{0U};
     std::atomic<std::size_t> dropped_records_{0U};
+    std::atomic<std::size_t> peak_queued_records_{0U};
+    std::atomic<std::size_t> staged_records_{0U};
     std::atomic<std::uint64_t> output_bytes_{0U};
+    std::uint64_t output_worker_busy_ns_{};
     std::atomic<bool> stop_requested_{false};
     std::atomic<bool> simulation_done_{false};
     std::atomic<bool> failed_{false};
@@ -546,7 +577,10 @@ void simulation_runtime::print_summary(std::ostream &stream) const
            << "\n  output: queued=" << value.queued_records
            << ", written=" << value.written_records
            << ", dropped=" << value.dropped_records
-           << ", bytes=" << value.output_bytes << "\n";
+           << ", peak_ring=" << value.peak_queued_records
+           << ", bytes=" << value.output_bytes
+           << ", writer_busy=" << value.output_worker_busy_time_s
+           << " s (asynchronous)\n";
 }
 
 void simulation_runtime::pause_if_requested(bool suppress_pause) const
@@ -571,7 +605,7 @@ const simulation_summary &simulation_runtime::implementation::summary() const
 
 std::size_t simulation_runtime::implementation::buffered_records() const noexcept
 {
-    return ring_.size();
+    return ring_.size() + staged_records_.load(std::memory_order_relaxed);
 }
 
 std::size_t simulation_runtime::implementation::completed_steps() const noexcept

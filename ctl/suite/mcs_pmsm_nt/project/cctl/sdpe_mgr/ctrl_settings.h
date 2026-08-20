@@ -224,6 +224,11 @@ extern "C"
 #define CCTL_SIM_STARTUP_SHORT_STEPS (200)
 
 /**
+ * @brief PMSM Integration Order
+ */
+#define CCTL_SIM_PMSM_INTEGRATION_ORDER (1)
+
+/**
  * @brief Output Ring Bytes
  */
 #define CCTL_SIM_OUTPUT_RING_BYTES (33554432)

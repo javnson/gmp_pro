@@ -87,6 +87,7 @@
     { "role": "Load Torque Start", "macro": "CCTL_SIM_LOAD_TORQUE_START_S", "binding": { "literal": "0.5" } },
     { "role": "Load Torque", "macro": "CCTL_SIM_LOAD_TORQUE_NM", "binding": { "literal": "0.02" } },
     { "role": "Startup Short Steps", "macro": "CCTL_SIM_STARTUP_SHORT_STEPS", "binding": { "number": "200" } },
+    { "role": "PMSM Integration Order", "macro": "CCTL_SIM_PMSM_INTEGRATION_ORDER", "binding": { "number": "1" } },
     { "role": "Output Ring Bytes", "macro": "CCTL_SIM_OUTPUT_RING_BYTES", "binding": { "number": "33554432" } },
     { "role": "Output Batch Bytes", "macro": "CCTL_SIM_OUTPUT_BATCH_BYTES", "binding": { "number": "1048576" } },
     { "role": "Progress Interval", "macro": "CCTL_SIM_PROGRESS_INTERVAL_MS", "binding": { "number": "1000" } },

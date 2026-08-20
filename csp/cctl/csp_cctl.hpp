@@ -52,7 +52,9 @@ struct simulation_summary
     std::size_t queued_records{};
     std::size_t written_records{};
     std::size_t dropped_records{};
+    std::size_t peak_queued_records{};
     std::uint64_t output_bytes{};
+    double output_worker_busy_time_s{};
     double simulated_time_s{};
     double wall_time_s{};
     double realtime_factor{};
