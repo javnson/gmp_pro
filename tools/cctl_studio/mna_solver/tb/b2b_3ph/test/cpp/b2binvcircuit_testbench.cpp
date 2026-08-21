@@ -18,6 +18,7 @@ namespace {
 
 constexpr double kPi = 3.141592653589793238462643383279502884;
 constexpr double kCarrierFrequencyHz = 10.0e3;
+constexpr double kDeadtimeS = 1.0e-6;
 constexpr double kGridFrequencyHz = 50.0;
 constexpr double kGridLineRmsV = 32.0;
 constexpr double kGridPhasePeakV = kGridLineRmsV * 0.81649658092772603273;
@@ -43,8 +44,12 @@ LegSignals leg_signals(double carrier_phase_s,
     const double duty = 0.5 + 0.5 * modulation * reference;
     const double rising_edge_s = 0.5 * (1.0 - duty) * carrier_period_s;
     const double falling_edge_s = 0.5 * (1.0 + duty) * carrier_period_s;
-    const bool upper = carrier_phase_s >= rising_edge_s && carrier_phase_s < falling_edge_s;
-    return {upper ? 1U : 0U, upper ? 0U : 1U, duty};
+    constexpr double half_deadtime_s = 0.5 * kDeadtimeS;
+    const bool upper = carrier_phase_s >= rising_edge_s + half_deadtime_s &&
+                       carrier_phase_s < falling_edge_s - half_deadtime_s;
+    const bool lower = carrier_phase_s < rising_edge_s - half_deadtime_s ||
+                       carrier_phase_s >= falling_edge_s + half_deadtime_s;
+    return {upper ? 1U : 0U, lower ? 1U : 0U, duty};
 }
 
 std::array<LegSignals, 3> three_phase_pwm(double time_s,
@@ -96,7 +101,7 @@ double phasor_cosine(const PhasorStatistics& lhs, const PhasorStatistics& rhs) {
 
 }  // namespace
 
-int main() {
+int run_test() {
     const auto archive_load_start = std::chrono::steady_clock::now();
     B2bInvCircuit circuit;
     const double archive_load_s = std::chrono::duration<double>(
@@ -111,6 +116,27 @@ int main() {
     constexpr std::size_t csv_decimation = 1000;
 
     B2bInvCircuit::Inputs input;
+    input.PWM1 = 1U;
+    input.PWM2 = 1U;
+    input.PWM7 = 1U;
+    input.PWM9 = 1U;
+    input.PWM11 = 1U;
+    bool channel_interlock_fault = false;
+    try {
+        circuit.step_short(input);
+    } catch (const std::runtime_error& error) {
+        channel_interlock_fault =
+            std::string(error.what()).find("simultaneous upper/lower channel") !=
+            std::string::npos;
+    }
+    if (!channel_interlock_fault) {
+        std::cerr << "generated bridge model did not reject upper/lower shoot-through\n";
+        return 11;
+    }
+    circuit.reset();
+    input = B2bInvCircuit::Inputs{};
+    // Start with every gate off. The approximate half-bridge model retains
+    // physical Vf + Rbody states for passive startup rectification.
     for (std::size_t index = 0; index < startup_short_steps; ++index) {
         circuit.step_short(input);
     }
@@ -129,11 +155,16 @@ int main() {
     std::array<PhasorStatistics, 3> output_voltage_stats;
     std::array<PhasorStatistics, 3> output_current_stats;
     std::array<PhasorStatistics, 3> grid_current_stats;
-    PhasorStatistics bus_stats;
+    PhasorStatistics passive_bus_stats;
+    PhasorStatistics active_bus_stats;
+    double passive_grid_power_sum = 0.0;
     double grid_power_sum = 0.0;
     double output_power_sum = 0.0;
     double maximum_bus_split_v = 0.0;
+    std::size_t passive_analysis_count = 0;
     std::size_t analysis_count = 0;
+    std::array<std::size_t, 6> deadtime_samples{};
+    std::array<std::size_t, 3> passive_rectification_samples{};
     std::vector<bool> visited(B2bInvCircuit::topology_count, false);
     std::size_t visited_count = 0;
 
@@ -149,12 +180,13 @@ int main() {
         const auto rectifier = three_phase_pwm(time_s, kGridFrequencyHz, kGridModulation);
         const auto inverter = three_phase_pwm(time_s, kOutputFrequencyHz, kOutputModulation);
 
-        input.PWM1 = rectifier[0].upper;
-        input.PWM2 = rectifier[0].lower;
-        input.PWM3 = rectifier[1].upper;
-        input.PWM4 = rectifier[1].lower;
-        input.PWM5 = rectifier[2].upper;
-        input.PWM6 = rectifier[2].lower;
+        const bool active_rectification = time_s >= 1.0;
+        input.PWM1 = active_rectification ? rectifier[0].upper : 0U;
+        input.PWM2 = active_rectification ? rectifier[0].lower : 0U;
+        input.PWM3 = active_rectification ? rectifier[1].upper : 0U;
+        input.PWM4 = active_rectification ? rectifier[1].lower : 0U;
+        input.PWM5 = active_rectification ? rectifier[2].upper : 0U;
+        input.PWM6 = active_rectification ? rectifier[2].lower : 0U;
         input.PWM7 = inverter[0].upper;
         input.PWM8 = inverter[0].lower;
         input.PWM9 = inverter[1].upper;
@@ -165,7 +197,33 @@ int main() {
         input.VS3 = grid_voltage[1];
         input.VS4 = grid_voltage[2];
 
+        const std::array<std::array<std::uint32_t, 2>, 6> bridge_commands{{
+            {{input.PWM1, input.PWM2}},
+            {{input.PWM3, input.PWM4}},
+            {{input.PWM5, input.PWM6}},
+            {{input.PWM7, input.PWM8}},
+            {{input.PWM9, input.PWM10}},
+            {{input.PWM11, input.PWM12}},
+        }};
+        for (std::size_t bridge = 0; bridge < bridge_commands.size(); ++bridge) {
+            if ((active_rectification || bridge >= 3U) &&
+                bridge_commands[bridge][0] == 0U && bridge_commands[bridge][1] == 0U) {
+                ++deadtime_samples[bridge];
+            }
+        }
+
         const auto& output = circuit.step_normal(input);
+        if (!active_rectification) {
+            const auto& bridge_modes = circuit.last_half_bridge_modes();
+            for (std::size_t bridge = 0; bridge < passive_rectification_samples.size();
+                 ++bridge) {
+                const auto mode = bridge_modes[bridge];
+                if (mode == B2bInvCircuit::HalfBridgeOperatingMode::upper_passive_rectification ||
+                    mode == B2bInvCircuit::HalfBridgeOperatingMode::lower_passive_rectification) {
+                    ++passive_rectification_samples[bridge];
+                }
+            }
+        }
         const std::array<double, 3> grid_current{
             output.LGRID_A, output.LGRID_B, output.LGRID_C};
         const std::array<double, 3> output_voltage{
@@ -204,11 +262,18 @@ int main() {
                 << circuit.last_calculation_state_index() << '\n';
         }
 
+        if (time_s + dt_s > 1.0 - analysis_duration_s && time_s + dt_s <= 1.0) {
+            passive_bus_stats.add(output.UBUS, 0.0);
+            for (std::size_t phase = 0; phase < 3; ++phase) {
+                passive_grid_power_sum += grid_voltage[phase] * grid_current[phase];
+            }
+            ++passive_analysis_count;
+        }
         if (time_s + dt_s > duration_s - analysis_duration_s) {
             const double sample_time_s = time_s + dt_s;
             const double output_angle = 2.0 * kPi * kOutputFrequencyHz * sample_time_s;
             const double current_angle = 2.0 * kPi * kGridFrequencyHz * sample_time_s;
-            bus_stats.add(output.UBUS, 0.0);
+            active_bus_stats.add(output.UBUS, 0.0);
             maximum_bus_split_v =
                 std::max(maximum_bus_split_v, std::abs(output.UBUS - output.n_20));
             for (std::size_t phase = 0; phase < 3; ++phase) {
@@ -226,6 +291,7 @@ int main() {
                               .count();
 
     const double count = static_cast<double>(analysis_count);
+    const double passive_count = static_cast<double>(passive_analysis_count);
     std::array<double, 3> output_voltage_peak{};
     std::array<double, 3> output_current_peak{};
     std::array<double, 3> grid_current_peak{};
@@ -243,17 +309,27 @@ int main() {
     };
 
     std::cout << std::setprecision(12)
-              << "B2B three-phase stress test: states=23, logical topologies="
-              << B2bInvCircuit::topology_count << ", visited=" << visited_count
+              << "B2B three-phase stress test: states=" << B2bInvCircuit::state_count
+              << ", selection/stored topologies=" << B2bInvCircuit::topology_count << '/'
+              << B2bInvCircuit::stored_topology_count << ", visited=" << visited_count
               << ", archive="
               << static_cast<double>(
                      std::filesystem::file_size(B2bInvCircuit::archive_filename)) /
                      (1024.0 * 1024.0)
               << " MiB, load=" << archive_load_s << " s\n"
-              << "grid: line_rms=32 V, frequency=50 Hz, rectifier m=" << kGridModulation
-              << "; output: frequency=30 Hz, m=0.8\n"
-              << "DC bus mean/min/max=" << bus_stats.mean(count) << '/' << bus_stats.minimum
-              << '/' << bus_stats.maximum << " V, maximum bridge-bus split="
+              << "grid: line_rms=32 V, frequency=50 Hz; passive rectifier 0..1 s, "
+                 "active rectifier 1..2 s, active m=" << kGridModulation
+              << "; output: frequency=30 Hz, m=0.8; deadtime=" << kDeadtimeS * 1.0e6
+              << " us\n"
+              << "passive DC bus mean/min/max=" << passive_bus_stats.mean(passive_count)
+              << '/' << passive_bus_stats.minimum << '/' << passive_bus_stats.maximum
+              << " V, mean grid power=" << passive_grid_power_sum / passive_count
+              << " W, passive samples=" << passive_rectification_samples[0] << '/'
+              << passive_rectification_samples[1] << '/'
+              << passive_rectification_samples[2] << "\n"
+              << "active DC bus mean/min/max=" << active_bus_stats.mean(count) << '/'
+              << active_bus_stats.minimum << '/' << active_bus_stats.maximum
+              << " V, maximum bridge-bus split="
               << maximum_bus_split_v << " V\n"
               << "mean grid/output power=" << grid_power_sum / count << '/'
               << output_power_sum / count << " W\n";
@@ -268,14 +344,22 @@ int main() {
               << "runtime=" << wall_s << " s, rate="
               << static_cast<double>(normal_steps) / wall_s / 1.0e6 << " Mstep/s\n";
 
-    if (bus_stats.mean(count) < 54.0 || bus_stats.mean(count) > 60.0 ||
-        bus_stats.minimum < 50.0 || bus_stats.maximum > 62.0 ||
+    if (active_bus_stats.mean(count) < 54.0 || active_bus_stats.mean(count) > 60.0 ||
+        active_bus_stats.minimum < 50.0 || active_bus_stats.maximum > 62.0 ||
         maximum_bus_split_v > 0.5) {
         std::cerr << "DC bus did not settle in the expected open-loop region\n";
         return 5;
     }
+    if (passive_bus_stats.mean(passive_count) < 38.0 ||
+        passive_bus_stats.mean(passive_count) > 45.0 ||
+        passive_grid_power_sum / passive_count < 30.0 ||
+        passive_grid_power_sum / passive_count > 55.0 ||
+        active_bus_stats.mean(count) < passive_bus_stats.mean(passive_count) + 10.0) {
+        std::cerr << "passive diode-rectifier interval is outside the expected region\n";
+        return 10;
+    }
     for (std::size_t phase = 0; phase < 3; ++phase) {
-        if (grid_current_peak[phase] < 3.0 || grid_current_peak[phase] > 3.6 ||
+        if (grid_current_peak[phase] < 1.9 || grid_current_peak[phase] > 2.4 ||
             output_voltage_peak[phase] < 21.0 || output_voltage_peak[phase] > 23.5 ||
             output_current_peak[phase] < 2.0 || output_current_peak[phase] > 2.4) {
             std::cerr << "output fundamental is outside the expected open-loop region\n";
@@ -293,5 +377,25 @@ int main() {
         std::cerr << "B2B power flow, balance, or topology coverage is insufficient\n";
         return 8;
     }
+    if (std::any_of(deadtime_samples.begin(), deadtime_samples.end(),
+                    [](std::size_t count) { return count == 0U; })) {
+        std::cerr << "one or more half bridges never entered the requested deadtime state\n";
+        return 12;
+    }
+    if (std::any_of(passive_rectification_samples.begin(),
+                    passive_rectification_samples.end(),
+                    [](std::size_t count) { return count == 0U; })) {
+        std::cerr << "one or more grid half bridges never entered passive rectification\n";
+        return 13;
+    }
     return 0;
+}
+
+int main() {
+    try {
+        return run_test();
+    } catch (const std::exception& error) {
+        std::cerr << "B2B testbench exception: " << error.what() << '\n';
+        return 9;
+    }
 }

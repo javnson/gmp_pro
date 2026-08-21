@@ -274,6 +274,24 @@ def _neighbor_keys(key: tuple[int, ...]):
     return itertools.product(*(range(value - 1, value + 2) for value in key))
 
 
+def _discriminator_positions(
+    matrices: Sequence[np.ndarray], maximum_count: int = 2
+) -> tuple[int, ...]:
+    """Choose entries that spread a same-shaped matrix family most strongly."""
+
+    if not matrices or not matrices[0].size:
+        return ()
+    minimum = np.asarray(matrices[0], dtype=float).ravel().copy()
+    maximum = minimum.copy()
+    for matrix in matrices[1:]:
+        values = np.asarray(matrix, dtype=float).ravel()
+        np.minimum(minimum, values, out=minimum)
+        np.maximum(maximum, values, out=maximum)
+    spread = np.nan_to_num(maximum - minimum, nan=0.0, posinf=0.0, neginf=0.0)
+    count = min(maximum_count, spread.size)
+    return tuple(int(index) for index in np.argsort(spread)[-count:][::-1])
+
+
 @dataclass
 class MatrixDedupPlan:
     tolerance: float
@@ -419,7 +437,7 @@ def _render_eigen_archive_support(
         expect_u32(static_cast<std::uint32_t>(state_count), "state count");
         expect_u32(static_cast<std::uint32_t>(analog_input_count), "input count");
         expect_u32(static_cast<std::uint32_t>(signal_count), "signal count");
-        expect_u32(static_cast<std::uint32_t>(topology_count), "topology count");
+        expect_u32(static_cast<std::uint32_t>(stored_topology_count), "topology count");
         expect_u32(static_cast<std::uint32_t>(calculation_state_count),
                    "calculation-state count");
         expect_u32(static_cast<std::uint32_t>(state_matrix_count),
@@ -453,7 +471,7 @@ def _render_eigen_archive_support(
             throw std::runtime_error("matrix archive payload checksum mismatch");
 
         auto result = std::make_shared<ArchiveData>();
-        result->topology_to_calculation_state.resize(topology_count);
+        result->topology_to_calculation_state.resize(stored_topology_count);
         for (auto& value : result->topology_to_calculation_state) {{
             value = read_u32(bytes, cursor);
             if (value >= calculation_state_count)
@@ -587,9 +605,13 @@ def build_matrix_dedup_plan(
         type_name: _bucket_width(matrices, tolerance)
         for type_name, matrices in by_type.items()
     }
+    discriminator_positions = {
+        type_name: _discriminator_positions(matrices)
+        for type_name, matrices in by_type.items()
+    }
 
     pools = {type_name: [] for type_name in _POOL_NAMES}
-    pool_buckets: dict[str, dict[int, list[int]]] = {
+    pool_buckets: dict[str, dict[tuple[int, ...], list[int]]] = {
         type_name: {} for type_name in _POOL_NAMES
     }
     pool_exact: dict[str, dict[tuple[tuple[int, ...], int], list[int]]] = {
@@ -601,10 +623,17 @@ def build_matrix_dedup_plan(
         for exact_index in pool_exact[type_name].get(exact_key, ()):
             if _equivalent((matrix,), (pools[type_name][exact_index],), tolerance):
                 return exact_index
-        key = _bucket(_invariant(matrix), bucket_widths[type_name])
+        flattened = matrix.ravel()
+        key = (
+            _bucket(_invariant(matrix), bucket_widths[type_name]),
+            *(
+                _bucket(float(flattened[position]), tolerance)
+                for position in discriminator_positions[type_name]
+            ),
+        )
         candidates: list[int] = []
-        for neighbor in range(key - 1, key + 2):
-            candidates.extend(pool_buckets[type_name].get(neighbor, ()))
+        for neighbor in _neighbor_keys(key):
+            candidates.extend(pool_buckets[type_name].get(tuple(neighbor), ()))
         for index in candidates:
             representative = pools[type_name][index]
             if _quick_equivalent(matrix, representative, tolerance) and _equivalent(
@@ -618,54 +647,19 @@ def build_matrix_dedup_plan(
         pool_exact[type_name].setdefault(exact_key, []).append(index)
         return index
 
-    state_width = bucket_widths["StateMatrix"]
-    state_buckets: dict[tuple[int, int], list[int]] = {}
-    unique_matrices: list[tuple[np.ndarray, ...]] = []
     calculation_states: list[tuple[int, ...]] = []
     topology_to_state: list[int] = []
-    state_exact: dict[tuple[tuple[tuple[int, ...], int], ...], list[int]] = {}
+    calculation_state_lookup: dict[tuple[int, ...], int] = {}
     for logical_index, matrices in enumerate(topology_matrices, start=1):
-        exact_state_key = tuple(_exact_matrix_key(matrix) for matrix in matrices)
-        exact_state_index = next(
-            (
-                index
-                for index in state_exact.get(exact_state_key, ())
-                if _equivalent(matrices, unique_matrices[index], tolerance)
-            ),
-            None,
+        pool_indices = tuple(
+            intern(type_name, matrix)
+            for (_, type_name, _, _), matrix in zip(_MATRIX_SPECS, matrices)
         )
-        state_key = (
-            _bucket(_invariant(matrices[0]), state_width),
-            _bucket(_invariant(matrices[3]), state_width),
-        )
-        candidates: list[int] = []
-        for neighbor in _neighbor_keys(state_key):
-            candidates.extend(state_buckets.get(tuple(neighbor), ()))
-        calculation_index = exact_state_index
+        calculation_index = calculation_state_lookup.get(pool_indices)
         if calculation_index is None:
-            calculation_index = next(
-                (
-                    index
-                    for index in candidates
-                    if all(
-                        _quick_equivalent(matrix, representative, tolerance)
-                        for matrix, representative in zip(matrices, unique_matrices[index])
-                    )
-                    and _equivalent(matrices, unique_matrices[index], tolerance)
-                ),
-                None,
-            )
-        if calculation_index is None:
-            calculation_index = len(unique_matrices)
-            unique_matrices.append(matrices)
-            state_buckets.setdefault(state_key, []).append(calculation_index)
-            calculation_states.append(
-                tuple(
-                    intern(type_name, matrix)
-                    for (_, type_name, _, _), matrix in zip(_MATRIX_SPECS, matrices)
-                )
-            )
-        state_exact.setdefault(exact_state_key, []).append(calculation_index)
+            calculation_index = len(calculation_states)
+            calculation_states.append(pool_indices)
+            calculation_state_lookup[pool_indices] = calculation_index
         topology_to_state.append(calculation_index)
         if progress is not None:
             progress(logical_index, logical_count)
@@ -717,8 +711,19 @@ def render_header(
     input_ports = [port for port in document["ports"]["inputs"] if port["data_type"] == "double"]
     outputs = document["ports"]["outputs"]
     input_count = len(input_ports)
-    topology_count = storage.logical_state_count
     switching = document["switching"]
+    stored_topology_count = storage.logical_state_count
+    topology_count = int(
+        switching.get("selection_topology_count", stored_topology_count)
+    )
+    selection_indices = [
+        int(item.get("selection_index", index))
+        for index, item in enumerate(document["topologies"])
+    ]
+    sparse_topology_selection = (
+        topology_count != stored_topology_count
+        or selection_indices != list(range(stored_topology_count))
+    )
     pwm_fields = [_identifier(port["name"], "PWM") for port in pwm_ports]
     input_fields = [_identifier(port["name"], "input") for port in input_ports]
     output_fields = [_identifier(port["field"], "output") for port in outputs]
@@ -759,6 +764,39 @@ def render_header(
     topology_mapping_values = ", ".join(
         f"{index}U" for index in storage.topology_to_calculation_state
     )
+    selection_index_values = ", ".join(f"{index}U" for index in selection_indices)
+    if sparse_topology_selection:
+        topology_resolver = f'''    static const std::array<std::size_t, stored_topology_count>& stored_selection_indices() {{
+        static constexpr std::array<std::size_t, stored_topology_count> value{{{{
+            {selection_index_values}
+        }}}};
+        return value;
+    }}
+
+    static const std::vector<std::size_t>& selection_to_stored_topology() {{
+        static const auto value = [] {{
+            std::vector<std::size_t> result(topology_count, invalid_topology_index);
+            const auto& indices = stored_selection_indices();
+            for (std::size_t index = 0; index < indices.size(); ++index)
+                result[indices[index]] = index;
+            return result;
+        }}();
+        return value;
+    }}
+
+    static std::size_t resolve_stored_topology(std::size_t selection_index) {{
+        if (selection_index >= topology_count)
+            throw std::runtime_error("switch topology index exceeds selection space");
+        const auto stored_index = selection_to_stored_topology()[selection_index];
+        if (stored_index == invalid_topology_index)
+            throw std::runtime_error("runtime switch state is outside the exported reachable set");
+        return stored_index;
+    }}'''
+    else:
+        topology_resolver = '''    static constexpr std::size_t resolve_stored_topology(
+        std::size_t selection_index) noexcept {
+        return selection_index;
+    }'''
     input_vector = ", ".join(f"inputs.{name}" for name in input_fields)
     function_parameters = ", ".join(
         [*(f"std::uint32_t {name}" for name in pwm_fields), *(f"double {name}" for name in input_fields)]
@@ -778,6 +816,8 @@ def render_header(
         for field, port in zip(input_fields, input_ports)
     )
     pwm_members = "\n".join(f"        std::uint32_t {field}{{0U}};" for field in pwm_fields)
+    half_bridge_public_declarations = ""
+    half_bridge_public_accessors = ""
     if switching.get("kind") == "multi_diode_switch":
         pwm_field_by_name = {
             str(port["name"]).upper(): field for port, field in zip(pwm_ports, pwm_fields)
@@ -812,16 +852,151 @@ def render_header(
             str(port["name"]).upper(): field for port, field in zip(pwm_ports, pwm_fields)
         }
         switch_lines = []
-        for switch in switching["switches"]:
+        for index, switch in enumerate(switching["switches"]):
             field = pwm_field_by_name[str(switch["pwm_port"]).upper()]
             switch_lines.append(
-                f"        topology_index = topology_index * 2U + (inputs.{field} != 0U ? 1U : 0U);"
+                f'''        topology_index *= 2U;
+        if (inputs.{field} != 0U) {{
+            body_on_[{index}] = false;
+            topology_index += 1U;
+        }} else {{
+            const double reverse_voltage_{index} = {signal_at(switch['source_signal_index'])} - {signal_at(switch['drain_signal_index'])};
+            body_on_[{index}] = reverse_voltage_{index} >= (body_on_[{index}] ? -hysteresis : hysteresis);
+            topology_index += body_on_[{index}] ? 1U : 0U;
+        }}'''
             )
-        reset_switch_state = ""
+        reset_switch_state = "        body_on_.fill(false);"
         selection_body = "\n".join(
-            ["        std::size_t topology_index = 0U;", *switch_lines, "        return topology_index;"]
+            [
+                f"        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};",
+                "        std::size_t topology_index = 0U;",
+                *switch_lines,
+                "        return topology_index;",
+            ]
         )
-        switch_state_members = ""
+        switch_state_members = f"    std::array<bool, {len(switching['switches'])}> body_on_{{}};"
+    elif switching.get("kind") == "multi_mosfet_half_bridge":
+        switch_lines: list[str] = []
+        pwm_field_by_name = {
+            str(port["name"]).upper(): field for port, field in zip(pwm_ports, pwm_fields)
+        }
+        for index, switch in enumerate(switching["switches"]):
+            field = pwm_field_by_name[str(switch["pwm_port"]).upper()]
+            switch_lines.append(
+                f'''        if (inputs.{field} != 0U) {{
+            body_on_[{index}] = false;
+        }} else {{
+            const double reverse_voltage_{index} = {signal_at(switch['source_signal_index'])} - {signal_at(switch['drain_signal_index'])};
+            constexpr double body_threshold_{index} = {_number(switch['body_forward_threshold_V'])};
+            body_on_[{index}] = reverse_voltage_{index} >= body_threshold_{index} + (body_on_[{index}] ? -hysteresis : hysteresis);
+        }}'''
+            )
+        for pair in switching["half_bridge_pairs"]:
+            upper_index = int(pair["upper_switch_index"])
+            lower_index = int(pair["lower_switch_index"])
+            upper_field = pwm_field_by_name[str(pair["upper_pwm_port"]).upper()]
+            lower_field = pwm_field_by_name[str(pair["lower_pwm_port"]).upper()]
+            switch_lines.append(
+                f'''        if (inputs.{upper_field} != 0U && inputs.{lower_field} != 0U)
+            throw std::runtime_error("half bridge has simultaneous upper/lower channel commands: {pair['upper_pwm_port']}/{pair['lower_pwm_port']}");
+        if (body_on_[{upper_index}] && body_on_[{lower_index}])
+            throw std::runtime_error("half bridge entered impossible simultaneous body-diode conduction: {pair['upper_pwm_port']}/{pair['lower_pwm_port']}");
+        topology_index *= 7U;
+        if (inputs.{upper_field} != 0U)
+            topology_index += body_on_[{lower_index}] ? 4U : 3U;
+        else if (inputs.{lower_field} != 0U)
+            topology_index += body_on_[{upper_index}] ? 6U : 1U;
+        else if (body_on_[{upper_index}])
+            topology_index += 5U;
+        else if (body_on_[{lower_index}])
+            topology_index += 2U;'''
+            )
+        reset_switch_state = "        body_on_.fill(false);"
+        selection_body = "\n".join(
+            [
+                f"        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};",
+                "        std::size_t topology_index = 0U;",
+                *switch_lines,
+                "        return topology_index;",
+            ]
+        )
+        switch_state_members = f"    std::array<bool, {len(switching['switches'])}> body_on_{{}};"
+    elif switching.get("kind") == "multi_mosfet_half_bridge_approx":
+        switch_lines: list[str] = []
+        pwm_field_by_name = {
+            str(port["name"]).upper(): field for port, field in zip(pwm_ports, pwm_fields)
+        }
+        for pair_index, pair in enumerate(switching["half_bridge_pairs"]):
+            upper_index = int(pair["upper_switch_index"])
+            lower_index = int(pair["lower_switch_index"])
+            upper = switching["switches"][upper_index]
+            lower = switching["switches"][lower_index]
+            upper_field = pwm_field_by_name[str(pair["upper_pwm_port"]).upper()]
+            lower_field = pwm_field_by_name[str(pair["lower_pwm_port"]).upper()]
+            switch_lines.append(
+                f'''        topology_index *= 5U;
+        if (inputs.{upper_field} != 0U && inputs.{lower_field} != 0U)
+            throw std::runtime_error("half bridge has simultaneous upper/lower channel commands: {pair['upper_pwm_port']}/{pair['lower_pwm_port']}");
+        if (inputs.{upper_field} != 0U) {{
+            body_on_[{upper_index}] = body_on_[{lower_index}] = false;
+            half_bridge_modes_[{pair_index}] = HalfBridgeOperatingMode::upper_channel;
+            topology_index += 3U;
+        }} else if (inputs.{lower_field} != 0U) {{
+            body_on_[{upper_index}] = body_on_[{lower_index}] = false;
+            half_bridge_modes_[{pair_index}] = HalfBridgeOperatingMode::lower_channel;
+            topology_index += 1U;
+        }} else {{
+            const double upper_reverse_voltage_{upper_index} = {signal_at(upper['source_signal_index'])} - {signal_at(upper['drain_signal_index'])};
+            const double lower_reverse_voltage_{lower_index} = {signal_at(lower['source_signal_index'])} - {signal_at(lower['drain_signal_index'])};
+            constexpr double upper_body_threshold_{upper_index} = {_number(upper['body_forward_threshold_V'])};
+            constexpr double lower_body_threshold_{lower_index} = {_number(lower['body_forward_threshold_V'])};
+            body_on_[{upper_index}] = upper_reverse_voltage_{upper_index} >= upper_body_threshold_{upper_index} + (body_on_[{upper_index}] ? -hysteresis : hysteresis);
+            body_on_[{lower_index}] = lower_reverse_voltage_{lower_index} >= lower_body_threshold_{lower_index} + (body_on_[{lower_index}] ? -hysteresis : hysteresis);
+            if (body_on_[{upper_index}] && body_on_[{lower_index}])
+                throw std::runtime_error("half bridge entered impossible simultaneous reverse conduction: {pair['upper_pwm_port']}/{pair['lower_pwm_port']}");
+            if (body_on_[{upper_index}]) {{
+                half_bridge_modes_[{pair_index}] = HalfBridgeOperatingMode::upper_passive_rectification;
+                topology_index += 4U;
+            }} else if (body_on_[{lower_index}]) {{
+                half_bridge_modes_[{pair_index}] = HalfBridgeOperatingMode::lower_passive_rectification;
+                topology_index += 2U;
+            }} else {{
+                half_bridge_modes_[{pair_index}] = HalfBridgeOperatingMode::blocked;
+            }}
+        }}'''
+            )
+        reset_switch_state = (
+            "        body_on_.fill(false);\n"
+            "        half_bridge_modes_.fill(HalfBridgeOperatingMode::blocked);"
+        )
+        selection_body = "\n".join(
+            [
+                f"        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};",
+                "        std::size_t topology_index = 0U;",
+                *switch_lines,
+                "        return topology_index;",
+            ]
+        )
+        half_bridge_count = len(switching["half_bridge_pairs"])
+        half_bridge_public_declarations = f'''    enum class HalfBridgeOperatingMode : std::uint8_t {{
+        blocked,
+        lower_channel,
+        lower_passive_rectification,
+        upper_channel,
+        upper_passive_rectification,
+    }};
+    static constexpr std::size_t half_bridge_count = {half_bridge_count};
+    using HalfBridgeOperatingModes =
+        std::array<HalfBridgeOperatingMode, half_bridge_count>;
+'''
+        half_bridge_public_accessors = '''    const HalfBridgeOperatingModes& last_half_bridge_modes() const noexcept {
+        return half_bridge_modes_;
+    }
+'''
+        switch_state_members = (
+            f"    std::array<bool, {len(switching['switches'])}> body_on_{{}};\n"
+            "    HalfBridgeOperatingModes half_bridge_modes_{};"
+        )
     elif switching.get("kind") in {"multi_mosfet", "multi_mosfet_diode"}:
         switch_lines: list[str] = []
         pwm_field_by_name = {
@@ -840,6 +1015,17 @@ def render_header(
             body_on_[{index}] = reverse_voltage_{index} >= body_threshold_{index} + (body_on_[{index}] ? -hysteresis : hysteresis);
             topology_index += body_on_[{index}] ? 2U : 0U;
         }}'''
+            )
+        for pair in switching.get("half_bridge_pairs", []):
+            upper_index = int(pair["upper_switch_index"])
+            lower_index = int(pair["lower_switch_index"])
+            upper_field = pwm_field_by_name[str(pair["upper_pwm_port"]).upper()]
+            lower_field = pwm_field_by_name[str(pair["lower_pwm_port"]).upper()]
+            switch_lines.append(
+                f'''        if (inputs.{upper_field} != 0U && inputs.{lower_field} != 0U)
+            throw std::runtime_error("half bridge has simultaneous upper/lower channel commands: {pair['upper_pwm_port']}/{pair['lower_pwm_port']}");
+        if (body_on_[{upper_index}] && body_on_[{lower_index}])
+            throw std::runtime_error("half bridge entered impossible simultaneous body-diode conduction: {pair['upper_pwm_port']}/{pair['lower_pwm_port']}");'''
             )
         mixed_mosfet_diode = switching.get("kind") == "multi_mosfet_diode"
         if mixed_mosfet_diode:
@@ -967,8 +1153,8 @@ def render_header(
         return value;
     }}
 
-    static const std::array<std::size_t, topology_count>& topology_to_calculation_state() {{
-        static const std::array<std::size_t, topology_count> value{{{{
+    static const std::array<std::size_t, stored_topology_count>& topology_to_calculation_state() {{
+        static const std::array<std::size_t, stored_topology_count> value{{{{
             {topology_mapping_values}
         }}}};
         return value;
@@ -981,7 +1167,7 @@ def render_header(
 // Source SHA-256: {source_hash}
 // Matrix equivalence tolerance: {_number(storage.tolerance)}
 // Matrix backend: {selected_backend}
-// Logical states: {storage.logical_state_count}; unique calculation states: {storage.unique_state_count}.
+// Selection states: {topology_count}; stored reachable states: {stored_topology_count}; unique calculation states: {storage.unique_state_count}.
 // Do not hand-edit; regenerate from the circuit-data JSON file.
 
 {matrix_include}
@@ -992,6 +1178,7 @@ def render_header(
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 {archive_includes}
 
 class {class_name} {{
@@ -1001,6 +1188,7 @@ public:
     static constexpr std::size_t analog_input_count = {input_count};
     static constexpr std::size_t pwm_input_count = {len(pwm_ports)};
     static constexpr std::size_t topology_count = {topology_count};
+    static constexpr std::size_t stored_topology_count = {stored_topology_count};
     static constexpr std::size_t calculation_state_count = {storage.unique_state_count};
     static constexpr const char* matrix_backend = "{selected_backend}";
     static constexpr const char* matrix_storage = "{matrix_storage}";
@@ -1010,6 +1198,7 @@ public:
     static constexpr double short_step_s = {_number(document['solver']['short_step_s'])};
     static constexpr double matrix_tolerance = {_number(storage.tolerance)};
     static constexpr const char* discretization_method = "{document['solver']['method']}";
+{half_bridge_public_declarations}
 
     struct Inputs {{
 {pwm_members}
@@ -1032,7 +1221,7 @@ public:
     void reset() {{
 {reset_vectors}
 {reset_switch_state}
-        last_topology_index_ = 0;
+        last_topology_index_ = {selection_indices[0]};
         last_calculation_state_index_ = topology_to_calculation_state()[0];
         output = Outputs{{}};
     }}
@@ -1060,6 +1249,7 @@ public:
     const auto& state() const noexcept {{ return state_; }}
     std::size_t last_topology_index() const noexcept {{ return last_topology_index_; }}
     std::size_t last_calculation_state_index() const noexcept {{ return last_calculation_state_index_; }}
+{half_bridge_public_accessors}
 
 private:
 {matrix_aliases}
@@ -1068,7 +1258,11 @@ private:
 {calculation_state_fields}
     }};
 
+    static constexpr std::size_t invalid_topology_index = static_cast<std::size_t>(-1);
+
 {storage_text}
+
+{topology_resolver}
 
     std::size_t select_topology(const Inputs& inputs) {{
 {selection_body}
@@ -1076,7 +1270,8 @@ private:
 
     const Outputs& step(const Inputs& inputs, bool use_short_step) {{
         last_topology_index_ = select_topology(inputs);
-        last_calculation_state_index_ = topology_to_calculation_state()[last_topology_index_];
+        const auto stored_topology_index = resolve_stored_topology(last_topology_index_);
+        last_calculation_state_index_ = topology_to_calculation_state()[stored_topology_index];
         const auto& calculation_state = calculation_states()[last_calculation_state_index_];
 {input_vector_definition}
 {state_step_body}
@@ -1109,6 +1304,9 @@ def generate_cpp_project(
         else float(matrix_tolerance)
     )
     logical_count = len(document["topologies"])
+    selection_topology_count = int(
+        document.get("switching", {}).get("selection_topology_count", logical_count)
+    )
     selected_backend = backend.lower()
     if selected_backend not in _MATRIX_BACKENDS:
         raise ValueError(
@@ -1117,7 +1315,9 @@ def generate_cpp_project(
         )
     if show_progress:
         print(f"circuit:             {document['circuit']['name']}")
-        print(f"logical states:      {logical_count}")
+        print(f"logical states:      {selection_topology_count}")
+        if logical_count != selection_topology_count:
+            print(f"reachable states:    {logical_count}")
         print_circuit_dimensions(document)
         print(f"discretization:      {document['solver']['method']}")
         print(f"normal step:         {float(document['solver']['normal_step_s']):.12g} s")

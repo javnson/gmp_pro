@@ -28,6 +28,11 @@ from mna_solver import (
     parse_spice_value,
 )
 from switched_solver import (
+    MOSFET_MODEL_HALF_BRIDGE,
+    MOSFET_MODEL_HALF_BRIDGE_APPROX,
+    MOSFET_MODEL_THREE_STATE,
+    MOSFET_MODEL_TWO_STATE,
+    MOSFET_MODELS,
     MultiDiodeSwitchLinearModel,
     MultiMosfetDiodeLinearModel,
     MultiMosfetLinearModel,
@@ -35,8 +40,11 @@ from switched_solver import (
     PiecewiseLinearModel,
     TopologyKey,
     build_piecewise_model,
+    expand_mosfet_gate_scenarios,
+    infer_mosfet_half_bridge_pairs,
     ideal_source_nodes_requiring_capacitance_suppression,
     piecewise_topology_count,
+    resolve_mosfet_half_bridge_pairs,
 )
 
 
@@ -44,10 +52,65 @@ SCHEMA_NAME = "gmp.mna_solver.circuit_data"
 SCHEMA_VERSION = 2
 LEGACY_SCHEMA_VERSIONS = {1, SCHEMA_VERSION}
 DEFAULT_MATRIX_TOLERANCE = 1e-12
+_CONTINUOUS_POOL_FIELDS = (
+    "A",
+    "B",
+    "bias",
+    "C",
+    "D",
+    "output_bias",
+    "reconstruction_x",
+    "reconstruction_u",
+    "raw_input_defaults",
+)
 
 
 def _key(value: str) -> str:
     return value.upper()
+
+
+def _mosfet_selection_index(
+    paths: Sequence[MosfetPath], *, include_body_diode_states: bool
+) -> int:
+    values = {
+        MosfetPath.OFF: 0,
+        MosfetPath.CHANNEL: 1,
+        MosfetPath.BODY_DIODE: 2,
+    }
+    result = 0
+    for path in paths:
+        result = result * (3 if include_body_diode_states else 2) + values[path]
+    return result
+
+
+def _half_bridge_selection_index(
+    paths: Sequence[MosfetPath],
+    pairs: Sequence[Sequence[int]],
+    *,
+    approximate: bool = False,
+) -> int:
+    full_digits = {
+        (MosfetPath.OFF, MosfetPath.OFF): 0,
+        (MosfetPath.OFF, MosfetPath.CHANNEL): 1,
+        (MosfetPath.OFF, MosfetPath.BODY_DIODE): 2,
+        (MosfetPath.CHANNEL, MosfetPath.OFF): 3,
+        (MosfetPath.CHANNEL, MosfetPath.BODY_DIODE): 4,
+        (MosfetPath.BODY_DIODE, MosfetPath.OFF): 5,
+        (MosfetPath.BODY_DIODE, MosfetPath.CHANNEL): 6,
+    }
+    approximate_digits = {
+        (MosfetPath.OFF, MosfetPath.OFF): 0,
+        (MosfetPath.OFF, MosfetPath.CHANNEL): 1,
+        (MosfetPath.OFF, MosfetPath.BODY_DIODE): 2,
+        (MosfetPath.CHANNEL, MosfetPath.OFF): 3,
+        (MosfetPath.BODY_DIODE, MosfetPath.OFF): 4,
+    }
+    digits = approximate_digits if approximate else full_digits
+    radix = 5 if approximate else 7
+    result = 0
+    for upper, lower in pairs:
+        result = result * radix + digits[(paths[upper], paths[lower])]
+    return result
 
 
 def _matrix(value: np.ndarray) -> list[list[float]]:
@@ -244,10 +307,22 @@ def _build_multi_mosfet_circuit_data(
     pmsm_documents = _decorate_pmsm_ports(model.source_circuit, input_ports, output_ports)
 
     mixed_model = isinstance(model, MultiMosfetDiodeLinearModel)
+    mosfet_model = getattr(model, "mosfet_model", MOSFET_MODEL_THREE_STATE)
     binary_mosfet_model = (
         isinstance(model, MultiMosfetLinearModel)
-        and not model.includes_body_diode_states
+        and mosfet_model == MOSFET_MODEL_TWO_STATE
     )
+    half_bridge_model = (
+        isinstance(model, MultiMosfetLinearModel)
+        and mosfet_model == MOSFET_MODEL_HALF_BRIDGE
+    )
+    approximate_half_bridge_model = (
+        isinstance(model, MultiMosfetLinearModel)
+        and mosfet_model == MOSFET_MODEL_HALF_BRIDGE_APPROX
+    )
+    includes_body_diode_states = not binary_mosfet_model
+    gate_patterns = getattr(model, "gate_patterns", None)
+    half_bridge_pairs = getattr(model, "half_bridge_pairs", ())
     diode_documents = []
     diode_selection = []
     if mixed_model:
@@ -318,7 +393,11 @@ def _build_multi_mosfet_circuit_data(
                     "off_resistance": "RDS",
                     "output_capacitance": "CBD+CGDO",
                     "body_forward_voltage": "PB",
-                    "body_on_resistance": "RD+RS",
+                    "body_on_resistance": (
+                        "matched to channel_on_resistance by generator option"
+                        if getattr(model, "matched_body_channel_resistance", False)
+                        else "RD+RS"
+                    ),
                     "series_resistance_ohm": rd + rs,
                 },
             }
@@ -336,6 +415,16 @@ def _build_multi_mosfet_circuit_data(
             }
         )
 
+    half_bridge_documents = [
+        {
+            "upper_switch_index": upper,
+            "lower_switch_index": lower,
+            "upper_pwm_port": switch_documents[upper]["pwm_port"],
+            "lower_pwm_port": switch_documents[lower]["pwm_port"],
+        }
+        for upper, lower in half_bridge_pairs
+    ]
+
     topology_documents = []
     topology_order = []
     topology_count = len(model.topologies)
@@ -347,8 +436,24 @@ def _build_multi_mosfet_circuit_data(
         continuous["unknown_names"] = list(topology.state.unknown_names)
         continuous["raw_input_names"] = list(topology.state.input_names)
         continuous["raw_input_defaults"] = _vector(topology.state.input_defaults)
+        selection_index = (
+            _half_bridge_selection_index(
+                key.paths,
+                half_bridge_pairs,
+                approximate=approximate_half_bridge_model,
+            )
+            if half_bridge_model or approximate_half_bridge_model
+            else _mosfet_selection_index(
+                key.paths,
+                include_body_diode_states=includes_body_diode_states,
+            )
+        )
+        if mixed_model:
+            for diode_on in key.diode_states:
+                selection_index = selection_index * 2 + int(diode_on)
         topology_document = {
             "index": len(topology_documents),
+            "selection_index": selection_index,
             "name": key.name,
             "mosfet_paths": [path.value for path in key.paths],
             "continuous": continuous,
@@ -389,15 +494,55 @@ def _build_multi_mosfet_circuit_data(
                 else (
                     "multi_mosfet_binary"
                     if binary_mosfet_model
-                    else "multi_mosfet"
+                    else (
+                        "multi_mosfet_half_bridge"
+                        if half_bridge_model
+                        else (
+                            "multi_mosfet_half_bridge_approx"
+                            if approximate_half_bridge_model
+                            else "multi_mosfet"
+                        )
+                    )
                 )
             ),
             "switches": switch_documents,
             "diodes": diode_selection,
             "voltage_hysteresis_V": voltage_hysteresis,
-            "selection_uses_previous_terminal_voltage": not binary_mosfet_model,
+            "selection_uses_previous_terminal_voltage": True,
             "topology_order": topology_order,
             "topology_count": len(topology_documents),
+            "selection_topology_count": (
+                (5 if approximate_half_bridge_model else 7) ** len(half_bridge_pairs)
+                if half_bridge_model or approximate_half_bridge_model
+                else (
+                    (3 if includes_body_diode_states else 2) ** len(model.mosfets)
+                    * (2 ** len(model.diodes) if mixed_model else 1)
+                )
+            ),
+            "gate_pattern_filter": (
+                None
+                if gate_patterns is None
+                else [
+                    "".join("1" if command else "0" for command in pattern)
+                    for pattern in gate_patterns
+                ]
+            ),
+            "half_bridge_pairs": half_bridge_documents,
+            "half_bridge_operating_modes": (
+                [
+                    "blocked",
+                    "lower_channel",
+                    "lower_passive_rectification",
+                    "upper_channel",
+                    "upper_passive_rectification",
+                ]
+                if approximate_half_bridge_model
+                else []
+            ),
+            "passive_rectification_reuses_channel_topology": False,
+            "body_channel_resistance_matched": bool(
+                getattr(model, "matched_body_channel_resistance", False)
+            ),
         },
         "solver": {
             "method": method,
@@ -826,18 +971,74 @@ def validate_circuit_data(document: Mapping) -> None:
         )
     switching = document.get("switching", {})
     switches = switching.get("switches", [])
-    if switching.get("kind") == "multi_mosfet" and expected_topologies != 3 ** len(switches):
-        raise ValueError("multi-MOS topology count must be 3**number_of_switches")
-    if (
-        switching.get("kind") == "multi_mosfet_binary"
-        and expected_topologies != 2 ** len(switches)
-    ):
-        raise ValueError(
-            "binary multi-MOS topology count must be 2**number_of_switches"
+    if switching.get("kind") in {
+        "multi_mosfet",
+        "multi_mosfet_binary",
+        "multi_mosfet_half_bridge",
+        "multi_mosfet_half_bridge_approx",
+    }:
+        half_bridge_model = switching.get("kind") == "multi_mosfet_half_bridge"
+        approximate_half_bridge_model = (
+            switching.get("kind") == "multi_mosfet_half_bridge_approx"
         )
+        radix = 2 if switching.get("kind") == "multi_mosfet_binary" else 3
+        selection_topologies = int(
+            switching.get("selection_topology_count", expected_topologies)
+        )
+        pair_count = len(switching.get("half_bridge_pairs", []))
+        expected_selection_topologies = (
+            (5 if approximate_half_bridge_model else 7) ** pair_count
+            if half_bridge_model or approximate_half_bridge_model
+            else radix ** len(switches)
+        )
+        if selection_topologies != expected_selection_topologies:
+            raise ValueError(
+                "multi-MOS selection topology count does not match its device model"
+            )
+        selection_indices = [
+            int(item.get("selection_index", index))
+            for index, item in enumerate(topologies)
+        ]
+        if (
+            len(set(selection_indices)) != len(selection_indices)
+            or selection_indices != sorted(selection_indices)
+            or any(index < 0 or index >= selection_topologies for index in selection_indices)
+        ):
+            raise ValueError("multi-MOS sparse selection indices are invalid")
+        assigned_switches: set[int] = set()
+        for pair in switching.get("half_bridge_pairs", []):
+            upper = int(pair.get("upper_switch_index", -1))
+            lower = int(pair.get("lower_switch_index", -1))
+            if (
+                upper == lower
+                or upper < 0
+                or lower < 0
+                or upper >= len(switches)
+                or lower >= len(switches)
+                or upper in assigned_switches
+                or lower in assigned_switches
+            ):
+                raise ValueError("multi-MOS half-bridge pair indices are invalid")
+            if (
+                pair.get("upper_pwm_port") != switches[upper].get("pwm_port")
+                or pair.get("lower_pwm_port") != switches[lower].get("pwm_port")
+            ):
+                raise ValueError("multi-MOS half-bridge gate metadata is inconsistent")
+            assigned_switches.update((upper, lower))
+        if (
+            half_bridge_model or approximate_half_bridge_model
+        ) and assigned_switches != set(range(len(switches))):
+            raise ValueError(
+                "half-bridge MOSFET model must pair every switch exactly once"
+            )
     if switching.get("kind") == "multi_mosfet_diode":
         diode_count = len(switching.get("diodes", []))
-        if expected_topologies != 3 ** len(switches) * 2**diode_count:
+        full_topology_count = 3 ** len(switches) * 2**diode_count
+        if (
+            expected_topologies != full_topology_count
+            or int(switching.get("selection_topology_count", expected_topologies))
+            != full_topology_count
+        ):
             raise ValueError(
                 "mixed MOS/diode topology count must be 3**number_of_MOSFETs * 2**number_of_diodes"
             )
@@ -895,6 +1096,27 @@ def validate_circuit_data(document: Mapping) -> None:
                     )
         if len(matrix_storage.get("matrix_specs", [])) != 9:
             raise ValueError("matrix storage must describe nine runtime matrices")
+        continuous_storage = document.get("continuous_matrix_storage")
+        if continuous_storage is not None:
+            if continuous_storage.get("format") != "deduplicated_continuous_v1":
+                raise ValueError("unsupported continuous matrix storage format")
+            continuous_pools = continuous_storage.get("pools", {})
+            if set(continuous_storage.get("fields", [])) != set(
+                _CONTINUOUS_POOL_FIELDS
+            ) or any(field not in continuous_pools for field in _CONTINUOUS_POOL_FIELDS):
+                raise ValueError("continuous matrix storage fields are incomplete")
+            for topology in topologies:
+                references = topology.get("continuous", {}).get("pool_indices", {})
+                for field in _CONTINUOUS_POOL_FIELDS:
+                    index = references.get(field)
+                    if (
+                        not isinstance(index, int)
+                        or index < 0
+                        or index >= len(continuous_pools[field])
+                    ):
+                        raise ValueError(
+                            "continuous matrix storage contains an invalid pool index"
+                        )
         return
 
     for topology in topologies:
@@ -952,9 +1174,9 @@ def print_circuit_dimensions(document: Mapping) -> None:
 def compact_circuit_data(document: Mapping) -> dict:
     """Return schema-v2 data with discrete runtime matrices interned once.
 
-    Continuous equations remain attached to each physical topology for analysis.
-    Only the matrices consumed on every simulation step are pooled.  Code
-    generation can therefore write its archive directly from this catalog.
+    Runtime matrices and repeated continuous-analysis arrays are pooled. Code
+    generation can therefore write its archive directly from this catalog while
+    large switching families avoid repeating reconstruction/output matrices in JSON.
     """
 
     if document.get("matrix_storage") is not None:
@@ -970,12 +1192,52 @@ def compact_circuit_data(document: Mapping) -> dict:
     compact = dict(document)
     compact["schema"] = {"name": SCHEMA_NAME, "version": SCHEMA_VERSION}
     compact["topologies"] = []
+    continuous_pools: dict[str, list] = {
+        field: [] for field in _CONTINUOUS_POOL_FIELDS
+    }
+    continuous_exact: dict[
+        str, dict[tuple[tuple[int, ...], int], list[int]]
+    ] = {field: {} for field in _CONTINUOUS_POOL_FIELDS}
+
+    def intern_continuous(field: str, value) -> int:
+        matrix = np.asarray(value, dtype=float)
+        key = (matrix.shape, hash(matrix.tobytes(order="C")))
+        for index in continuous_exact[field].get(key, ()):
+            if np.array_equal(
+                matrix, np.asarray(continuous_pools[field][index], dtype=float)
+            ):
+                return index
+        index = len(continuous_pools[field])
+        continuous_pools[field].append(value)
+        continuous_exact[field].setdefault(key, []).append(index)
+        return index
+
     for topology, state_index in zip(
         document["topologies"], plan.topology_to_calculation_state
     ):
-        item = {key: value for key, value in topology.items() if key != "discrete"}
+        item = {
+            key: value
+            for key, value in topology.items()
+            if key not in {"continuous", "discrete"}
+        }
+        continuous = topology.get("continuous")
+        if continuous is not None:
+            item["continuous"] = {
+                key: value
+                for key, value in continuous.items()
+                if key not in _CONTINUOUS_POOL_FIELDS
+            }
+            item["continuous"]["pool_indices"] = {
+                field: intern_continuous(field, continuous[field])
+                for field in _CONTINUOUS_POOL_FIELDS
+            }
         item["calculation_state_index"] = state_index
         compact["topologies"].append(item)
+    compact["continuous_matrix_storage"] = {
+        "format": "deduplicated_continuous_v1",
+        "fields": list(_CONTINUOUS_POOL_FIELDS),
+        "pools": continuous_pools,
+    }
     compact["matrix_storage"] = {
         "format": "deduplicated_runtime_v1",
         "tolerance": tolerance,
@@ -1043,6 +1305,25 @@ def load_circuit_data(path: str | Path) -> dict:
     return document
 
 
+def continuous_topology_data(document: Mapping, topology_index: int) -> dict:
+    """Resolve one topology's continuous matrices from inline or pooled JSON."""
+
+    topologies = document.get("topologies", [])
+    if topology_index < 0 or topology_index >= len(topologies):
+        raise IndexError("continuous topology index is out of range")
+    continuous = dict(topologies[topology_index].get("continuous", {}))
+    references = continuous.pop("pool_indices", None)
+    if references is None:
+        return continuous
+    storage = document.get("continuous_matrix_storage")
+    if storage is None:
+        raise ValueError("continuous topology references are missing their matrix pools")
+    pools = storage["pools"]
+    for field in _CONTINUOUS_POOL_FIELDS:
+        continuous[field] = pools[field][int(references[field])]
+    return continuous
+
+
 @dataclass
 class DataSimulationResult:
     time: np.ndarray
@@ -1062,9 +1343,17 @@ class CircuitDataSimulator:
         self.switching_kind = document["switching"].get("kind", "single_diode_mosfet")
         self.multi_mosfet_diode = self.switching_kind == "multi_mosfet_diode"
         self.binary_mosfet = self.switching_kind == "multi_mosfet_binary"
+        self.half_bridge_mosfet = (
+            self.switching_kind == "multi_mosfet_half_bridge"
+        )
+        self.approximate_half_bridge_mosfet = (
+            self.switching_kind == "multi_mosfet_half_bridge_approx"
+        )
         self.multi_mosfet = self.switching_kind in {
             "multi_mosfet",
             "multi_mosfet_binary",
+            "multi_mosfet_half_bridge",
+            "multi_mosfet_half_bridge_approx",
             "multi_mosfet_diode",
         }
         self.multi_diode_switch = self.switching_kind == "multi_diode_switch"
@@ -1097,6 +1386,11 @@ class CircuitDataSimulator:
             else False
         )
         self.body_on = [False] * len(document["switching"].get("switches", [])) if self.multi_mosfet else False
+        self.half_bridge_modes = (
+            ["blocked"] * len(document["switching"].get("half_bridge_pairs", []))
+            if self.approximate_half_bridge_mosfet
+            else []
+        )
         self.last_topology = document["topologies"][0]["name"]
         self.discrete_states = self._load_discrete_states()
 
@@ -1131,6 +1425,12 @@ class CircuitDataSimulator:
             else False
         )
         self.body_on = [False] * len(self.document["switching"].get("switches", [])) if self.multi_mosfet else False
+        self.half_bridge_modes = (
+            ["blocked"]
+            * len(self.document["switching"].get("half_bridge_pairs", []))
+            if self.approximate_half_bridge_mosfet
+            else []
+        )
         self.last_topology = self.document["topologies"][0]["name"]
 
     def _select(self, pwm: int | Mapping[str, int]) -> tuple:
@@ -1168,13 +1468,85 @@ class CircuitDataSimulator:
             unknown = set(supplied) - {_key(port["name"]) for port in self.pwm_ports}
             if unknown:
                 raise ValueError("unknown PWM input(s): " + ", ".join(sorted(unknown)))
+            for pair in self.document["switching"].get("half_bridge_pairs", []):
+                upper = supplied.get(_key(pair["upper_pwm_port"]), 0)
+                lower = supplied.get(_key(pair["lower_pwm_port"]), 0)
+                if upper and lower:
+                    raise RuntimeError(
+                        "half bridge has simultaneous upper/lower channel commands: "
+                        f"{pair['upper_pwm_port']}/{pair['lower_pwm_port']}"
+                    )
             if self.binary_mosfet:
-                return tuple(
-                    MosfetPath.CHANNEL.value
-                    if supplied.get(_key(switch["pwm_port"]), 0)
-                    else MosfetPath.OFF.value
-                    for switch in self.document["switching"]["switches"]
+                paths: list[str] = []
+                hysteresis = self.document["switching"]["voltage_hysteresis_V"]
+                for index, switch in enumerate(self.document["switching"]["switches"]):
+                    command = supplied.get(_key(switch["pwm_port"]), 0)
+                    if command:
+                        self.body_on[index] = False
+                    else:
+                        vsd = (
+                            self.signals[switch["source_signal_index"]]
+                            - self.signals[switch["drain_signal_index"]]
+                        )
+                        self.body_on[index] = vsd >= (
+                            -hysteresis if self.body_on[index] else hysteresis
+                        )
+                    paths.append(
+                        MosfetPath.CHANNEL.value
+                        if command or self.body_on[index]
+                        else MosfetPath.OFF.value
+                    )
+                return tuple(paths)
+            if self.approximate_half_bridge_mosfet:
+                paths = [MosfetPath.OFF.value] * len(
+                    self.document["switching"]["switches"]
                 )
+                hysteresis = self.document["switching"]["voltage_hysteresis_V"]
+                for pair_index, pair in enumerate(
+                    self.document["switching"]["half_bridge_pairs"]
+                ):
+                    upper = int(pair["upper_switch_index"])
+                    lower = int(pair["lower_switch_index"])
+                    upper_command = supplied.get(_key(pair["upper_pwm_port"]), 0)
+                    lower_command = supplied.get(_key(pair["lower_pwm_port"]), 0)
+                    if upper_command:
+                        self.body_on[upper] = self.body_on[lower] = False
+                        paths[upper] = MosfetPath.CHANNEL.value
+                        self.half_bridge_modes[pair_index] = "upper_channel"
+                        continue
+                    if lower_command:
+                        self.body_on[upper] = self.body_on[lower] = False
+                        paths[lower] = MosfetPath.CHANNEL.value
+                        self.half_bridge_modes[pair_index] = "lower_channel"
+                        continue
+                    for index in (upper, lower):
+                        switch = self.document["switching"]["switches"][index]
+                        vsd = (
+                            self.signals[switch["source_signal_index"]]
+                            - self.signals[switch["drain_signal_index"]]
+                        )
+                        threshold = switch["body_forward_threshold_V"]
+                        self.body_on[index] = vsd >= threshold + (
+                            -hysteresis if self.body_on[index] else hysteresis
+                        )
+                    if self.body_on[upper] and self.body_on[lower]:
+                        raise RuntimeError(
+                            "half bridge entered impossible simultaneous reverse conduction: "
+                            f"{pair['upper_pwm_port']}/{pair['lower_pwm_port']}"
+                        )
+                    if self.body_on[upper]:
+                        paths[upper] = MosfetPath.BODY_DIODE.value
+                        self.half_bridge_modes[pair_index] = (
+                            "upper_passive_rectification"
+                        )
+                    elif self.body_on[lower]:
+                        paths[lower] = MosfetPath.BODY_DIODE.value
+                        self.half_bridge_modes[pair_index] = (
+                            "lower_passive_rectification"
+                        )
+                    else:
+                        self.half_bridge_modes[pair_index] = "blocked"
+                return tuple(paths)
             paths: list[str] = []
             hysteresis = self.document["switching"]["voltage_hysteresis_V"]
             for index, switch in enumerate(self.document["switching"]["switches"]):
@@ -1194,6 +1566,14 @@ class CircuitDataSimulator:
                 paths.append(
                     MosfetPath.BODY_DIODE.value if self.body_on[index] else MosfetPath.OFF.value
                 )
+            for pair in self.document["switching"].get("half_bridge_pairs", []):
+                upper = int(pair["upper_switch_index"])
+                lower = int(pair["lower_switch_index"])
+                if self.body_on[upper] and self.body_on[lower]:
+                    raise RuntimeError(
+                        "half bridge entered impossible simultaneous body-diode conduction: "
+                        f"{pair['upper_pwm_port']}/{pair['lower_pwm_port']}"
+                    )
             if not self.multi_mosfet_diode:
                 return tuple(paths)
             assert isinstance(self.diode_on, list)
@@ -1236,7 +1616,12 @@ class CircuitDataSimulator:
             raise ValueError("unknown input(s): " + ", ".join(sorted(unknown)))
         u = np.asarray([supplied.get(_key(port["name"]), port["default"]) for port in self.external_inputs])
         key = self._select(pwm)
-        topology = self.topologies[key]
+        try:
+            topology = self.topologies[key]
+        except KeyError as error:
+            raise RuntimeError(
+                f"runtime switch state is outside the exported reachable set: {key}"
+            ) from error
         state_index = topology.get("calculation_state_index")
         if state_index is None:
             item = topology["discrete"][profile]
@@ -1363,11 +1748,54 @@ def _parser() -> argparse.ArgumentParser:
     )
     export.add_argument("--no-progress", action="store_true")
     export.add_argument(
+        "--mosfet-model",
+        choices=MOSFET_MODELS,
+        help=(
+            "MOS switching model: two_state (bidirectional on/off), three_state "
+            "(per-device off/channel/body diode), or half_bridge (seven states per "
+            "verified upper/lower pair); half_bridge_approx uses five states per "
+            "pair, retaining Vf+Rbody only during all-gates-off passive conduction"
+        ),
+    )
+    export.add_argument(
         "--ideal-mosfet-switches",
         action="store_true",
         help=(
-            "use two-state bidirectional channel/off MOS models; this omits "
-            "body-diode conduction and is intended for synchronized bridge stress tests"
+            "deprecated alias for --mosfet-model two_state; reverse D/S voltage "
+            "selects the same zero-drop Ron topology as commanded channel conduction"
+        ),
+    )
+    export.add_argument(
+        "--mosfet-gate-scenarios",
+        help=(
+            "JSON file describing fixed commands and complementary PWM pairs; "
+            "only three-state MOS paths reachable from those scenarios are exported"
+        ),
+    )
+    export.add_argument(
+        "--half-bridge-pair",
+        action="append",
+        default=[],
+        metavar="UPPER,LOWER",
+        help=(
+            "declare one mutually exclusive MOS gate pair; repeat for each two-level "
+            "leg (for example --half-bridge-pair PWM1,PWM2)"
+        ),
+    )
+    export.add_argument(
+        "--infer-half-bridges",
+        action="store_true",
+        help=(
+            "infer unambiguous two-level upper/lower MOS pairs, prune simultaneous "
+            "channel/body-diode states, and emit runtime fault checks"
+        ),
+    )
+    export.add_argument(
+        "--match-body-channel-resistance",
+        action="store_true",
+        help=(
+            "force body-diode dynamic resistance to MOS Ron while retaining Vf; "
+            "valid for three_state and exact half_bridge models"
         ),
     )
     export.add_argument("--device-param", action="append", default=[], metavar="NAME=VALUE")
@@ -1384,24 +1812,130 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "export":
             circuit = parse_netlist(args.netlist)
-            include_body_diodes = not args.ideal_mosfet_switches
+            if (
+                args.ideal_mosfet_switches
+                and args.mosfet_model not in {None, MOSFET_MODEL_TWO_STATE}
+            ):
+                raise ValueError(
+                    "--ideal-mosfet-switches conflicts with the selected MOSFET model"
+                )
+            selected_mosfet_model = args.mosfet_model
+            if selected_mosfet_model is None:
+                if args.ideal_mosfet_switches:
+                    selected_mosfet_model = MOSFET_MODEL_TWO_STATE
+                elif args.half_bridge_pair or args.infer_half_bridges:
+                    selected_mosfet_model = MOSFET_MODEL_HALF_BRIDGE
+                else:
+                    selected_mosfet_model = MOSFET_MODEL_THREE_STATE
+            include_body_diodes = selected_mosfet_model != MOSFET_MODEL_TWO_STATE
+            if (
+                args.match_body_channel_resistance
+                and selected_mosfet_model
+                not in {MOSFET_MODEL_THREE_STATE, MOSFET_MODEL_HALF_BRIDGE}
+            ):
+                raise ValueError(
+                    "--match-body-channel-resistance requires three_state or "
+                    "exact half_bridge MOSFET model"
+                )
+            gate_patterns = None
+            half_bridge_pairs = None
+            if args.half_bridge_pair:
+                named_pairs = []
+                for value in args.half_bridge_pair:
+                    names = [name.strip() for name in value.split(",")]
+                    if len(names) != 2 or not all(names):
+                        raise ValueError(
+                            "--half-bridge-pair expects UPPER,LOWER gate names"
+                        )
+                    named_pairs.append(names)
+                half_bridge_pairs = resolve_mosfet_half_bridge_pairs(
+                    circuit, named_pairs
+                )
+            if args.mosfet_gate_scenarios:
+                scenario_document = json.loads(
+                    Path(args.mosfet_gate_scenarios).read_text(encoding="utf-8")
+                )
+                scenarios = scenario_document.get("scenarios")
+                if not isinstance(scenarios, list):
+                    raise ValueError(
+                        "MOS gate-scenario JSON must contain a scenarios array"
+                    )
+                gate_patterns = expand_mosfet_gate_scenarios(circuit, scenarios)
+                pair_document = scenario_document.get("half_bridge_pairs", [])
+                if not isinstance(pair_document, list):
+                    raise ValueError(
+                        "MOS gate-scenario half_bridge_pairs must be an array"
+                    )
+                scenario_pairs = resolve_mosfet_half_bridge_pairs(
+                    circuit, pair_document
+                )
+                if (
+                    half_bridge_pairs is not None
+                    and set(half_bridge_pairs) != set(scenario_pairs)
+                ):
+                    raise ValueError(
+                        "command-line MOS half bridges do not match the gate-scenario file"
+                    )
+                half_bridge_pairs = scenario_pairs
+            half_bridge_models = {
+                MOSFET_MODEL_HALF_BRIDGE,
+                MOSFET_MODEL_HALF_BRIDGE_APPROX,
+            }
+            if (
+                selected_mosfet_model not in half_bridge_models
+                and (args.half_bridge_pair or args.infer_half_bridges)
+            ):
+                raise ValueError(
+                    "half-bridge pair options require --mosfet-model half_bridge"
+                )
+            if selected_mosfet_model in half_bridge_models:
+                if gate_patterns is not None:
+                    raise ValueError(
+                        "half-bridge models define their complete local state set and "
+                        "do not accept MOS gate-scenario filtering"
+                    )
+                if half_bridge_pairs is None or args.infer_half_bridges:
+                    inferred_pairs = infer_mosfet_half_bridge_pairs(circuit)
+                    if (
+                        half_bridge_pairs is not None
+                        and set(half_bridge_pairs) != set(inferred_pairs)
+                    ):
+                        raise ValueError(
+                            "inferred MOS half bridges do not match the explicit pairs"
+                        )
+                    if half_bridge_pairs is None:
+                        half_bridge_pairs = inferred_pairs
+            selection_topology_count = piecewise_topology_count(
+                circuit,
+                include_mosfet_body_diodes=include_body_diodes,
+                mosfet_model=selected_mosfet_model,
+                mosfet_half_bridge_pairs=half_bridge_pairs,
+            )
             topology_count = piecewise_topology_count(
-                circuit, include_mosfet_body_diodes=include_body_diodes
+                circuit,
+                include_mosfet_body_diodes=include_body_diodes,
+                mosfet_gate_patterns=gate_patterns,
+                mosfet_half_bridge_pairs=half_bridge_pairs,
+                mosfet_model=selected_mosfet_model,
             )
             print(f"circuit:             {circuit.title}")
-            print(f"logical states:      {topology_count}")
+            print(f"logical states:      {selection_topology_count}")
+            if topology_count != selection_topology_count:
+                print(f"reachable states:    {topology_count}")
+            if gate_patterns is not None:
+                print(f"gate patterns:       {len(gate_patterns or ())}")
+            if half_bridge_pairs:
+                print(f"half-bridge pairs:   {len(half_bridge_pairs)} (verified)")
             print(f"discretization:      {args.method}")
             print(f"normal step:         {args.normal_dt:.12g} s")
             print(f"short step:          {args.short_dt:.12g} s")
             print(f"matrix tolerance:    {args.matrix_tolerance:.12g}")
             print(
                 "MOS switch model:     "
-                + (
-                    "channel/off (ideal bidirectional)"
-                    if args.ideal_mosfet_switches
-                    else "channel/off/body diode"
-                )
+                + selected_mosfet_model
             )
+            if args.match_body_channel_resistance:
+                print("body/channel R:      matched (body Vf retained)")
             build_bar = (
                 None
                 if args.no_progress
@@ -1412,6 +1946,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 _assignments(args.device_param),
                 None if build_bar is None else build_bar.update,
                 include_mosfet_body_diodes=include_body_diodes,
+                mosfet_gate_patterns=gate_patterns,
+                mosfet_half_bridge_pairs=half_bridge_pairs,
+                mosfet_model=selected_mosfet_model,
+                match_body_channel_resistance=args.match_body_channel_resistance,
+                retain_topology_details=False,
             )
             if build_bar is not None:
                 build_bar.finish()

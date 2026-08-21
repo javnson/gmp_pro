@@ -4,7 +4,7 @@
 // Source SHA-256: 2f23f8f6bb7fde93293f8ba1f90e169ad5df845ab134222ddb9711b57cf285b5
 // Matrix equivalence tolerance: 9.9999999999999998e-13
 // Matrix backend: eigen
-// Logical states: 6; unique calculation states: 6.
+// Selection states: 6; stored reachable states: 6; unique calculation states: 6.
 // Do not hand-edit; regenerate from the circuit-data JSON file.
 
 #include <Eigen/Dense>
@@ -12,14 +12,15 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <vector>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <limits>
 #include <memory>
-#include <stdexcept>
-#include <string>
-#include <string_view>
 #include <vector>
 
 class BuckCircuit {
@@ -29,6 +30,7 @@ public:
     static constexpr std::size_t analog_input_count = 1;
     static constexpr std::size_t pwm_input_count = 1;
     static constexpr std::size_t topology_count = 6;
+    static constexpr std::size_t stored_topology_count = 6;
     static constexpr std::size_t calculation_state_count = 6;
     static constexpr const char* matrix_backend = "eigen";
     static constexpr const char* matrix_storage = "archive";
@@ -42,6 +44,7 @@ public:
     static constexpr double normal_step_s = 1.0000000000000001e-07;
     static constexpr double short_step_s = 1.0000000000000001e-09;
     static constexpr double matrix_tolerance = 9.9999999999999998e-13;
+    static constexpr const char* discretization_method = "backward_euler";
 
     struct Inputs {
         std::uint32_t PWM{0U};
@@ -119,6 +122,8 @@ private:
         std::size_t D;
         std::size_t output_bias;
     };
+
+    static constexpr std::size_t invalid_topology_index = static_cast<std::size_t>(-1);
 
     template <typename Matrix>
     using MatrixPool = std::vector<Matrix, Eigen::aligned_allocator<Matrix>>;
@@ -219,7 +224,7 @@ private:
             0x47U, 0x4dU, 0x50U, 0x4dU, 0x4eU, 0x41U, 0x31U, 0x00U
         }};
         constexpr std::array<std::uint8_t, 32U> expected_source_hash{{
-            0x2fU, 0x23U, 0xf8U, 0xf6U, 0xbbU, 0x7fU, 0xdeU, 0x93U, 0x29U, 0x3fU, 0x8bU, 0xa1U, 0xf9U, 0x0eU, 0x16U, 0x9aU, 0xd5U, 0xdfU, 0x84U, 0x5aU, 0xb1U, 0x34U, 0x22U, 0x2dU, 0xdbU, 0x97U, 0x11U, 0xb5U, 0x7cU, 0xf2U, 0x85U, 0xb5U
+            0xc1U, 0xd3U, 0x48U, 0x98U, 0x84U, 0x67U, 0x02U, 0x5cU, 0x1eU, 0x18U, 0x55U, 0x5aU, 0x57U, 0x8eU, 0x5aU, 0x08U, 0xecU, 0x0cU, 0x42U, 0x9cU, 0x84U, 0x41U, 0xe9U, 0xfaU, 0xb3U, 0xbcU, 0x9eU, 0xe1U, 0xf9U, 0xf9U, 0x8cU, 0x4bU
         }};
         require_bytes(bytes, 0U, expected_magic.size());
         if (std::memcmp(bytes.data(), expected_magic.data(), expected_magic.size()) != 0)
@@ -237,7 +242,7 @@ private:
         expect_u32(static_cast<std::uint32_t>(state_count), "state count");
         expect_u32(static_cast<std::uint32_t>(analog_input_count), "input count");
         expect_u32(static_cast<std::uint32_t>(signal_count), "signal count");
-        expect_u32(static_cast<std::uint32_t>(topology_count), "topology count");
+        expect_u32(static_cast<std::uint32_t>(stored_topology_count), "topology count");
         expect_u32(static_cast<std::uint32_t>(calculation_state_count),
                    "calculation-state count");
         expect_u32(static_cast<std::uint32_t>(state_matrix_count),
@@ -271,7 +276,7 @@ private:
             throw std::runtime_error("matrix archive payload checksum mismatch");
 
         auto result = std::make_shared<ArchiveData>();
-        result->topology_to_calculation_state.resize(topology_count);
+        result->topology_to_calculation_state.resize(stored_topology_count);
         for (auto& value : result->topology_to_calculation_state) {
             value = read_u32(bytes, cursor);
             if (value >= calculation_state_count)
@@ -336,6 +341,11 @@ private:
         return archive_->topology_to_calculation_state;
     }
 
+    static constexpr std::size_t resolve_stored_topology(
+        std::size_t selection_index) noexcept {
+        return selection_index;
+    }
+
     std::size_t select_topology(const Inputs& inputs) {
         const double diode_voltage = signals_(4) - signals_(5);
         const double reverse_mosfet_voltage = signals_(3) - signals_(2);
@@ -356,7 +366,8 @@ private:
 
     const Outputs& step(const Inputs& inputs, bool use_short_step) {
         last_topology_index_ = select_topology(inputs);
-        last_calculation_state_index_ = topology_to_calculation_state()[last_topology_index_];
+        const auto stored_topology_index = resolve_stored_topology(last_topology_index_);
+        last_calculation_state_index_ = topology_to_calculation_state()[stored_topology_index];
         const auto& calculation_state = calculation_states()[last_calculation_state_index_];
         InputVector input_vector;
         input_vector << inputs.VS1;

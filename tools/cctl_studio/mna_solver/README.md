@@ -266,7 +266,10 @@ probes, raw model values and extraction provenance, state/signal names, all
 continuous topologies, normal/short-step discrete matrices, affine terms, and
 the terminal indices used for previous-sample mode selection. Schema v2 interns
 normal/short runtime matrices into tolerance-aware pools when the file is
-written; topologies store calculation-state indices instead of expanded copies.
+written; repeated continuous-analysis arrays are also interned into an exact
+pool. Topologies store pool/calculation-state indices instead of expanded copies.
+`continuous_topology_data(document, index)` resolves the pooled continuous model
+for analysis code.
 The JSON can be simulated without rebuilding MNA and is the only input to `cpp_codegen.py`.
 One diode plus one MOS produces six topologies. A MOS-only switching circuit
 uses three paths per device (`OFF`, channel, body diode), so the four-switch
@@ -281,22 +284,26 @@ contains `3^4 * 2^2 = 324` compatible state/output models. Diode A/K and MOSFET
 D/S terminal voltages remain internal signals used for previous-sample mode
 selection.
 
-Code generation separates logical topologies from calculation states. Every
-logical topology remains addressable, preserving switching selection and
-`last_topology_index()`, while numerically equivalent topologies may map to one
-calculation state. Calculation states contain only indices into shared static
+Code generation separates switch-selection indices, stored reachable
+topologies, and calculation states. Every exported reachable topology remains
+addressable and `last_topology_index()` preserves the full-radix selection
+index; a runtime state excluded by a gate scenario is a fault. Numerically
+equivalent stored topologies may map to one calculation state. Calculation
+states contain only indices into shared static
 `StateMatrix`, `InputMatrix`, `StateVector`, `SignalMatrix`,
 `SignalInputMatrix`, and `SignalVector` pools, so identical A/B/C/D and affine
 terms have one C++ copy.
 
 Equivalence means that every element differs by no more than the absolute
-`matrix_tolerance`; relative tolerance is zero. The default is `1e-12`. Square
-matrices first enter determinant hash buckets, while non-square objects use
-their element sum. Adjacent buckets are included to cover quantization
-boundaries, and every candidate still receives a full elementwise check, so a
-determinant collision cannot merge unequal states. A complete state merges only
+`matrix_tolerance`; relative tolerance is zero. The default is `1e-12`. Candidate
+buckets combine the determinant (or element sum for non-square objects) with
+the two entries that best distinguish that matrix family. Adjacent buckets cover
+quantization boundaries, and every candidate still receives a full elementwise
+check, so hash collisions cannot merge unequal matrices. A complete state is
+identified by its nine already-interned runtime matrix indices; it merges only
 when normal/short A, B, bias and C, D, output bias all match, including internal
-D/S and A/K mode-selection signals.
+D/S and A/K mode-selection signals. This avoids quadratic whole-state scans for
+large high-order families.
 
 Both `circuit_data.py export` and `cpp_codegen.py` accept
 `--matrix-tolerance`. A schema-v2 JSON file is already pooled at export time,
@@ -368,13 +375,41 @@ change a case's `MATRIX_BACKEND`, only when the allocation-free fixed backend is
 specifically required. Fixed generation remains supported but is not part of the
 default generation or build path.
 
-Pure multi-MOS circuits may additionally pass `--ideal-mosfet-switches` to use
-two-state channel/off bidirectional switches. The option deliberately omits
-body-diode conduction and reduces the logical family from `3^N` to `2^N`; it is
-off by default and must only be used when synchronized complementary channel
-conduction makes that approximation appropriate. The B2B stress case uses it
-to retain 4096 precomputed states instead of attempting to materialize 531441
-three-path states.
+The generator exposes four MOS switching models. `N` is the MOS count and `H`
+is the number of verified two-level half bridges.
+
+| `--mosfet-model` | Local states | Reverse conduction | Logical scaling | Intended use |
+| --- | --- | --- | --- | --- |
+| `two_state` | OFF/ON per MOS | Reverse D/S voltage selects the same zero-drop `Ron` ON topology | `2^N` | coarse independent-switch approximation |
+| `three_state` | OFF/CHANNEL/BODY per MOS | explicit body-diode `Vf + Rbody` | `3^N` | general and most detailed model |
+| `half_bridge` | OO, OC, OB, CO, CB, BO, BC per pair | explicit body-diode `Vf + Rbody`; excludes channel/channel and body/body | `7^H` | exact two-level bridges |
+| `half_bridge_approx` | OO, OC, OB, CO, BO per pair | all-gates-off states retain extracted body-diode `Vf + Rbody`; commanded conduction omits the opposite device's body path | `5^H` | recommended for large B2B/two-level systems |
+
+`--ideal-mosfet-switches` remains as a deprecated alias for
+`--mosfet-model two_state`. All four models retain real all-off deadtime. In the
+approximate half-bridge model, D/S voltage selects OB or BO only while both gate
+commands are off. Those passive states use the independently extracted `Vf` and
+`Rbody`, so passive startup rectification remains physically distinct from `Ron`.
+
+Declare each upper/lower pair with repeated
+`--half-bridge-pair PWM1,PWM2`, or omit the pairs and let either half-bridge
+model infer an unambiguous complete two-level network automatically.
+`--infer-half-bridges` can also be combined with explicit pairs to cross-check
+them. Both half-bridge models reject simultaneous upper/lower gate commands;
+the exact model additionally rejects simultaneous upper/lower body conduction.
+Inference intentionally rejects NPC and other multilevel legs, which should use
+the basic `three_state` model. Gate-scenario filtering remains available for
+the per-device models but is not combined with either complete half-bridge
+state family.
+
+When the physical approximation `Rbody ~= Ron` is acceptable, add
+`--match-body-channel-resistance` to `three_state` or exact `half_bridge`.
+Generation then forces the body dynamic resistance to `Ron` while retaining
+`Vf`. Corresponding channel/body cases consequently share `A/B/C/D`; only the
+affine state/output bias differs. The logical state count is unchanged, but
+matrix-pool deduplication can store one dynamic copy for several logical cases.
+It is deliberately rejected for `half_bridge_approx`, whose purpose now includes
+preserving the `Rbody`/`Ron` difference during passive rectification.
 
 Only the calculation class artifacts are generated. Testbench source, CMake
 files, waveform scheduling, CSV policy, and acceptance limits are deliberately
@@ -458,11 +493,18 @@ The `b2b_3ph` stress case connects a 32 Vrms line-to-line, 50 Hz generated grid
 to PWM1--PWM6 through explicit per-phase 1 mH/50 mOhm grid reactors. PWM7--PWM12
 produce a balanced 30 Hz output at modulation 0.8. Because the testbench already
 knows the generated grid angle, the active rectifier uses direct angle feedforward
-without a PLL or closed-loop-control claim. Its ideal bidirectional MOS mode has
-23 states, three analog inputs, 35 internal output signals and 4096 unique
-calculation states; the Eigen archive is about 36.8 MB. The 2 s, 20-million-step regression
-settles near a 57 V DC link, transfers about 81 W from the grid, visits 50 runtime
-topologies, and writes `b2b_3ph_open_loop.csv`. The series grid reactors are also
+without a PLL or closed-loop-control claim. During the first second PWM1--PWM6
+remain off and their body diodes perform passive rectification; during the second
+second the active rectifier is enabled. Every leg has a real 1 us OO deadtime.
+The recommended `half_bridge_approx` model and six inferred pairs reduce the
+full three-state `3^12 = 531441` family to `5^6 = 15625` logical/calculation
+states while keeping physical passive-diode states. The model has 23 states,
+three analog inputs and 35 internal signals; its Eigen archive is about
+133.6 MiB. The 2 s, 20-million-step regression measures about 41.28 V/39.47 W
+in the passive window and 56.55 V with 72.44 W grid input and 67.75 W output in
+the active window, visits 1125 runtime topologies, confirms passive conduction
+in every grid leg, and writes
+`b2b_3ph_open_loop.csv`. The series grid reactors are also
 physically required: connecting ideal grid voltage sources directly to MOSFET
 `Coss` forms an index-2 capacitor/source cutset that cannot be represented by the
 current ordinary `x_dot=Ax+Bu` boundary.
@@ -514,8 +556,10 @@ verify both the DC transfer and `A=-1000` state matrix.
   singular.
 - Initial conditions are state-coordinate values. Mapping physical capacitor
   voltages/inductor currents to initial state coordinates is future work.
-- MOS-only multi-switch circuits default to `3^N` topologies; synchronized
-  bridge stress tests may explicitly select the body-diode-free `2^N` mode.
+- MOS-only multi-switch circuits default to `3^N` topologies. Two-level bridges
+  may prune unreachable states with gate scenarios and verified half-bridge
+  constraints while retaining all three MOS paths; synchronized bridge stress
+  tests may alternatively select the body-diode-free `2^N` mode.
   Diode/VSWITCH-only networks grow as `2^N`. Mixed circuits containing both
   MOSFETs and multiple independent diodes or VSWITCH devices still need the
   general combinational device expansion. A Verilog/fixed-point backend over

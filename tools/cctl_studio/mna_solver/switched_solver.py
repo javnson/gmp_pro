@@ -11,7 +11,7 @@ import argparse
 import csv
 import itertools
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
@@ -41,6 +41,18 @@ class MosfetPath(str, Enum):
     OFF = "off"
     CHANNEL = "channel"
     BODY_DIODE = "body_diode"
+
+
+MOSFET_MODEL_TWO_STATE = "two_state"
+MOSFET_MODEL_THREE_STATE = "three_state"
+MOSFET_MODEL_HALF_BRIDGE = "half_bridge"
+MOSFET_MODEL_HALF_BRIDGE_APPROX = "half_bridge_approx"
+MOSFET_MODELS = (
+    MOSFET_MODEL_TWO_STATE,
+    MOSFET_MODEL_THREE_STATE,
+    MOSFET_MODEL_HALF_BRIDGE,
+    MOSFET_MODEL_HALF_BRIDGE_APPROX,
+)
 
 
 @dataclass(frozen=True)
@@ -152,8 +164,8 @@ class MultiDiodeSwitchTopologyKey:
 @dataclass
 class LinearTopology:
     key: TopologyKey | MultiMosfetTopologyKey | MultiMosfetDiodeTopologyKey | MultiDiodeSwitchTopologyKey
-    circuit: Circuit
-    descriptor: DescriptorModel
+    circuit: Circuit | None
+    descriptor: DescriptorModel | None
     state: StateSpaceModel
     discrete: DiscreteModel | None = None
 
@@ -186,6 +198,10 @@ class MultiMosfetLinearModel:
     parameters: list[MosfetSwitchParameters]
     topologies: dict[MultiMosfetTopologyKey, LinearTopology]
     includes_body_diode_states: bool = True
+    gate_patterns: tuple[tuple[bool, ...], ...] | None = None
+    half_bridge_pairs: tuple[tuple[int, int], ...] = ()
+    mosfet_model: str = MOSFET_MODEL_THREE_STATE
+    matched_body_channel_resistance: bool = False
 
 
 @dataclass
@@ -710,6 +726,11 @@ def build_multi_mosfet_model(
     device_overrides: Mapping[str, float] | None = None,
     progress: ProgressCallback | None = None,
     include_body_diode_states: bool = True,
+    gate_patterns: Sequence[Sequence[bool]] | None = None,
+    half_bridge_pairs: Sequence[Sequence[int]] | None = None,
+    mosfet_model: str | None = None,
+    match_body_channel_resistance: bool = False,
+    retain_topology_details: bool = True,
 ) -> MultiMosfetLinearModel:
     """Build the selected channel/off[/body-diode] NMOS topology family."""
 
@@ -725,13 +746,60 @@ def build_multi_mosfet_model(
     parameters = [
         derive_mosfet_parameters(circuit, mosfet, device_overrides) for mosfet in mosfets
     ]
+    selected_model = mosfet_model or (
+        MOSFET_MODEL_THREE_STATE
+        if include_body_diode_states
+        else MOSFET_MODEL_TWO_STATE
+    )
+    if selected_model not in MOSFET_MODELS:
+        raise NetlistError(f"unsupported MOSFET model {selected_model!r}")
+    if match_body_channel_resistance and selected_model not in {
+        MOSFET_MODEL_THREE_STATE,
+        MOSFET_MODEL_HALF_BRIDGE,
+    }:
+        raise NetlistError(
+            "matching body/channel resistance requires three_state or exact "
+            "half_bridge MOSFET model"
+        )
+    if match_body_channel_resistance:
+        parameters = [
+            replace(item, body_on_resistance=item.on_resistance)
+            for item in parameters
+        ]
+    if selected_model == MOSFET_MODEL_TWO_STATE:
+        include_body_diode_states = False
+    else:
+        include_body_diode_states = True
+    normalized_patterns = _normalize_gate_patterns(gate_patterns, len(mosfets))
+    normalized_pairs = _normalize_half_bridge_pairs(
+        half_bridge_pairs, len(mosfets)
+    )
+    if selected_model in {
+        MOSFET_MODEL_HALF_BRIDGE,
+        MOSFET_MODEL_HALF_BRIDGE_APPROX,
+    }:
+        if normalized_patterns is not None:
+            raise NetlistError(
+                "half-bridge MOSFET model already contains channel, deadtime, and "
+                "body-diode states; gate-pattern filtering is not supported"
+            )
+        _require_complete_half_bridge_pairs(normalized_pairs, len(mosfets))
+        paths_to_build = _half_bridge_mosfet_paths(
+            len(mosfets),
+            normalized_pairs,
+            approximate=selected_model == MOSFET_MODEL_HALF_BRIDGE_APPROX,
+        )
+    else:
+        paths_to_build = _reachable_mosfet_paths(
+            len(mosfets),
+            include_body_diode_states,
+            normalized_patterns,
+            normalized_pairs,
+        )
+    topology_count = len(paths_to_build)
     topologies: dict[MultiMosfetTopologyKey, LinearTopology] = {}
-    choices: tuple[MosfetPath, ...] = (MosfetPath.OFF, MosfetPath.CHANNEL)
-    if include_body_diode_states:
-        choices += (MosfetPath.BODY_DIODE,)
-    topology_count = len(choices) ** len(mosfets)
     for topology_index, paths in enumerate(
-        itertools.product(choices, repeat=len(mosfets)), start=1
+        paths_to_build, start=1
     ):
         key = MultiMosfetTopologyKey(paths)
         expanded = _expanded_multi_mosfet_circuit(
@@ -743,7 +811,12 @@ def build_multi_mosfet_model(
             state = reduce_to_state_space(descriptor, outputs)
         except NetlistError as error:
             raise NetlistError(f"{key.name}: {error}") from error
-        topologies[key] = LinearTopology(key, expanded, descriptor, state)
+        topologies[key] = LinearTopology(
+            key,
+            expanded if retain_topology_details else None,
+            descriptor if retain_topology_details else None,
+            state,
+        )
         if progress is not None:
             progress(topology_index, topology_count)
 
@@ -762,7 +835,342 @@ def build_multi_mosfet_model(
         parameters,
         topologies,
         include_body_diode_states,
+        normalized_patterns,
+        normalized_pairs,
+        selected_model,
+        match_body_channel_resistance,
     )
+
+
+def _normalize_gate_patterns(
+    patterns: Sequence[Sequence[bool]] | None, mosfet_count: int
+) -> tuple[tuple[bool, ...], ...] | None:
+    if patterns is None:
+        return None
+    normalized = {tuple(bool(value) for value in pattern) for pattern in patterns}
+    if not normalized:
+        raise NetlistError("MOS gate-pattern filter must contain at least one pattern")
+    if any(len(pattern) != mosfet_count for pattern in normalized):
+        raise NetlistError(
+            f"each MOS gate pattern must contain {mosfet_count} commands"
+        )
+    return tuple(sorted(normalized))
+
+
+def _mosfet_path_selection_index(paths: Sequence[MosfetPath]) -> int:
+    values = {
+        MosfetPath.OFF: 0,
+        MosfetPath.CHANNEL: 1,
+        MosfetPath.BODY_DIODE: 2,
+    }
+    result = 0
+    for path in paths:
+        result = result * 3 + values[path]
+    return result
+
+
+def _normalize_half_bridge_pairs(
+    pairs: Sequence[Sequence[int]] | None, mosfet_count: int
+) -> tuple[tuple[int, int], ...]:
+    if pairs is None:
+        return ()
+    normalized: list[tuple[int, int]] = []
+    assigned: set[int] = set()
+    for pair in pairs:
+        if (
+            not isinstance(pair, Sequence)
+            or isinstance(pair, (str, bytes))
+            or len(pair) != 2
+        ):
+            raise NetlistError("each MOS half-bridge pair must contain two indices")
+        upper, lower = (int(pair[0]), int(pair[1]))
+        if (
+            upper == lower
+            or upper < 0
+            or lower < 0
+            or upper >= mosfet_count
+            or lower >= mosfet_count
+            or upper in assigned
+            or lower in assigned
+        ):
+            raise NetlistError("MOS half-bridge pairs contain invalid or repeated indices")
+        assigned.update((upper, lower))
+        normalized.append((upper, lower))
+    return tuple(normalized)
+
+
+def _require_complete_half_bridge_pairs(
+    pairs: Sequence[Sequence[int]], mosfet_count: int
+) -> None:
+    assigned = {index for pair in pairs for index in pair}
+    if len(pairs) * 2 != mosfet_count or assigned != set(range(mosfet_count)):
+        raise NetlistError(
+            "half-bridge MOSFET model requires every MOSFET to belong to exactly one pair"
+        )
+
+
+_HALF_BRIDGE_PATHS: tuple[tuple[MosfetPath, MosfetPath], ...] = (
+    (MosfetPath.OFF, MosfetPath.OFF),
+    (MosfetPath.OFF, MosfetPath.CHANNEL),
+    (MosfetPath.OFF, MosfetPath.BODY_DIODE),
+    (MosfetPath.CHANNEL, MosfetPath.OFF),
+    (MosfetPath.CHANNEL, MosfetPath.BODY_DIODE),
+    (MosfetPath.BODY_DIODE, MosfetPath.OFF),
+    (MosfetPath.BODY_DIODE, MosfetPath.CHANNEL),
+)
+
+_HALF_BRIDGE_APPROX_PATHS: tuple[tuple[MosfetPath, MosfetPath], ...] = (
+    (MosfetPath.OFF, MosfetPath.OFF),
+    (MosfetPath.OFF, MosfetPath.CHANNEL),
+    (MosfetPath.OFF, MosfetPath.BODY_DIODE),
+    (MosfetPath.CHANNEL, MosfetPath.OFF),
+    (MosfetPath.BODY_DIODE, MosfetPath.OFF),
+)
+
+
+def _half_bridge_mosfet_paths(
+    mosfet_count: int,
+    pairs: Sequence[Sequence[int]],
+    *,
+    approximate: bool = False,
+) -> list[tuple[MosfetPath, ...]]:
+    result: list[tuple[MosfetPath, ...]] = []
+    choices = _HALF_BRIDGE_APPROX_PATHS if approximate else _HALF_BRIDGE_PATHS
+    for bridge_states in itertools.product(choices, repeat=len(pairs)):
+        paths = [MosfetPath.OFF] * mosfet_count
+        for (upper, lower), (upper_path, lower_path) in zip(pairs, bridge_states):
+            paths[upper] = upper_path
+            paths[lower] = lower_path
+        result.append(tuple(paths))
+    return result
+
+
+def _reachable_mosfet_paths(
+    mosfet_count: int,
+    include_body_diode_states: bool,
+    gate_patterns: tuple[tuple[bool, ...], ...] | None,
+    half_bridge_pairs: tuple[tuple[int, int], ...] = (),
+) -> list[tuple[MosfetPath, ...]]:
+    if gate_patterns is None:
+        choices: tuple[MosfetPath, ...] = (MosfetPath.OFF, MosfetPath.CHANNEL)
+        if include_body_diode_states:
+            choices += (MosfetPath.BODY_DIODE,)
+        candidates = itertools.product(choices, repeat=mosfet_count)
+    else:
+        reachable: set[tuple[MosfetPath, ...]] = set()
+        off_choices: tuple[MosfetPath, ...] = (MosfetPath.OFF,)
+        if include_body_diode_states:
+            off_choices += (MosfetPath.BODY_DIODE,)
+        for pattern in gate_patterns:
+            choices = tuple(
+                (MosfetPath.CHANNEL,) if command else off_choices
+                for command in pattern
+            )
+            reachable.update(itertools.product(*choices))
+        candidates = reachable
+
+    filtered = [
+        paths
+        for paths in candidates
+        if all(
+            not (
+                paths[upper] == paths[lower] == MosfetPath.BODY_DIODE
+                or paths[upper] == paths[lower] == MosfetPath.CHANNEL
+            )
+            for upper, lower in half_bridge_pairs
+        )
+    ]
+    return sorted(filtered, key=_mosfet_path_selection_index)
+
+
+def _mosfet_gate_aliases(
+    circuit: Circuit,
+) -> tuple[list[Element], list[Element], dict[str, int]]:
+    mosfets = [element for element in circuit.elements if element.kind == "M"]
+    gate_sources = [_gate_source(circuit, mosfet) for mosfet in mosfets]
+    aliases: dict[str, int] = {}
+    for index, source in enumerate(gate_sources):
+        names = {_key(source.name)}
+        if source.name.upper().startswith("V"):
+            names.add(_key(source.name[1:]))
+        for name in names:
+            if name in aliases and aliases[name] != index:
+                raise NetlistError(f"ambiguous MOS gate alias {name!r}")
+            aliases[name] = index
+    return mosfets, gate_sources, aliases
+
+
+def resolve_mosfet_half_bridge_pairs(
+    circuit: Circuit, pairs: Sequence[Sequence[object]]
+) -> tuple[tuple[int, int], ...]:
+    """Resolve named upper/lower gate pairs to MOS instance indices."""
+
+    mosfets, _, aliases = _mosfet_gate_aliases(circuit)
+    resolved: list[tuple[int, int]] = []
+    for pair in pairs:
+        if (
+            not isinstance(pair, Sequence)
+            or isinstance(pair, (str, bytes))
+            or len(pair) != 2
+        ):
+            raise NetlistError("each named MOS half-bridge pair must contain two gates")
+        indices: list[int] = []
+        for name in pair:
+            alias = _key(str(name))
+            if alias not in aliases:
+                raise NetlistError(f"unknown MOS half-bridge gate {name!r}")
+            indices.append(aliases[alias])
+        resolved.append((indices[0], indices[1]))
+    return _normalize_half_bridge_pairs(resolved, len(mosfets))
+
+
+def infer_mosfet_half_bridge_pairs(
+    circuit: Circuit, maximum_series_resistance_ohm: float = 0.1
+) -> tuple[tuple[int, int], ...]:
+    """Infer an unambiguous set of two-level upper/lower MOS pairs.
+
+    Small current-shunt resistors are collapsed only for identifying common DC
+    rails. The actual shared switching node must be directly connected.
+    """
+
+    if maximum_series_resistance_ohm <= 0.0:
+        raise NetlistError("half-bridge inference resistance must be positive")
+    mosfets = [element for element in circuit.elements if element.kind == "M"]
+    if len(mosfets) < 4 or len(mosfets) % 2:
+        raise NetlistError(
+            "half-bridge inference requires an even MOS count covering at least two legs"
+        )
+
+    parents: dict[str, str] = {}
+
+    def find(node: str) -> str:
+        key = _key(node)
+        if key in {"0", "GND"}:
+            key = "0"
+        parents.setdefault(key, key)
+        while parents[key] != key:
+            parents[key] = parents[parents[key]]
+            key = parents[key]
+        return key
+
+    def union(left: str, right: str) -> None:
+        left_root, right_root = find(left), find(right)
+        if left_root != right_root:
+            parents[right_root] = left_root
+
+    for element in circuit.elements:
+        if element.kind != "R":
+            continue
+        try:
+            value = element.numeric_value({})
+        except NetlistError:
+            continue
+        if 0.0 < value <= maximum_series_resistance_ohm:
+            union(element.nodes[0], element.nodes[1])
+
+    candidates: list[tuple[int, int]] = []
+    for upper_index, upper in enumerate(mosfets):
+        for lower_index, lower in enumerate(mosfets):
+            if upper_index == lower_index:
+                continue
+            if _key(upper.nodes[2]) == _key(lower.nodes[0]):
+                candidates.append((upper_index, lower_index))
+
+    participation = [0] * len(mosfets)
+    for upper, lower in candidates:
+        participation[upper] += 1
+        participation[lower] += 1
+    if len(candidates) * 2 != len(mosfets) or any(count != 1 for count in participation):
+        raise NetlistError(
+            "MOS network is not an unambiguous two-level half bridge; "
+            "do not enable inference for NPC or other multi-level legs"
+        )
+
+    rail_groups: dict[tuple[str, str], list[tuple[int, int]]] = {}
+    for upper_index, lower_index in candidates:
+        upper = mosfets[upper_index]
+        lower = mosfets[lower_index]
+        positive_rail = find(upper.nodes[0])
+        negative_rail = find(lower.nodes[2])
+        midpoint = find(upper.nodes[2])
+        if positive_rail == negative_rail or midpoint in {positive_rail, negative_rail}:
+            raise NetlistError("inferred half bridge has collapsed or shorted rails")
+        rail_groups.setdefault((positive_rail, negative_rail), []).append(
+            (upper_index, lower_index)
+        )
+    if any(len(group) < 2 for group in rail_groups.values()):
+        raise NetlistError(
+            "half-bridge inference requires at least two legs on each common DC bus"
+        )
+    return _normalize_half_bridge_pairs(candidates, len(mosfets))
+
+
+def expand_mosfet_gate_scenarios(
+    circuit: Circuit, scenarios: Sequence[Mapping[str, object]]
+) -> tuple[tuple[bool, ...], ...]:
+    """Expand fixed/complementary gate scenarios in MOS instance order."""
+
+    _, gate_sources, aliases = _mosfet_gate_aliases(circuit)
+
+    patterns: set[tuple[bool, ...]] = set()
+    for scenario_index, scenario in enumerate(scenarios, start=1):
+        fixed = scenario.get("fixed", {})
+        pairs = scenario.get("complementary_pairs", [])
+        if not isinstance(fixed, Mapping) or not isinstance(pairs, Sequence):
+            raise NetlistError(f"gate scenario {scenario_index} has invalid fields")
+        assigned: dict[int, bool] = {}
+        for name, value in fixed.items():
+            alias = _key(str(name))
+            if alias not in aliases:
+                raise NetlistError(f"gate scenario {scenario_index}: unknown gate {name!r}")
+            if not isinstance(value, (bool, int)) or int(value) not in {0, 1}:
+                raise NetlistError(
+                    f"gate scenario {scenario_index}: {name!r} must be Boolean"
+                )
+            assigned[aliases[alias]] = bool(value)
+
+        pair_indices: list[tuple[int, int]] = []
+        for pair in pairs:
+            if (
+                not isinstance(pair, Sequence)
+                or isinstance(pair, (str, bytes))
+                or len(pair) != 2
+            ):
+                raise NetlistError(
+                    f"gate scenario {scenario_index}: complementary pair must have two names"
+                )
+            indices = []
+            for name in pair:
+                alias = _key(str(name))
+                if alias not in aliases:
+                    raise NetlistError(
+                        f"gate scenario {scenario_index}: unknown gate {name!r}"
+                    )
+                indices.append(aliases[alias])
+            if indices[0] == indices[1] or any(index in assigned for index in indices):
+                raise NetlistError(
+                    f"gate scenario {scenario_index}: gate assigned more than once"
+                )
+            assigned[indices[0]] = False
+            assigned[indices[1]] = False
+            pair_indices.append((indices[0], indices[1]))
+
+        if len(assigned) != len(gate_sources):
+            missing = [
+                source.name
+                for index, source in enumerate(gate_sources)
+                if index not in assigned
+            ]
+            raise NetlistError(
+                f"gate scenario {scenario_index} does not assign: {', '.join(missing)}"
+            )
+        for choices in itertools.product((False, True), repeat=len(pair_indices)):
+            pattern = [assigned[index] for index in range(len(gate_sources))]
+            for first_on, (first, second) in zip(choices, pair_indices):
+                pattern[first] = first_on
+                pattern[second] = not first_on
+            patterns.add(tuple(pattern))
+    return tuple(sorted(patterns))
 
 
 def _expanded_multi_mosfet_diode_circuit(
@@ -1063,7 +1471,12 @@ def build_multi_diode_switch_model(
 
 
 def piecewise_topology_count(
-    circuit: Circuit, *, include_mosfet_body_diodes: bool = True
+    circuit: Circuit,
+    *,
+    include_mosfet_body_diodes: bool = True,
+    mosfet_gate_patterns: Sequence[Sequence[bool]] | None = None,
+    mosfet_half_bridge_pairs: Sequence[Sequence[int]] | None = None,
+    mosfet_model: str | None = None,
 ) -> int:
     """Return the number of logical PWL states before constructing matrices."""
 
@@ -1075,7 +1488,38 @@ def piecewise_topology_count(
     if not mosfet_count and (diode_count or switch_count):
         return 2 ** (diode_count + switch_count)
     if not diode_count and mosfet_count:
-        return (3 if include_mosfet_body_diodes else 2) ** mosfet_count
+        selected_model = mosfet_model or (
+            MOSFET_MODEL_THREE_STATE
+            if include_mosfet_body_diodes
+            else MOSFET_MODEL_TWO_STATE
+        )
+        if selected_model not in MOSFET_MODELS:
+            raise NetlistError(f"unsupported MOSFET model {selected_model!r}")
+        if selected_model in {
+            MOSFET_MODEL_HALF_BRIDGE,
+            MOSFET_MODEL_HALF_BRIDGE_APPROX,
+        }:
+            normalized_pairs = _normalize_half_bridge_pairs(
+                mosfet_half_bridge_pairs, mosfet_count
+            )
+            _require_complete_half_bridge_pairs(normalized_pairs, mosfet_count)
+            if mosfet_gate_patterns is not None:
+                raise NetlistError(
+                    "gate-pattern filtering is not supported by the half-bridge model"
+                )
+            radix = 5 if selected_model == MOSFET_MODEL_HALF_BRIDGE_APPROX else 7
+            return radix ** len(normalized_pairs)
+        normalized = _normalize_gate_patterns(mosfet_gate_patterns, mosfet_count)
+        return len(
+            _reachable_mosfet_paths(
+                mosfet_count,
+                selected_model != MOSFET_MODEL_TWO_STATE,
+                normalized,
+                _normalize_half_bridge_pairs(
+                    mosfet_half_bridge_pairs, mosfet_count
+                ),
+            )
+        )
     if not include_mosfet_body_diodes and mosfet_count:
         raise NetlistError(
             "ideal bidirectional MOS mode does not support explicit diode devices"
@@ -1091,6 +1535,11 @@ def build_piecewise_model(
     progress: ProgressCallback | None = None,
     *,
     include_mosfet_body_diodes: bool = True,
+    mosfet_gate_patterns: Sequence[Sequence[bool]] | None = None,
+    mosfet_half_bridge_pairs: Sequence[Sequence[int]] | None = None,
+    mosfet_model: str | None = None,
+    match_body_channel_resistance: bool = False,
+    retain_topology_details: bool = True,
 ) -> PiecewiseLinearModel | MultiMosfetLinearModel | MultiMosfetDiodeLinearModel | MultiDiodeSwitchLinearModel:
     """Build the supported diode, MOSFET, and VSWITCH PWL topology family."""
 
@@ -1107,6 +1556,11 @@ def build_piecewise_model(
             device_overrides,
             progress,
             include_body_diode_states=include_mosfet_body_diodes,
+            gate_patterns=mosfet_gate_patterns,
+            half_bridge_pairs=mosfet_half_bridge_pairs,
+            mosfet_model=mosfet_model,
+            match_body_channel_resistance=match_body_channel_resistance,
+            retain_topology_details=retain_topology_details,
         )
     if not include_mosfet_body_diodes and mosfets:
         raise NetlistError(

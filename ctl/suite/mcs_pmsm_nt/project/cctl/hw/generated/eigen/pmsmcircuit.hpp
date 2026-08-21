@@ -4,7 +4,7 @@
 // Source SHA-256: ec6ca113ace0bf79d6e1c865dc646e5c9e246b99540361f586292679199d8d23
 // Matrix equivalence tolerance: 9.9999999999999998e-13
 // Matrix backend: eigen
-// Logical states: 729; unique calculation states: 729.
+// Selection states: 729; stored reachable states: 729; unique calculation states: 729.
 // Do not hand-edit; regenerate from the circuit-data JSON file.
 
 #include <Eigen/Dense>
@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -29,6 +30,7 @@ public:
     static constexpr std::size_t analog_input_count = 7;
     static constexpr std::size_t pwm_input_count = 6;
     static constexpr std::size_t topology_count = 729;
+    static constexpr std::size_t stored_topology_count = 729;
     static constexpr std::size_t calculation_state_count = 729;
     static constexpr const char* matrix_backend = "eigen";
     static constexpr const char* matrix_storage = "archive";
@@ -43,6 +45,7 @@ public:
     static constexpr double short_step_s = 1.0000000000000001e-09;
     static constexpr double matrix_tolerance = 9.9999999999999998e-13;
     static constexpr const char* discretization_method = "backward_euler";
+
 
     struct Inputs {
         std::uint32_t PWM1{0U};
@@ -132,6 +135,7 @@ public:
     std::size_t last_topology_index() const noexcept { return last_topology_index_; }
     std::size_t last_calculation_state_index() const noexcept { return last_calculation_state_index_; }
 
+
 private:
     using StateMatrix = Eigen::Matrix<double, 23, 23>;
     using InputMatrix = Eigen::Matrix<double, 23, 7>;
@@ -152,6 +156,8 @@ private:
         std::size_t D;
         std::size_t output_bias;
     };
+
+    static constexpr std::size_t invalid_topology_index = static_cast<std::size_t>(-1);
 
     template <typename Matrix>
     using MatrixPool = std::vector<Matrix, Eigen::aligned_allocator<Matrix>>;
@@ -270,7 +276,7 @@ private:
         expect_u32(static_cast<std::uint32_t>(state_count), "state count");
         expect_u32(static_cast<std::uint32_t>(analog_input_count), "input count");
         expect_u32(static_cast<std::uint32_t>(signal_count), "signal count");
-        expect_u32(static_cast<std::uint32_t>(topology_count), "topology count");
+        expect_u32(static_cast<std::uint32_t>(stored_topology_count), "topology count");
         expect_u32(static_cast<std::uint32_t>(calculation_state_count),
                    "calculation-state count");
         expect_u32(static_cast<std::uint32_t>(state_matrix_count),
@@ -304,7 +310,7 @@ private:
             throw std::runtime_error("matrix archive payload checksum mismatch");
 
         auto result = std::make_shared<ArchiveData>();
-        result->topology_to_calculation_state.resize(topology_count);
+        result->topology_to_calculation_state.resize(stored_topology_count);
         for (auto& value : result->topology_to_calculation_state) {
             value = read_u32(bytes, cursor);
             if (value >= calculation_state_count)
@@ -367,6 +373,11 @@ private:
     }
     const std::vector<std::size_t>& topology_to_calculation_state() const noexcept {
         return archive_->topology_to_calculation_state;
+    }
+
+    static constexpr std::size_t resolve_stored_topology(
+        std::size_t selection_index) noexcept {
+        return selection_index;
     }
 
     std::size_t select_topology(const Inputs& inputs) {
@@ -437,7 +448,8 @@ private:
 
     const Outputs& step(const Inputs& inputs, bool use_short_step) {
         last_topology_index_ = select_topology(inputs);
-        last_calculation_state_index_ = topology_to_calculation_state()[last_topology_index_];
+        const auto stored_topology_index = resolve_stored_topology(last_topology_index_);
+        last_calculation_state_index_ = topology_to_calculation_state()[stored_topology_index];
         const auto& calculation_state = calculation_states()[last_calculation_state_index_];
         InputVector input_vector;
         input_vector << inputs.VS4, inputs.VS3, inputs.VS2, inputs.IPMSM1_C, inputs.IPMSM1_B, inputs.IPMSM1_A, inputs.VS1;

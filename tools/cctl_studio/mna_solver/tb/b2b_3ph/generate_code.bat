@@ -4,7 +4,8 @@ setlocal EnableExtensions
 set "NETLIST_FILE=B2B_INV.CIR"
 set "MATRIX_TOLERANCE=1E-12"
 set "MATRIX_BACKEND=eigen"
-rem This stress case deliberately uses channel/off bidirectional MOS switches.
+set "MOSFET_MODEL=half_bridge_approx"
+rem The recommended B2B model keeps Vf+Rbody passive states while pruning body paths during commanded conduction.
 
 set "NO_PAUSE=0"
 if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
@@ -36,9 +37,8 @@ if not exist "%NETLIST_PATH%" (
     goto :failed_with_result
 )
 if not exist "%GENERATED_DIR%" mkdir "%GENERATED_DIR%"
-
-echo [1/2] Exporting the 4096-state ideal-MOS circuit data...
-python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method backward_euler --matrix-tolerance "%MATRIX_TOLERANCE%" --ideal-mosfet-switches
+echo [1/2] Exporting the deadtime-aware approximate half-bridge circuit data...
+python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method backward_euler --matrix-tolerance "%MATRIX_TOLERANCE%" --mosfet-model "%MOSFET_MODEL%" --infer-half-bridges
 if errorlevel 1 goto :failed
 echo [2/2] Generating the %MATRIX_BACKEND% archive-backed C++ calculation class...
 python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%GENERATED_DIR%" --backend "%MATRIX_BACKEND%"

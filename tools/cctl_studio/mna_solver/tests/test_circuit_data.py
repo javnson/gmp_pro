@@ -31,6 +31,7 @@ RECTIFIER_DIR = TB_DIR / "rectifier"
 INV_DIR = TB_DIR / "inv"
 BUCK_NPC_DIR = TB_DIR / "buck_npc"
 PMSM_DIR = TB_DIR / "pmsm"
+B2B_DIR = TB_DIR / "b2b_3ph"
 
 
 class CircuitDataTests(unittest.TestCase):
@@ -123,6 +124,14 @@ class CircuitDataTests(unittest.TestCase):
             self.assertEqual(loaded["schema"]["version"], 2)
             self.assertIn("matrix_storage", loaded)
             self.assertNotIn("discrete", loaded["topologies"][0])
+            self.assertIn("continuous_matrix_storage", loaded)
+            self.assertIn("pool_indices", loaded["topologies"][0]["continuous"])
+            self.assertNotIn("A", loaded["topologies"][0]["continuous"])
+            resolved_continuous = data.continuous_topology_data(loaded, 0)
+            np.testing.assert_allclose(
+                resolved_continuous["A"],
+                self.document["topologies"][0]["continuous"]["A"],
+            )
             self.assertEqual(
                 len(loaded["matrix_storage"]["topology_to_calculation_state"]),
                 len(loaded["topologies"]),
@@ -304,7 +313,7 @@ class CircuitDataTests(unittest.TestCase):
         )
         data.validate_circuit_data(document)
         self.assertEqual(document["switching"]["kind"], "multi_mosfet_binary")
-        self.assertFalse(
+        self.assertTrue(
             document["switching"]["selection_uses_previous_terminal_voltage"]
         )
 
@@ -320,7 +329,289 @@ class CircuitDataTests(unittest.TestCase):
             files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
             header = files["header"].read_text(encoding="utf-8")
         self.assertIn("static constexpr std::size_t topology_count = 16", header)
-        self.assertNotIn("body_on_", header)
+        self.assertIn("body_on_", header)
+        self.assertIn("reverse_voltage_", header)
+
+    def test_gate_scenarios_prune_three_state_mos_topologies_and_guard_pairs(self) -> None:
+        source = FSBB_DIR / "FSBB.CIR"
+        circuit = mna.parse_netlist(source)
+        scenario_document = {
+            "half_bridge_pairs": [["PWM1", "PWM2"], ["PWM4", "PWM3"]],
+            "scenarios": [
+                {
+                    "fixed": {"PWM1": 0, "PWM2": 0, "PWM3": 0, "PWM4": 0},
+                    "complementary_pairs": [],
+                },
+                {
+                    "fixed": {},
+                    "complementary_pairs": [
+                        ["PWM1", "PWM2"],
+                        ["PWM4", "PWM3"],
+                    ],
+                },
+            ],
+        }
+        patterns = switched.expand_mosfet_gate_scenarios(
+            circuit, scenario_document["scenarios"]
+        )
+        pairs = switched.resolve_mosfet_half_bridge_pairs(
+            circuit, scenario_document["half_bridge_pairs"]
+        )
+        self.assertEqual(len(patterns), 5)
+        self.assertEqual(
+            switched.piecewise_topology_count(
+                circuit,
+                mosfet_gate_patterns=patterns,
+                mosfet_half_bridge_pairs=pairs,
+            ),
+            25,
+        )
+
+        model = switched.build_piecewise_model(
+            circuit,
+            mosfet_gate_patterns=patterns,
+            mosfet_half_bridge_pairs=pairs,
+        )
+        self.assertEqual(len(model.topologies), 25)
+        document = data.build_circuit_data(
+            model,
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        data.validate_circuit_data(document)
+        self.assertEqual(document["switching"]["topology_count"], 25)
+        self.assertEqual(document["switching"]["selection_topology_count"], 81)
+        self.assertEqual(len(document["switching"]["half_bridge_pairs"]), 2)
+
+        simulator = data.CircuitDataSimulator(document)
+        simulator.step_normal(
+            {"PWM1": 0, "PWM2": 0, "PWM3": 0, "PWM4": 0}, {"VS1": 5.0}
+        )
+        simulator.step_normal(
+            {"PWM1": 1, "PWM2": 0, "PWM3": 1, "PWM4": 0}, {"VS1": 5.0}
+        )
+        with self.assertRaisesRegex(RuntimeError, "simultaneous upper/lower"):
+            simulator.step_normal(
+                {"PWM1": 1, "PWM2": 1, "PWM3": 1, "PWM4": 0}, {"VS1": 5.0}
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "FSBB.json"
+            data.write_circuit_data(data_path, document)
+            files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
+            header = files["header"].read_text(encoding="utf-8")
+        self.assertIn("static constexpr std::size_t topology_count = 81", header)
+        self.assertIn("static constexpr std::size_t stored_topology_count = 25", header)
+        self.assertIn("selection_to_stored_topology", header)
+        self.assertIn("simultaneous upper/lower channel commands", header)
+        self.assertIn("simultaneous body-diode conduction", header)
+
+    def test_half_bridge_inference_accepts_b2b_and_rejects_npc(self) -> None:
+        b2b = mna.parse_netlist(B2B_DIR / "B2B_INV.CIR")
+        inferred = switched.infer_mosfet_half_bridge_pairs(b2b)
+        self.assertEqual(inferred, tuple((index, index + 1) for index in range(0, 12, 2)))
+        self.assertEqual(
+            switched.piecewise_topology_count(
+                b2b,
+                mosfet_model=switched.MOSFET_MODEL_HALF_BRIDGE,
+                mosfet_half_bridge_pairs=inferred,
+            ),
+            117649,
+        )
+
+        npc = mna.parse_netlist(BUCK_NPC_DIR / "BUCK_NPC.CIR")
+        with self.assertRaisesRegex(mna.NetlistError, "NPC|multi-level"):
+            switched.infer_mosfet_half_bridge_pairs(npc)
+
+    def test_half_bridge_model_exports_seven_states_per_pair(self) -> None:
+        source = FSBB_DIR / "FSBB.CIR"
+        circuit = mna.parse_netlist(source)
+        pairs = switched.resolve_mosfet_half_bridge_pairs(
+            circuit, [["PWM1", "PWM2"], ["PWM4", "PWM3"]]
+        )
+        model = switched.build_piecewise_model(
+            circuit,
+            mosfet_model=switched.MOSFET_MODEL_HALF_BRIDGE,
+            mosfet_half_bridge_pairs=pairs,
+        )
+        self.assertEqual(len(model.topologies), 49)
+        self.assertEqual(model.mosfet_model, switched.MOSFET_MODEL_HALF_BRIDGE)
+
+        document = data.build_circuit_data(
+            model,
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        data.validate_circuit_data(document)
+        self.assertEqual(document["switching"]["kind"], "multi_mosfet_half_bridge")
+        self.assertEqual(document["switching"]["topology_count"], 49)
+        self.assertEqual(document["switching"]["selection_topology_count"], 49)
+        self.assertEqual(
+            [item["selection_index"] for item in document["topologies"]],
+            list(range(49)),
+        )
+
+        simulator = data.CircuitDataSimulator(document)
+        simulator.step_normal(
+            {"PWM1": 0, "PWM2": 0, "PWM3": 0, "PWM4": 0}, {"VS1": 5.0}
+        )
+        simulator.step_normal(
+            {"PWM1": 1, "PWM2": 0, "PWM3": 0, "PWM4": 1}, {"VS1": 5.0}
+        )
+        with self.assertRaisesRegex(RuntimeError, "simultaneous upper/lower"):
+            simulator.step_normal(
+                {"PWM1": 1, "PWM2": 1, "PWM3": 0, "PWM4": 1}, {"VS1": 5.0}
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "FSBB.json"
+            data.write_circuit_data(data_path, document)
+            files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
+            header = files["header"].read_text(encoding="utf-8")
+        self.assertIn("static constexpr std::size_t topology_count = 49", header)
+        self.assertIn("topology_index *= 7U", header)
+        self.assertNotIn("selection_to_stored_topology", header)
+
+    def test_matching_body_and_channel_resistance_shares_dynamic_matrices(self) -> None:
+        source = FSBB_DIR / "FSBB.CIR"
+        circuit = mna.parse_netlist(source)
+        pairs = switched.resolve_mosfet_half_bridge_pairs(
+            circuit, [["PWM1", "PWM2"], ["PWM4", "PWM3"]]
+        )
+        model = switched.build_piecewise_model(
+            circuit,
+            mosfet_model=switched.MOSFET_MODEL_HALF_BRIDGE,
+            mosfet_half_bridge_pairs=pairs,
+            match_body_channel_resistance=True,
+        )
+        self.assertTrue(model.matched_body_channel_resistance)
+        for parameters in model.parameters:
+            self.assertEqual(parameters.body_on_resistance, parameters.on_resistance)
+
+        document = data.build_circuit_data(
+            model,
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        self.assertTrue(document["switching"]["body_channel_resistance_matched"])
+        self.assertIn(
+            "matched",
+            document["devices"]["mosfets"][0]["extraction"]["body_on_resistance"],
+        )
+        by_paths = {
+            tuple(item["mosfet_paths"]): item for item in document["topologies"]
+        }
+        channel = by_paths[("channel", "off", "off", "off")]["continuous"]
+        body = by_paths[("body_diode", "off", "off", "off")]["continuous"]
+        for matrix in ("A", "B", "C", "D"):
+            np.testing.assert_allclose(channel[matrix], body[matrix], rtol=0.0, atol=1e-12)
+        self.assertFalse(np.allclose(channel["bias"], body["bias"]))
+
+        unmatched_document = data.build_circuit_data(
+            switched.build_piecewise_model(
+                circuit,
+                mosfet_model=switched.MOSFET_MODEL_HALF_BRIDGE,
+                mosfet_half_bridge_pairs=pairs,
+            ),
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        matched_plan = codegen.build_matrix_dedup_plan(document)
+        unmatched_plan = codegen.build_matrix_dedup_plan(unmatched_document)
+        self.assertLess(
+            len(matched_plan.pools["StateMatrix"]),
+            len(unmatched_plan.pools["StateMatrix"]),
+        )
+        with self.assertRaisesRegex(mna.NetlistError, "three_state or exact"):
+            switched.build_piecewise_model(
+                circuit,
+                mosfet_model=switched.MOSFET_MODEL_HALF_BRIDGE_APPROX,
+                mosfet_half_bridge_pairs=pairs,
+                match_body_channel_resistance=True,
+            )
+
+    def test_approximate_half_bridge_retains_passive_body_diode_states(self) -> None:
+        source = FSBB_DIR / "FSBB.CIR"
+        circuit = mna.parse_netlist(source)
+        pairs = switched.resolve_mosfet_half_bridge_pairs(
+            circuit, [["PWM1", "PWM2"], ["PWM4", "PWM3"]]
+        )
+        model = switched.build_piecewise_model(
+            circuit,
+            mosfet_model=switched.MOSFET_MODEL_HALF_BRIDGE_APPROX,
+            mosfet_half_bridge_pairs=pairs,
+        )
+        self.assertEqual(len(model.topologies), 25)
+        self.assertNotEqual(
+            model.parameters[0].on_resistance,
+            model.parameters[0].body_on_resistance,
+        )
+        document = data.build_circuit_data(
+            model,
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        data.validate_circuit_data(document)
+        self.assertEqual(
+            document["switching"]["kind"], "multi_mosfet_half_bridge_approx"
+        )
+        self.assertEqual(document["switching"]["topology_count"], 25)
+        self.assertFalse(
+            document["switching"]["passive_rectification_reuses_channel_topology"]
+        )
+        self.assertEqual(
+            document["switching"]["half_bridge_operating_modes"],
+            [
+                "blocked",
+                "lower_channel",
+                "lower_passive_rectification",
+                "upper_channel",
+                "upper_passive_rectification",
+            ],
+        )
+        by_paths = {
+            tuple(item["mosfet_paths"]): item for item in document["topologies"]
+        }
+        channel = by_paths[("channel", "off", "off", "off")]["continuous"]
+        passive = by_paths[("body_diode", "off", "off", "off")]["continuous"]
+        self.assertFalse(np.allclose(channel["A"], passive["A"]))
+        self.assertFalse(np.allclose(channel["bias"], passive["bias"]))
+
+        simulator = data.CircuitDataSimulator(document)
+        first_switch = document["switching"]["switches"][0]
+        simulator.signals[first_switch["source_signal_index"]] = (
+            first_switch["body_forward_threshold_V"] + 1.0
+        )
+        simulator.signals[first_switch["drain_signal_index"]] = 0.0
+        selected = simulator._select(
+            {"PWM1": 0, "PWM2": 0, "PWM3": 0, "PWM4": 0}
+        )
+        self.assertEqual(selected[0], switched.MosfetPath.BODY_DIODE.value)
+        self.assertEqual(
+            simulator.half_bridge_modes[0], "upper_passive_rectification"
+        )
+        selected = simulator._select(
+            {"PWM1": 1, "PWM2": 0, "PWM3": 0, "PWM4": 0}
+        )
+        self.assertEqual(selected[0], switched.MosfetPath.CHANNEL.value)
+        self.assertEqual(simulator.half_bridge_modes[0], "upper_channel")
+
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "FSBB.json"
+            data.write_circuit_data(data_path, document)
+            files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
+            header = files["header"].read_text(encoding="utf-8")
+        self.assertIn("static constexpr std::size_t topology_count = 25", header)
+        self.assertIn("topology_index *= 5U", header)
+        self.assertIn("upper_body_threshold", header)
+        self.assertIn("upper_passive_rectification", header)
+        self.assertIn("last_half_bridge_modes", header)
+        self.assertIn("simultaneous reverse conduction", header)
 
     def test_single_phase_inverter_exports_differential_voltage_probe(self) -> None:
         source = SINV_DIR / "SINV.CIR"

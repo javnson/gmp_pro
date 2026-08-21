@@ -4,7 +4,7 @@
 // Source SHA-256: 29dd58452859fb3d7ef583318ad36b65bff3da7a26cdaf445da34bb85de2240a
 // Matrix equivalence tolerance: 9.9999999999999998e-13
 // Matrix backend: eigen
-// Logical states: 4096; unique calculation states: 4096.
+// Selection states: 15625; stored reachable states: 15625; unique calculation states: 15625.
 // Do not hand-edit; regenerate from the circuit-data JSON file.
 
 #include <Eigen/Dense>
@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -28,14 +29,15 @@ public:
     static constexpr std::size_t signal_count = 35;
     static constexpr std::size_t analog_input_count = 3;
     static constexpr std::size_t pwm_input_count = 12;
-    static constexpr std::size_t topology_count = 4096;
-    static constexpr std::size_t calculation_state_count = 4096;
+    static constexpr std::size_t topology_count = 15625;
+    static constexpr std::size_t stored_topology_count = 15625;
+    static constexpr std::size_t calculation_state_count = 15625;
     static constexpr const char* matrix_backend = "eigen";
     static constexpr const char* matrix_storage = "archive";
     static constexpr const char* archive_filename = "b2binvcircuit.archive";
-    static constexpr std::size_t state_matrix_count = 8192;
-    static constexpr std::size_t input_matrix_count = 3588;
-    static constexpr std::size_t state_vector_count = 1;
+    static constexpr std::size_t state_matrix_count = 31250;
+    static constexpr std::size_t input_matrix_count = 3096;
+    static constexpr std::size_t state_vector_count = 29793;
     static constexpr std::size_t signal_matrix_count = 1;
     static constexpr std::size_t signal_input_matrix_count = 1;
     static constexpr std::size_t signal_vector_count = 1;
@@ -43,6 +45,17 @@ public:
     static constexpr double short_step_s = 1.0000000000000001e-09;
     static constexpr double matrix_tolerance = 9.9999999999999998e-13;
     static constexpr const char* discretization_method = "backward_euler";
+    enum class HalfBridgeOperatingMode : std::uint8_t {
+        blocked,
+        lower_channel,
+        lower_passive_rectification,
+        upper_channel,
+        upper_passive_rectification,
+    };
+    static constexpr std::size_t half_bridge_count = 6;
+    using HalfBridgeOperatingModes =
+        std::array<HalfBridgeOperatingMode, half_bridge_count>;
+
 
     struct Inputs {
         std::uint32_t PWM1{0U};
@@ -100,7 +113,8 @@ public:
     void reset() {
         state_.setZero();
         signals_.setZero();
-
+        body_on_.fill(false);
+        half_bridge_modes_.fill(HalfBridgeOperatingMode::blocked);
         last_topology_index_ = 0;
         last_calculation_state_index_ = topology_to_calculation_state()[0];
         output = Outputs{};
@@ -129,6 +143,10 @@ public:
     const auto& state() const noexcept { return state_; }
     std::size_t last_topology_index() const noexcept { return last_topology_index_; }
     std::size_t last_calculation_state_index() const noexcept { return last_calculation_state_index_; }
+    const HalfBridgeOperatingModes& last_half_bridge_modes() const noexcept {
+        return half_bridge_modes_;
+    }
+
 
 private:
     using StateMatrix = Eigen::Matrix<double, 23, 23>;
@@ -150,6 +168,8 @@ private:
         std::size_t D;
         std::size_t output_bias;
     };
+
+    static constexpr std::size_t invalid_topology_index = static_cast<std::size_t>(-1);
 
     template <typename Matrix>
     using MatrixPool = std::vector<Matrix, Eigen::aligned_allocator<Matrix>>;
@@ -268,7 +288,7 @@ private:
         expect_u32(static_cast<std::uint32_t>(state_count), "state count");
         expect_u32(static_cast<std::uint32_t>(analog_input_count), "input count");
         expect_u32(static_cast<std::uint32_t>(signal_count), "signal count");
-        expect_u32(static_cast<std::uint32_t>(topology_count), "topology count");
+        expect_u32(static_cast<std::uint32_t>(stored_topology_count), "topology count");
         expect_u32(static_cast<std::uint32_t>(calculation_state_count),
                    "calculation-state count");
         expect_u32(static_cast<std::uint32_t>(state_matrix_count),
@@ -302,7 +322,7 @@ private:
             throw std::runtime_error("matrix archive payload checksum mismatch");
 
         auto result = std::make_shared<ArchiveData>();
-        result->topology_to_calculation_state.resize(topology_count);
+        result->topology_to_calculation_state.resize(stored_topology_count);
         for (auto& value : result->topology_to_calculation_state) {
             value = read_u32(bytes, cursor);
             if (value >= calculation_state_count)
@@ -367,26 +387,201 @@ private:
         return archive_->topology_to_calculation_state;
     }
 
+    static constexpr std::size_t resolve_stored_topology(
+        std::size_t selection_index) noexcept {
+        return selection_index;
+    }
+
     std::size_t select_topology(const Inputs& inputs) {
+        constexpr double hysteresis = 9.9999999999999995e-07;
         std::size_t topology_index = 0U;
-        topology_index = topology_index * 2U + (inputs.PWM3 != 0U ? 1U : 0U);
-        topology_index = topology_index * 2U + (inputs.PWM4 != 0U ? 1U : 0U);
-        topology_index = topology_index * 2U + (inputs.PWM1 != 0U ? 1U : 0U);
-        topology_index = topology_index * 2U + (inputs.PWM2 != 0U ? 1U : 0U);
-        topology_index = topology_index * 2U + (inputs.PWM5 != 0U ? 1U : 0U);
-        topology_index = topology_index * 2U + (inputs.PWM6 != 0U ? 1U : 0U);
-        topology_index = topology_index * 2U + (inputs.PWM9 != 0U ? 1U : 0U);
-        topology_index = topology_index * 2U + (inputs.PWM10 != 0U ? 1U : 0U);
-        topology_index = topology_index * 2U + (inputs.PWM7 != 0U ? 1U : 0U);
-        topology_index = topology_index * 2U + (inputs.PWM8 != 0U ? 1U : 0U);
-        topology_index = topology_index * 2U + (inputs.PWM11 != 0U ? 1U : 0U);
-        topology_index = topology_index * 2U + (inputs.PWM12 != 0U ? 1U : 0U);
+        topology_index *= 5U;
+        if (inputs.PWM3 != 0U && inputs.PWM4 != 0U)
+            throw std::runtime_error("half bridge has simultaneous upper/lower channel commands: PWM3/PWM4");
+        if (inputs.PWM3 != 0U) {
+            body_on_[0] = body_on_[1] = false;
+            half_bridge_modes_[0] = HalfBridgeOperatingMode::upper_channel;
+            topology_index += 3U;
+        } else if (inputs.PWM4 != 0U) {
+            body_on_[0] = body_on_[1] = false;
+            half_bridge_modes_[0] = HalfBridgeOperatingMode::lower_channel;
+            topology_index += 1U;
+        } else {
+            const double upper_reverse_voltage_0 = signals_(12) - signals_(11);
+            const double lower_reverse_voltage_1 = signals_(14) - signals_(13);
+            constexpr double upper_body_threshold_0 = 0.80000000000000004;
+            constexpr double lower_body_threshold_1 = 0.80000000000000004;
+            body_on_[0] = upper_reverse_voltage_0 >= upper_body_threshold_0 + (body_on_[0] ? -hysteresis : hysteresis);
+            body_on_[1] = lower_reverse_voltage_1 >= lower_body_threshold_1 + (body_on_[1] ? -hysteresis : hysteresis);
+            if (body_on_[0] && body_on_[1])
+                throw std::runtime_error("half bridge entered impossible simultaneous reverse conduction: PWM3/PWM4");
+            if (body_on_[0]) {
+                half_bridge_modes_[0] = HalfBridgeOperatingMode::upper_passive_rectification;
+                topology_index += 4U;
+            } else if (body_on_[1]) {
+                half_bridge_modes_[0] = HalfBridgeOperatingMode::lower_passive_rectification;
+                topology_index += 2U;
+            } else {
+                half_bridge_modes_[0] = HalfBridgeOperatingMode::blocked;
+            }
+        }
+        topology_index *= 5U;
+        if (inputs.PWM1 != 0U && inputs.PWM2 != 0U)
+            throw std::runtime_error("half bridge has simultaneous upper/lower channel commands: PWM1/PWM2");
+        if (inputs.PWM1 != 0U) {
+            body_on_[2] = body_on_[3] = false;
+            half_bridge_modes_[1] = HalfBridgeOperatingMode::upper_channel;
+            topology_index += 3U;
+        } else if (inputs.PWM2 != 0U) {
+            body_on_[2] = body_on_[3] = false;
+            half_bridge_modes_[1] = HalfBridgeOperatingMode::lower_channel;
+            topology_index += 1U;
+        } else {
+            const double upper_reverse_voltage_2 = signals_(16) - signals_(15);
+            const double lower_reverse_voltage_3 = signals_(18) - signals_(17);
+            constexpr double upper_body_threshold_2 = 0.80000000000000004;
+            constexpr double lower_body_threshold_3 = 0.80000000000000004;
+            body_on_[2] = upper_reverse_voltage_2 >= upper_body_threshold_2 + (body_on_[2] ? -hysteresis : hysteresis);
+            body_on_[3] = lower_reverse_voltage_3 >= lower_body_threshold_3 + (body_on_[3] ? -hysteresis : hysteresis);
+            if (body_on_[2] && body_on_[3])
+                throw std::runtime_error("half bridge entered impossible simultaneous reverse conduction: PWM1/PWM2");
+            if (body_on_[2]) {
+                half_bridge_modes_[1] = HalfBridgeOperatingMode::upper_passive_rectification;
+                topology_index += 4U;
+            } else if (body_on_[3]) {
+                half_bridge_modes_[1] = HalfBridgeOperatingMode::lower_passive_rectification;
+                topology_index += 2U;
+            } else {
+                half_bridge_modes_[1] = HalfBridgeOperatingMode::blocked;
+            }
+        }
+        topology_index *= 5U;
+        if (inputs.PWM5 != 0U && inputs.PWM6 != 0U)
+            throw std::runtime_error("half bridge has simultaneous upper/lower channel commands: PWM5/PWM6");
+        if (inputs.PWM5 != 0U) {
+            body_on_[4] = body_on_[5] = false;
+            half_bridge_modes_[2] = HalfBridgeOperatingMode::upper_channel;
+            topology_index += 3U;
+        } else if (inputs.PWM6 != 0U) {
+            body_on_[4] = body_on_[5] = false;
+            half_bridge_modes_[2] = HalfBridgeOperatingMode::lower_channel;
+            topology_index += 1U;
+        } else {
+            const double upper_reverse_voltage_4 = signals_(20) - signals_(19);
+            const double lower_reverse_voltage_5 = signals_(22) - signals_(21);
+            constexpr double upper_body_threshold_4 = 0.80000000000000004;
+            constexpr double lower_body_threshold_5 = 0.80000000000000004;
+            body_on_[4] = upper_reverse_voltage_4 >= upper_body_threshold_4 + (body_on_[4] ? -hysteresis : hysteresis);
+            body_on_[5] = lower_reverse_voltage_5 >= lower_body_threshold_5 + (body_on_[5] ? -hysteresis : hysteresis);
+            if (body_on_[4] && body_on_[5])
+                throw std::runtime_error("half bridge entered impossible simultaneous reverse conduction: PWM5/PWM6");
+            if (body_on_[4]) {
+                half_bridge_modes_[2] = HalfBridgeOperatingMode::upper_passive_rectification;
+                topology_index += 4U;
+            } else if (body_on_[5]) {
+                half_bridge_modes_[2] = HalfBridgeOperatingMode::lower_passive_rectification;
+                topology_index += 2U;
+            } else {
+                half_bridge_modes_[2] = HalfBridgeOperatingMode::blocked;
+            }
+        }
+        topology_index *= 5U;
+        if (inputs.PWM9 != 0U && inputs.PWM10 != 0U)
+            throw std::runtime_error("half bridge has simultaneous upper/lower channel commands: PWM9/PWM10");
+        if (inputs.PWM9 != 0U) {
+            body_on_[6] = body_on_[7] = false;
+            half_bridge_modes_[3] = HalfBridgeOperatingMode::upper_channel;
+            topology_index += 3U;
+        } else if (inputs.PWM10 != 0U) {
+            body_on_[6] = body_on_[7] = false;
+            half_bridge_modes_[3] = HalfBridgeOperatingMode::lower_channel;
+            topology_index += 1U;
+        } else {
+            const double upper_reverse_voltage_6 = signals_(24) - signals_(23);
+            const double lower_reverse_voltage_7 = signals_(26) - signals_(25);
+            constexpr double upper_body_threshold_6 = 0.80000000000000004;
+            constexpr double lower_body_threshold_7 = 0.80000000000000004;
+            body_on_[6] = upper_reverse_voltage_6 >= upper_body_threshold_6 + (body_on_[6] ? -hysteresis : hysteresis);
+            body_on_[7] = lower_reverse_voltage_7 >= lower_body_threshold_7 + (body_on_[7] ? -hysteresis : hysteresis);
+            if (body_on_[6] && body_on_[7])
+                throw std::runtime_error("half bridge entered impossible simultaneous reverse conduction: PWM9/PWM10");
+            if (body_on_[6]) {
+                half_bridge_modes_[3] = HalfBridgeOperatingMode::upper_passive_rectification;
+                topology_index += 4U;
+            } else if (body_on_[7]) {
+                half_bridge_modes_[3] = HalfBridgeOperatingMode::lower_passive_rectification;
+                topology_index += 2U;
+            } else {
+                half_bridge_modes_[3] = HalfBridgeOperatingMode::blocked;
+            }
+        }
+        topology_index *= 5U;
+        if (inputs.PWM7 != 0U && inputs.PWM8 != 0U)
+            throw std::runtime_error("half bridge has simultaneous upper/lower channel commands: PWM7/PWM8");
+        if (inputs.PWM7 != 0U) {
+            body_on_[8] = body_on_[9] = false;
+            half_bridge_modes_[4] = HalfBridgeOperatingMode::upper_channel;
+            topology_index += 3U;
+        } else if (inputs.PWM8 != 0U) {
+            body_on_[8] = body_on_[9] = false;
+            half_bridge_modes_[4] = HalfBridgeOperatingMode::lower_channel;
+            topology_index += 1U;
+        } else {
+            const double upper_reverse_voltage_8 = signals_(28) - signals_(27);
+            const double lower_reverse_voltage_9 = signals_(30) - signals_(29);
+            constexpr double upper_body_threshold_8 = 0.80000000000000004;
+            constexpr double lower_body_threshold_9 = 0.80000000000000004;
+            body_on_[8] = upper_reverse_voltage_8 >= upper_body_threshold_8 + (body_on_[8] ? -hysteresis : hysteresis);
+            body_on_[9] = lower_reverse_voltage_9 >= lower_body_threshold_9 + (body_on_[9] ? -hysteresis : hysteresis);
+            if (body_on_[8] && body_on_[9])
+                throw std::runtime_error("half bridge entered impossible simultaneous reverse conduction: PWM7/PWM8");
+            if (body_on_[8]) {
+                half_bridge_modes_[4] = HalfBridgeOperatingMode::upper_passive_rectification;
+                topology_index += 4U;
+            } else if (body_on_[9]) {
+                half_bridge_modes_[4] = HalfBridgeOperatingMode::lower_passive_rectification;
+                topology_index += 2U;
+            } else {
+                half_bridge_modes_[4] = HalfBridgeOperatingMode::blocked;
+            }
+        }
+        topology_index *= 5U;
+        if (inputs.PWM11 != 0U && inputs.PWM12 != 0U)
+            throw std::runtime_error("half bridge has simultaneous upper/lower channel commands: PWM11/PWM12");
+        if (inputs.PWM11 != 0U) {
+            body_on_[10] = body_on_[11] = false;
+            half_bridge_modes_[5] = HalfBridgeOperatingMode::upper_channel;
+            topology_index += 3U;
+        } else if (inputs.PWM12 != 0U) {
+            body_on_[10] = body_on_[11] = false;
+            half_bridge_modes_[5] = HalfBridgeOperatingMode::lower_channel;
+            topology_index += 1U;
+        } else {
+            const double upper_reverse_voltage_10 = signals_(32) - signals_(31);
+            const double lower_reverse_voltage_11 = signals_(34) - signals_(33);
+            constexpr double upper_body_threshold_10 = 0.80000000000000004;
+            constexpr double lower_body_threshold_11 = 0.80000000000000004;
+            body_on_[10] = upper_reverse_voltage_10 >= upper_body_threshold_10 + (body_on_[10] ? -hysteresis : hysteresis);
+            body_on_[11] = lower_reverse_voltage_11 >= lower_body_threshold_11 + (body_on_[11] ? -hysteresis : hysteresis);
+            if (body_on_[10] && body_on_[11])
+                throw std::runtime_error("half bridge entered impossible simultaneous reverse conduction: PWM11/PWM12");
+            if (body_on_[10]) {
+                half_bridge_modes_[5] = HalfBridgeOperatingMode::upper_passive_rectification;
+                topology_index += 4U;
+            } else if (body_on_[11]) {
+                half_bridge_modes_[5] = HalfBridgeOperatingMode::lower_passive_rectification;
+                topology_index += 2U;
+            } else {
+                half_bridge_modes_[5] = HalfBridgeOperatingMode::blocked;
+            }
+        }
         return topology_index;
     }
 
     const Outputs& step(const Inputs& inputs, bool use_short_step) {
         last_topology_index_ = select_topology(inputs);
-        last_calculation_state_index_ = topology_to_calculation_state()[last_topology_index_];
+        const auto stored_topology_index = resolve_stored_topology(last_topology_index_);
+        last_calculation_state_index_ = topology_to_calculation_state()[stored_topology_index];
         const auto& calculation_state = calculation_states()[last_calculation_state_index_];
         InputVector input_vector;
         input_vector << inputs.VS4, inputs.VS3, inputs.VS2;
@@ -419,7 +614,8 @@ private:
     std::shared_ptr<const ArchiveData> archive_;
     StateVector state_{StateVector::Zero()};
     SignalVector signals_{SignalVector::Zero()};
-
+    std::array<bool, 12> body_on_{};
+    HalfBridgeOperatingModes half_bridge_modes_{};
     std::size_t last_topology_index_{0};
     std::size_t last_calculation_state_index_{0};
 };
