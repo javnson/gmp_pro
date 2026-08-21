@@ -22,7 +22,7 @@ SysConfig 工具中值得采用的分层方式：元件属性和工程连线属�
 
 ## 快速验证
 
-在仓库根目录执行：
+先运行 `tools\gmp_installer\activate_env.bat` 激活已安装的 GMP 私有环境，再在仓库根目录执行：
 
 ```powershell
 python tools/cctl_studio/cctl_studio.py list-components

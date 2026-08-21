@@ -28,7 +28,8 @@ file format. Vendor-specific PSpice/HSPICE/Spectre syntax may still need transla
 
 ## Try it
 
-From the repository root:
+Run `tools\gmp_installer\activate_env.bat` to activate the installed GMP private
+environment, then execute these commands from the repository root:
 
 ```powershell
 python tools/cctl_studio/cctl_studio.py list-components

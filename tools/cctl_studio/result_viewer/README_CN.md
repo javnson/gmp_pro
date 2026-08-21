@@ -4,7 +4,9 @@
 
 ## 启动
 
-先使用 GMP 安装程序配置环境变量，然后双击 `run_result_viewer.bat`，也可把结果文件作为参数传入：
+先使用 GMP 私有环境安装程序完成安装并配置 `GMP_PRO_LOCATION`，然后双击
+`run_result_viewer.bat`。该脚本会通过环境守卫检查安装状态，并显式使用
+`%GMP_PRO_LOCATION%\bin\python\python.exe`，不会意外调用系统 Python。也可把结果文件作为参数传入：
 
 ```bat
 run_result_viewer.bat E:\path\to\mcs_pmsm_nt_cctl.csv
