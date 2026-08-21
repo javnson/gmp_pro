@@ -36,6 +36,7 @@ csp/c28x_syscfg/sdpe_component/         C2000 board schemas and entities
 ctl/suite/<suite>/sdpe_general/         suite-wide parameters
 ctl/suite/<suite>/project/<target>/
   sdpe_mgr/                             target requirements and output
+    private_hardware/<category>/        project-owned entity sources
 ```
 
 All repository paths are resolved from `GMP_PRO_LOCATION`. Generated files and
@@ -43,6 +44,13 @@ project data must not contain developer-machine absolute paths.
 The library search paths are declared once in `sdpe_settings.json`; both the
 CTL hardware library and the CSP C2000 board-component library are therefore
 available to the CLI, GUI, validation and project generators.
+
+When one target needs a calibrated or modified version of reusable hardware,
+select it on the Project page and use `Make private copy`. SDPE assigns a new
+globally unique entity ID, writes the JSON beside that project's requirement,
+and updates the project hardware and binding references. Project generation
+automatically discovers `private_hardware`; an ID collision is an error rather
+than an implicit override of the system preset.
 
 Generated project headers and `*_matlab_init.m` files duplicate information in
 the SDPE requirements and library, so they may be ignored in the main GMP

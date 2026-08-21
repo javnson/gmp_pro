@@ -854,9 +854,33 @@ def discretize(model: StateSpaceModel, dt: float, method: str = "forward_euler")
         Ad = np.linalg.solve(lhs, np.eye(model.A.shape[0]))
         Bd = np.linalg.solve(lhs, dt * model.B)
         normalized = "backward_euler"
+    elif normalized in {"rk4", "runge_kutta_4", "classical_rk4"}:
+        # For an affine LTI stage with a zero-order-held input, classical RK4
+        # reduces exactly to one precomputed affine map.  Runtime cost is thus
+        # the same matrix/vector expression as the Euler backends.
+        identity = np.eye(model.A.shape[0])
+        A2 = model.A @ model.A
+        A3 = A2 @ model.A
+        A4 = A3 @ model.A
+        Ad = (
+            identity
+            + dt * model.A
+            + (dt**2 / 2.0) * A2
+            + (dt**3 / 6.0) * A3
+            + (dt**4 / 24.0) * A4
+        )
+        input_integral = (
+            dt * identity
+            + (dt**2 / 2.0) * model.A
+            + (dt**3 / 6.0) * A2
+            + (dt**4 / 24.0) * A3
+        )
+        Bd = input_integral @ model.B
+        normalized = "rk4"
     else:
         raise ValueError(
-            f"unknown discretization method {method!r}; available: forward_euler, backward_euler"
+            f"unknown discretization method {method!r}; available: "
+            "forward_euler, backward_euler, rk4"
         )
     return DiscreteModel(
         Ad, Bd, model.C.copy(), model.D.copy(), model.F.copy(), dt, normalized,
@@ -1070,7 +1094,11 @@ def _build_parser() -> argparse.ArgumentParser:
         command.add_argument("--param", action="append", default=[], metavar="NAME=VALUE")
         if name in {"discretize", "simulate"}:
             command.add_argument("--dt", type=_cli_spice_value, required=True)
-            command.add_argument("--method", default="forward_euler")
+            command.add_argument(
+                "--method",
+                choices=("forward_euler", "backward_euler", "rk4"),
+                default="forward_euler",
+            )
             if name == "simulate":
                 command.add_argument("--duration", type=_cli_spice_value, required=True)
                 command.add_argument("--input", action="append", default=[], metavar="NAME=VALUE")

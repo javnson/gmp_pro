@@ -40,11 +40,18 @@ The netlist exposes seven final conditioning nodes named `VADC_VDC`,
 `VADC_VA/VB/VC`, and `VADC_IA/IB/IC`; circuit JSON marks them with
 `role=adc_sample_voltage` and an `adc_channel`. Conversion is
 `floor(clamp(VADC,0,Vref)/Vref*2^N)`, saturated to `2^N-1` (3.3 V, 12 bit in
-this project). Controller scaling matches the netlist's actual analog front end:
-1/48 voltage dividers, 0.055 V/A current sensitivity, and 1.65 V current bias.
+this project). The project-private `mcs_pmsm_nt_cctl_inverter` SDPE entity binds
+the 2136SINV simulation calibration: 1/48 voltage dividers, 5 mOhm times 15 or
+0.075 V/A current sensitivity, and 1.65 V current bias. The netlist uses 30 kOhm
+feedback resistors to match the global 2136SINV gain. Before compilation,
+`hw/validate_generated_model.py` recovers these DC gains from the generated
+matrices and compares them with the private SDPE parameters.
 The handwritten binding also follows the netlist's physical A/B/C shunt routing,
 which is labeled `VADC_IC/IB/IA` respectively. CSV records include all seven raw
 ADC result codes.
+Open large result files with `tools/cctl_studio/result_viewer/run_result_viewer.bat`;
+it loads selected columns in the background, preserves extrema while decimating,
+and supports independent multi-panel curves with linked zoom.
 
 The reusable `cctl/dsa` SPSC record ring is allocation-free and lock-free after
 initialization. The `csp/cctl` host runtime exposes `initialize`, `step`,
@@ -109,7 +116,7 @@ motor every circuit step; it adds no multirate hold or extra coupling delay.
 Values 2 and 4 remain available for accuracy comparisons.
 
 On the current machine, the 4 s, 40,000,000-step, 23-state/729-topology Release
-Eigen regression takes 9.55 s. A profiled run to `NUL` takes about 9.11 s at
+Eigen regression takes about 9.4 s. A profiled run to `NUL` takes about 9.11 s at
 4.39 Mstep/s, versus 12.15 s with RK4. The last-50-ms mean-speed difference from
 RK4 is about 0.003 rpm and the closed-loop regression passes. Formatting and
 writing 80,000 records (about 22.45 MB) keeps the asynchronous output worker busy
@@ -124,7 +131,8 @@ about 12.6 s, so Eigen remains the default.
 
 The Eigen archive is read and validated only while constructing `PmsmCircuit`;
 simulation steps perform no file I/O. For the current 23-state, 729-topology
-model, the JSON is 181,466,029 bytes. The formerly embedded Eigen header was
+model, compact schema-v2 JSON is about 77.2 MB after pooling runtime matrices. The pools
+retain 1,037,408 of 1,604,529 logical coefficients, a 35.35% reduction. The formerly embedded Eigen header was
 about 24.66 MB; the split output is about 23 KB of header plus an 8.33 MB archive.
 Both JSON and archive are reproducible and excluded from Git. A deployment must
 place `pmsmcircuit.archive` in the process working directory or pass an explicit
@@ -139,6 +147,14 @@ handoff every 100 ns without overlap. A Jacobi-style one-step lag could overlap
 work, but changes the numerical model and is not a transparent optimization.
 The exact solver therefore remains one numerical worker while file and console
 workers run concurrently with it.
+
+`hw/generate_code.bat` accepts `DISCRETIZATION_METHOD=forward_euler`,
+`backward_euler`, or `rk4`. The affine-LTI RK4 backend is precomputed into one
+matrix update, so it adds no runtime stages. This particular circuit is highly
+stiff because of its pF-scale conditioning/parasitic capacitances, however, and
+RK4 at 100 ns produces a non-finite first step. Backward Euler therefore remains
+the project default; RK4 is intended for less-stiff topologies or smaller-step
+accuracy experiments.
 
 Manual execution pauses through `system("@pause")` by default. CTest passes
 `--no-pause`; `--output <path>` overrides the CSV destination.

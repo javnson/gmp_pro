@@ -51,6 +51,33 @@ class SDPELibrary:
                 self.entity_files[entity_id] = path
         return self
 
+    def add_entity_directory(self, entity_dir: Path) -> None:
+        """Add an entity source directory after initial library discovery.
+
+        Project generators use this for ``private_hardware`` directories next
+        to an SDPE requirement.  IDs remain global within the composed project,
+        so an accidental collision is reported instead of silently shadowing a
+        system preset.
+        """
+
+        directory = entity_dir.resolve()
+        if directory in [path.resolve() for path in self.entity_dirs]:
+            return
+        self.entity_dirs.append(directory)
+        if not directory.exists():
+            return
+        for path in sorted(directory.rglob("*.json")):
+            data = read_json(path)
+            entity_id = data.get("id")
+            if not entity_id:
+                raise SDPEError(f"Entity file {path} has no 'id'.")
+            if entity_id in self.entity_files:
+                raise SDPEError(
+                    f"Duplicate entity id: {entity_id} ({self.entity_files[entity_id]} and {path})"
+                )
+            self.entity_files[entity_id] = path
+        self._entities.clear()
+
     def schema(self, schema_id: str) -> HardwareSchema:
         """Get a schema by id."""
 

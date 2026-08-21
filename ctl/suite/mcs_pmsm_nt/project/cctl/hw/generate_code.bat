@@ -4,6 +4,7 @@ setlocal EnableExtensions
 set "NETLIST_FILE=PMSM.CIR"
 set "MATRIX_TOLERANCE=1E-12"
 if not defined MATRIX_BACKEND set "MATRIX_BACKEND=eigen"
+if not defined DISCRETIZATION_METHOD set "DISCRETIZATION_METHOD=backward_euler"
 rem MATRIX_BACKEND accepts eigen (default), fixed, or all.
 
 set "NO_PAUSE=0"
@@ -27,6 +28,11 @@ if /I not "%MATRIX_BACKEND%"=="eigen" if /I not "%MATRIX_BACKEND%"=="fixed" if /
     set "RESULT=1"
     goto :failed_with_result
 )
+if /I not "%DISCRETIZATION_METHOD%"=="forward_euler" if /I not "%DISCRETIZATION_METHOD%"=="backward_euler" if /I not "%DISCRETIZATION_METHOD%"=="rk4" (
+    echo [ERROR] DISCRETIZATION_METHOD must be forward_euler, backward_euler, or rk4: %DISCRETIZATION_METHOD%
+    set "RESULT=1"
+    goto :failed_with_result
+)
 set "TOTAL_STAGES=2"
 if /I "%MATRIX_BACKEND%"=="all" set "TOTAL_STAGES=3"
 call "%GMP_PRO_LOCATION%\tools\gmp_installer\ensure_gmp_environment.bat" >nul
@@ -47,7 +53,7 @@ if not exist "%NETLIST_PATH%" (
 if not exist "%GENERATED_DIR%" mkdir "%GENERATED_DIR%"
 
 echo [1/%TOTAL_STAGES%] Exporting portable PMSM-inverter circuit data...
-python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method backward_euler --matrix-tolerance "%MATRIX_TOLERANCE%"
+python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method "%DISCRETIZATION_METHOD%" --matrix-tolerance "%MATRIX_TOLERANCE%"
 if errorlevel 1 goto :failed
 
 if /I "%MATRIX_BACKEND%"=="all" goto :generate_all
@@ -81,6 +87,7 @@ set "GENERATED_SOLVER=%EIGEN_DIR% and %FIXED_DIR%"
 echo.
 echo Circuit data:       %JSON_PATH%
 echo Matrix backend:     %MATRIX_BACKEND%
+echo Discretization:     %DISCRETIZATION_METHOD%
 echo Generated solver:   %GENERATED_SOLVER%
 echo Handwritten tests:  %CASE_DIR%test
 if "%NO_PAUSE%"=="0" pause

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 from sdpe_v2.generator import HeaderGenerator
@@ -33,6 +34,37 @@ class SDPEV2Tests(unittest.TestCase):
         self.assertIn("hall", lib.entity("tmcs1133_b2a").tags)
         self.assertEqual(lib.entity("tmcs1133_b2a").vendor, "Texas Instruments")
         self.assertIn("current_sensor", lib.schemas["half_bridge"].default_components)
+
+    def test_project_private_hardware_is_discovered_and_generated_locally(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_dir = root / "project"
+            private_dir = project_dir / "private_hardware"
+            private_dir.mkdir(parents=True)
+            entity = read_json(EXAMPLES / "entities" / "tmcs1133.json")
+            entity["id"] = "private_tmcs1133"
+            entity["display_name"] = "Project Private TMCS1133"
+            (private_dir / "private_tmcs1133.json").write_text(
+                json.dumps(entity), encoding="utf-8"
+            )
+            project = {
+                "id": "private_project",
+                "output_header": "ctrl_settings.h",
+                "hardware": [{"entity": "private_tmcs1133"}],
+                "requirements": [],
+            }
+            project_path = project_dir / "sdpe_requirement.json"
+            project_path.write_text(json.dumps(project), encoding="utf-8")
+
+            lib = self.load_library()
+            generated = HeaderGenerator(
+                lib, project_dir, include_prefix="", include_mode="relative", project_subdir=""
+            ).generate_project(project_path)
+            paths = {item.path for item in generated}
+            private_header = project_dir / "hardware_preset" / "current_sensor" / "private_tmcs1133.h"
+            self.assertIn(private_header, paths)
+            self.assertIn("private_tmcs1133", lib.entity_files)
+            self.assertTrue(private_header.is_file())
 
     def test_real_hardware_presets_are_modeled(self) -> None:
         lib = self.load_library()

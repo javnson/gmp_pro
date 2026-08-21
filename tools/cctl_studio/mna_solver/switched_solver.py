@@ -1352,7 +1352,11 @@ def _parser() -> argparse.ArgumentParser:
     analyze.add_argument("netlist")
     analyze.add_argument("--device-param", action="append", default=[], metavar="NAME=VALUE")
     analyze.add_argument("--dt", type=_number)
-    analyze.add_argument("--method", default="backward_euler")
+    analyze.add_argument(
+        "--method",
+        choices=("forward_euler", "backward_euler", "rk4"),
+        default="backward_euler",
+    )
     simulate = commands.add_parser("simulate")
     simulate.add_argument("netlist")
     simulate.add_argument("--device-param", action="append", default=[], metavar="NAME=VALUE")
@@ -1362,7 +1366,11 @@ def _parser() -> argparse.ArgumentParser:
     simulate.add_argument("--pwm-frequency", type=_number, default=10_000.0)
     simulate.add_argument("--duty", type=float, default=0.5)
     simulate.add_argument("--transition-substep", type=_number, default=0.5e-9)
-    simulate.add_argument("--method", default="backward_euler")
+    simulate.add_argument(
+        "--method",
+        choices=("forward_euler", "backward_euler", "rk4"),
+        default="backward_euler",
+    )
     simulate.add_argument("--output-stride", type=int, default=1)
     simulate.add_argument("--output", required=True)
     return parser

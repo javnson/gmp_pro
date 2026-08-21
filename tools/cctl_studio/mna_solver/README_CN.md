@@ -108,10 +108,12 @@ python tools\cctl_studio\mna_solver\mna_solver.py frequency ^
   --output tools\cctl_studio\mna_solver\tb\basic\example6_frequency.csv
 ```
 
-Python API 的完整示例见 [README.md](README.md)。离散化接口已经保留
-`method` 参数；当前实现 `forward_euler` 和适合刚性开关电路的
-`backward_euler`，后续可以在不改变解析器、状态空间调用方的前提下加入
-龙格-库塔等方法。
+Python API 的完整示例见 [README.md](README.md)。离散化接口通过 `method`
+选择 `forward_euler`、适合刚性开关电路的 `backward_euler` 或经典四阶
+`rk4`。对仿射线性系统和零阶保持输入，RK4 的四级计算在生成期化简为一组
+`Ad/Bd/bias`，因此 C++ 单步运行成本与欧拉后端相同。RK4 是显式方法；含极小
+寄生电容/导通电阻的刚性系统仍应优先使用后向欧拉。导出器会打印正常/短步长
+离散矩阵的最大谱半径；若存在大于 1 的拓扑，会提示核对方法和步长稳定性。
 
 ## 二极管/MOSFET 分段线性仿真
 
@@ -171,11 +173,12 @@ python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
 
 ## 电路数据文件与固定维 C++ 代码生成
 
-`circuit_data.py` 把 CIR/MNA 结果固化成带版本的 JSON。文件包含外部端口、
+`circuit_data.py` 把 CIR/MNA 结果固化成带版本的 JSON。schema v2 文件包含外部端口、
 探针、原始模型参数和提取依据、状态/信号名称、连续矩阵、正常与短步长离散
 矩阵，以及上一采样端电压选模所需索引。单二极管加单 MOS 电路包含 6 个
 拓扑；FSBB 的四个 MOS 每个具有关断、沟道和体二极管三条路径，因此包含
-`3^4=81` 个拓扑；三相逆变器的六个 MOS 则包含 `3^6=729` 个拓扑。JSON
+`3^4=81` 个拓扑；三相逆变器的六个 MOS 则包含 `3^6=729` 个拓扑。写盘时
+正常/短步长运行矩阵会先按容差放入共享矩阵池，拓扑只保存计算状态索引。JSON
 可以由 `CircuitDataSimulator` 直接仿真，也是 C++
 代码生成器唯一的输入。
 
@@ -194,7 +197,8 @@ python tools\cctl_studio\mna_solver\switched_solver.py simulate ^
 选模信号也因此不会被丢失。
 
 `circuit_data.py export` 和 `cpp_codegen.py` 都支持
-`--matrix-tolerance`；后者的参数可覆盖 JSON 中保存的值。命令行会显示逻辑
+`--matrix-tolerance`。schema v2 JSON 已按导出时的容差完成去重，因此代码生成
+必须使用同一容差；若传入不同值会明确报错并要求重新导出。命令行会显示逻辑
 状态数、离散方法、正常/启动步长、误差阈值、带耗时和 ETA 的构造/离散/去重
 进度条，以及最终计算状态数、去重数和各矩阵池的共享统计。重定向输出时，
 进度会自动变成稀疏的分段日志。INV 的当前默认阈值下，729 个完整状态由于

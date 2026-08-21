@@ -141,10 +141,13 @@ result = simulate(discrete, duration=1e-3, inputs={"Vin": 1.0})
 response = frequency_response(state, [10.0, 100.0, 1000.0])
 ```
 
-The discretization entry point deliberately takes a method name. Only
-`forward_euler` and the stiff-circuit-friendly `backward_euler` are implemented;
-RK methods can be added behind the same interface without changing parser or
-state-space clients.
+The discretization entry point supports `forward_euler`, the stiff-circuit-
+friendly `backward_euler`, and classical `rk4`. For affine LTI systems with a
+zero-order-held input, the four RK stages are reduced at generation time to one
+precomputed `Ad/Bd/bias` map, so generated runtime cost remains one affine
+matrix update. RK4 is explicit; strongly stiff parasitic networks should still
+use backward Euler. Export reports the maximum discrete spectral radius for the
+normal and short profiles and warns when any topology exceeds one.
 
 ## Diode/MOSFET piecewise-linear simulation
 
@@ -261,8 +264,10 @@ test only and is not a hardware-safe operating point.
 `circuit_data.py` exports a versioned JSON boundary containing external ports,
 probes, raw model values and extraction provenance, state/signal names, all
 continuous topologies, normal/short-step discrete matrices, affine terms, and
-the terminal indices used for previous-sample mode selection. The JSON can be
-simulated without rebuilding MNA and is the only input to `cpp_codegen.py`.
+the terminal indices used for previous-sample mode selection. Schema v2 interns
+normal/short runtime matrices into tolerance-aware pools when the file is
+written; topologies store calculation-state indices instead of expanded copies.
+The JSON can be simulated without rebuilding MNA and is the only input to `cpp_codegen.py`.
 One diode plus one MOS produces six topologies. A MOS-only switching circuit
 uses three paths per device (`OFF`, channel, body diode), so the four-switch
 FSBB exports `3^4 = 81` topologies and the six-switch three-phase inverter
@@ -294,8 +299,9 @@ when normal/short A, B, bias and C, D, output bias all match, including internal
 D/S and A/K mode-selection signals.
 
 Both `circuit_data.py export` and `cpp_codegen.py` accept
-`--matrix-tolerance`; the code-generator option overrides the value stored in
-JSON. Their console output reports logical state count, discretization method,
+`--matrix-tolerance`. A schema-v2 JSON file is already pooled at export time,
+so code generation rejects a different tolerance and asks for re-export rather
+than silently changing equivalence. Their console output reports logical state count, discretization method,
 normal/startup step sizes, tolerance, timed progress with ETA, unique and
 deduplicated calculation-state counts, and per-pool sharing. Redirected output
 uses sparse progress records instead of carriage-return animation. At the

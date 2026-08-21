@@ -154,6 +154,31 @@ class SolverTests(unittest.TestCase):
         self.assertAlmostEqual(response.magnitude_db[1, 0, 0], -3.0102999566, places=9)
         self.assertAlmostEqual(response.phase_deg[1, 0, 0], -45.0, places=9)
 
+    def test_rk4_is_precomputed_as_one_affine_discrete_map(self) -> None:
+        model = mna.StateSpaceModel(
+            A=np.asarray([[-2.0]]),
+            B=np.asarray([[3.0]]),
+            C=np.asarray([[1.0]]),
+            D=np.asarray([[0.0]]),
+            F=np.asarray([[0.0]]),
+            state_names=["x"],
+            input_names=["u"],
+            output_names=["y"],
+            input_defaults=np.zeros(1),
+            reconstruction_x=np.eye(1),
+            reconstruction_u=np.zeros((1, 1)),
+            unknown_names=["x"],
+        )
+        step = 0.1
+        discrete = mna.discretize(model, step, "rk4")
+        expected_a = 1.0 - 0.2 + 0.2**2 / 2.0 - 0.2**3 / 6.0 + 0.2**4 / 24.0
+        expected_b = 3.0 * (
+            step - 2.0 * step**2 / 2.0 + 4.0 * step**3 / 6.0 - 8.0 * step**4 / 24.0
+        )
+        self.assertEqual(discrete.method, "rk4")
+        np.testing.assert_allclose(discrete.A, [[expected_a]], rtol=0.0, atol=1e-15)
+        np.testing.assert_allclose(discrete.B, [[expected_b]], rtol=0.0, atol=1e-15)
+
     def test_dependent_source_examples_reduce_with_parameter_values(self) -> None:
         for filename, parameter in (
             ("exampleE.cir", {"Ea": 2}),

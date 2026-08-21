@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import itertools
 import json
 import math
@@ -86,15 +87,17 @@ def _fnv1a64(data: bytes | bytearray) -> int:
 
 def _source_hash_bytes(document: Mapping) -> bytes:
     value = document.get("circuit", {}).get("source", {}).get("sha256")
-    if not value:
-        return bytes(32)
-    try:
-        result = bytes.fromhex(str(value))
-    except ValueError as error:
-        raise ValueError(f"invalid source SHA-256 in circuit data: {value!r}") from error
-    if len(result) != 32:
-        raise ValueError(f"invalid source SHA-256 in circuit data: {value!r}")
-    return result
+    if value:
+        try:
+            source_hash = bytes.fromhex(str(value))
+        except ValueError as error:
+            raise ValueError(f"invalid source SHA-256 in circuit data: {value!r}") from error
+        if len(source_hash) != 32:
+            raise ValueError(f"invalid source SHA-256 in circuit data: {value!r}")
+    else:
+        source_hash = bytes(32)
+    method = str(document.get("solver", {}).get("method", "")).encode("utf-8")
+    return hashlib.sha256(source_hash + b"\0" + method).digest()
 
 
 def write_matrix_archive(
@@ -521,6 +524,52 @@ def build_matrix_dedup_plan(
 
     if tolerance <= 0.0 or not math.isfinite(tolerance):
         raise ValueError("matrix tolerance must be a finite positive number")
+    stored = document.get("matrix_storage")
+    if stored is not None:
+        stored_tolerance = float(stored.get("tolerance", tolerance))
+        if abs(stored_tolerance - tolerance) > max(
+            np.finfo(float).eps, abs(tolerance) * 1e-12
+        ):
+            raise ValueError(
+                "requested matrix tolerance differs from the precomputed JSON matrix store"
+            )
+        pools = {
+            type_name: [np.asarray(matrix, dtype=float) for matrix in stored["pools"][type_name]]
+            for type_name in _POOL_NAMES
+        }
+        calculation_states = [
+            tuple(int(index) for index in state)
+            for state in stored["calculation_states"]
+        ]
+        mappings = [int(index) for index in stored["topology_to_calculation_state"]]
+        statistics = stored.get("statistics", {})
+        coefficients_before = int(
+            statistics.get(
+                "coefficients_before",
+                sum(matrix.size for matrices in pools.values() for matrix in matrices),
+            )
+        )
+        coefficients_after = sum(
+            matrix.size for matrices in pools.values() for matrix in matrices
+        )
+        pool_references = {
+            type_name: sum(spec_type == type_name for _, spec_type, _, _ in _MATRIX_SPECS)
+            * len(calculation_states)
+            for type_name in pools
+        }
+        if progress is not None:
+            progress(len(mappings), len(mappings))
+        return MatrixDedupPlan(
+            stored_tolerance,
+            mappings,
+            calculation_states,
+            pools,
+            len(mappings),
+            len(calculation_states),
+            coefficients_before,
+            coefficients_after,
+            pool_references,
+        )
     topology_matrices = [_topology_matrices(item) for item in document["topologies"]]
     logical_count = len(topology_matrices)
     if not topology_matrices:
@@ -941,6 +990,7 @@ public:
     static constexpr double normal_step_s = {_number(document['solver']['normal_step_s'])};
     static constexpr double short_step_s = {_number(document['solver']['short_step_s'])};
     static constexpr double matrix_tolerance = {_number(storage.tolerance)};
+    static constexpr const char* discretization_method = "{document['solver']['method']}";
 
     struct Inputs {{
 {pwm_members}

@@ -283,8 +283,8 @@ def choose_duplicate_macros(
     }
 
 
-def prompt_identifier(parent: QWidget, title: str, label: str) -> str:
-    text, ok = QInputDialog.getText(parent, title, label)
+def prompt_identifier(parent: QWidget, title: str, label: str, default: str = "") -> str:
+    text, ok = QInputDialog.getText(parent, title, label, text=default)
     if not ok:
         return ""
     return text.strip()

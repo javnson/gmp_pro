@@ -88,6 +88,13 @@ class CircuitDataTests(unittest.TestCase):
             data.write_circuit_data(path, self.document)
             loaded = data.load_circuit_data(path)
             self.assertEqual(loaded["circuit"]["source"]["sha256"], self.document["circuit"]["source"]["sha256"])
+            self.assertEqual(loaded["schema"]["version"], 2)
+            self.assertIn("matrix_storage", loaded)
+            self.assertNotIn("discrete", loaded["topologies"][0])
+            self.assertEqual(
+                len(loaded["matrix_storage"]["topology_to_calculation_state"]),
+                len(loaded["topologies"]),
+            )
             result = data.simulate_circuit_data(loaded, 1e-3, startup_short_steps=20)
         self.assertTrue(np.all(np.isfinite(result.outputs)))
         self.assertGreater(result.outputs[-1, 0], 0.0)
@@ -124,6 +131,28 @@ class CircuitDataTests(unittest.TestCase):
         self.assertNotIn("value <<", header)
         self.assertIn("matrix_tolerance", header)
         self.assertIn('matrix_backend = "eigen"', header)
+
+    def test_rk4_document_preserves_method_through_compact_json_and_archive(self) -> None:
+        source = BUCK_DIR / "buck.CIR"
+        document = data.build_circuit_data(
+            switched.build_piecewise_model(mna.parse_netlist(source)),
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+            method="rk4",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "buck.json"
+            data.write_circuit_data(data_path, document)
+            loaded = data.load_circuit_data(data_path)
+            files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
+            header = files["header"].read_text(encoding="utf-8")
+        self.assertEqual(loaded["solver"]["method"], "rk4")
+        self.assertIn('discretization_method = "rk4"', header)
+        self.assertLessEqual(
+            loaded["matrix_storage"]["statistics"]["unique_states"],
+            loaded["matrix_storage"]["statistics"]["logical_states"],
+        )
 
     def test_cpp_generator_supports_all_static_fixed_matrix_backend(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -10,7 +10,7 @@ from typing import Any
 
 from .library import SDPELibrary
 from .model import ComponentRef, HardwareEntity, HardwareSchema, SDPEError
-from .project_requirements import load_project_requirements
+from .project_requirements import load_project_requirements, private_hardware_directory
 from .util import c_literal, header_guard, macro_name, read_json, write_if_changed
 
 
@@ -587,6 +587,7 @@ class HeaderGenerator:
         """Generate one merged header for a private project and all of its Common inputs."""
 
         data, commons = load_project_requirements(project_path)
+        self._register_private_hardware(project_path, [path for path, _data in commons])
         generated: list[GeneratedFile] = []
         seen: set[Path] = set()
         common_data = self.effective_common_overrides(data, [item for _path, item in commons])
@@ -636,6 +637,7 @@ class HeaderGenerator:
         """Generate private output first, followed by its bound common output."""
 
         data, commons = load_project_requirements(project_path)
+        self._register_private_hardware(project_path, [path for path, _data in commons])
         generated: list[GeneratedFile] = []
         common_data = [item for _path, item in commons]
         for project_data, inherited in [(data, common_data), *((item, []) for item in common_data)]:
@@ -643,6 +645,12 @@ class HeaderGenerator:
             changed = write_if_changed(out_path, self.render_project_matlab_script(project_data, inherited))
             generated.append(GeneratedFile(out_path, changed))
         return generated
+
+    def _register_private_hardware(
+        self, project_path: Path, common_paths: list[Path]
+    ) -> None:
+        for requirement in [project_path, *common_paths]:
+            self.library.add_entity_directory(private_hardware_directory(requirement))
 
     def effective_common_overrides(
         self,

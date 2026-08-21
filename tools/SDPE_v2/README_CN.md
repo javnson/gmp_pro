@@ -15,10 +15,17 @@ v2 当前采用“核心 CLI + PyQt 图形化管理器”的结构。CLI 负责�
 - C2000 板级 Template/Entity：`%GMP_PRO_LOCATION%/csp/c28x_syscfg/sdpe_component`
 - 全局硬件头文件输出：`%GMP_PRO_LOCATION%/ctl/hardware_preset/<category>`
 - 工程局部输出：工程的 `sdpe_mgr` 目录；工程设置头文件放在 `sdpe_mgr` 根目录，硬件头文件放在 `sdpe_mgr/hardware_preset`
+- 工程私有 Entity 源文件：`sdpe_requirement.json` 同级的 `private_hardware/<category>`
 - Suite 公共配置：`<suite>/sdpe_general`；公共 C 头文件输出到 `<suite>/src`，公共 MATLAB 初始化脚本保留在 `sdpe_general`
 - 默认设置文件：`%GMP_PRO_LOCATION%/tools/SDPE_v2/sdpe_settings.json`
 
 `sdpe_settings.json` 统一注册 CTL 硬件库和 CSP C2000 板级组件库，因此 CLI、GUI、校验器与工程生成器看到的是同一套模块集合，工程脚本不再复制或私自声明板级元件。
+
+当某个工程需要在全局硬件基础上做仿真标定或板级改型时，可在 Project 页选择
+硬件后点击 `Make private copy`。工具会创建一个新且全局唯一的 Entity ID，把源
+JSON 写入该工程的 `private_hardware`，并同步替换当前工程的硬件与参数绑定。
+CLI 生成项目时会自动发现该目录，生成的私有硬件头放入本工程
+`hardware_preset`；私有 ID 与全局 ID 冲突时直接报错，不允许静默覆盖。
 
 全局硬件头文件生成入口：
 

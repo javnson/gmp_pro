@@ -10,7 +10,7 @@
   "common_requirements": ["../../../sdpe_general/sdpe_requirement.json"],
   "hardware": [
     { "entity": "sm060r20b30mnad" },
-    { "entity": "ti_boostxl_3phganinv" }
+    { "entity": "mcs_pmsm_nt_cctl_inverter" }
   ],
   "requirement_groups": [
     {
@@ -34,7 +34,7 @@
       "requirements": [
         "Plant Step", "Control Frequency", "Simulation Duration", "Simulation DC Bus",
         "Load Torque Start", "Load Torque", "Startup Short Steps", "Output Ring Bytes",
-        "Output Batch Bytes", "Progress Interval", "Simulation Chunk Steps",
+        "PMSM Integration Order", "Output Batch Bytes", "Progress Interval", "Simulation Chunk Steps",
         "Realtime Priority", "Pause On Exit", "Output Filename"
       ]
     },
@@ -62,14 +62,14 @@
     { "role": "Encoder Bias", "macro": "CTRL_POS_ENC_BIAS", "binding": { "parameter": "0.0" } },
     { "role": "Mechanical Division", "macro": "CTRL_MECH_DIV", "binding": { "number": "5" } },
 
-    { "role": "Phase Current Sensitivity", "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY", "binding": { "literal": "(0.005f * 11.0f)" } },
-    { "role": "Phase Current Bias", "macro": "CTRL_INVERTER_CURRENT_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)" } },
-    { "role": "Phase Voltage Sensitivity", "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY", "binding": { "literal": "(1.0f / 48.0f)" } },
-    { "role": "Phase Voltage Bias", "macro": "CTRL_INVERTER_VOLTAGE_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)" } },
-    { "role": "DC Current Sensitivity", "macro": "CTRL_DC_CURRENT_SENSITIVITY", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)" } },
-    { "role": "DC Current Bias", "macro": "CTRL_DC_CURRENT_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)" } },
-    { "role": "DC Voltage Sensitivity", "macro": "CTRL_DC_VOLTAGE_SENSITIVITY", "binding": { "literal": "(1.0f / 48.0f)" } },
-    { "role": "DC Voltage Bias", "macro": "CTRL_DC_VOLTAGE_BIAS", "binding": { "literal": "(TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)" } },
+    { "role": "Phase Current Sensitivity", "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY", "binding": { "expr": "(${mcs_pmsm_nt_cctl_inverter.phase_shunt_resistance_ohm} * ${mcs_pmsm_nt_cctl_inverter.phase_current_gain_v_v})" } },
+    { "role": "Phase Current Bias", "macro": "CTRL_INVERTER_CURRENT_BIAS", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.phase_current_bias_v" } },
+    { "role": "Phase Voltage Sensitivity", "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.phase_voltage_gain_v_v" } },
+    { "role": "Phase Voltage Bias", "macro": "CTRL_INVERTER_VOLTAGE_BIAS", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.phase_voltage_bias_v" } },
+    { "role": "DC Current Sensitivity", "macro": "CTRL_DC_CURRENT_SENSITIVITY", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.bus_current_gain_v_a" } },
+    { "role": "DC Current Bias", "macro": "CTRL_DC_CURRENT_BIAS", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.bus_current_bias_v" } },
+    { "role": "DC Voltage Sensitivity", "macro": "CTRL_DC_VOLTAGE_SENSITIVITY", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.bus_voltage_gain_v_v" } },
+    { "role": "DC Voltage Bias", "macro": "CTRL_DC_VOLTAGE_BIAS", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.bus_voltage_bias_v" } },
 
     { "role": "Simulation ADC Resolution", "macro": "CCTL_SIM_ADC_RESOLUTION_BITS", "binding": { "number": "12" } },
     { "role": "Simulation ADC Reference", "macro": "CCTL_SIM_ADC_REFERENCE_V", "binding": { "literal": "3.3" } },

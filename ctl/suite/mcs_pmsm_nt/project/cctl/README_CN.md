@@ -43,15 +43,21 @@ ADC、带比较事件触发输出的中心对齐互补 ePWM（含 DBRED/DBFED �
 七个最终调理电压。MNA JSON 为这些探针增加 `role=adc_sample_voltage` 和
 `adc_channel` 元数据。ADC 量化为
 `floor(clamp(VADC, 0, Vref) / Vref * 2^N)`，并在满量程饱和到 `2^N-1`；
-本工程使用 `Vref=3.3 V`、`N=12`。SDPE 的控制器标定与网表实际模拟前端一致：
-电压分压为 `1/48`，电流灵敏度为 `5 mOhm * 11 = 0.055 V/A`，零电流偏置为
-1.65 V。该网表的物理 A/B/C 下桥采样网络分别标为 `VADC_IC/IB/IA`，因此手写
+本工程使用 `Vref=3.3 V`、`N=12`。工程通过
+`sdpe_mgr/private_hardware/inverter_3ph/mcs_pmsm_nt_cctl_inverter.json` 绑定
+2136SINV 的私有仿真标定：电压分压为 `1/48`，电流灵敏度为
+`5 mOhm * 15 = 0.075 V/A`，零电流偏置为 1.65 V。网表的六个运放反馈电阻为
+30 kΩ，与全局 `gmp_3ph_2136sinv_dual` 的 15 倍参数一致；
+`hw/validate_generated_model.py` 会在编译前从生成矩阵反算三相电流和母线电压
+DC 增益，并与私有 SDPE 参数比较。该网表的物理 A/B/C 下桥采样网络分别标为 `VADC_IC/IB/IA`，因此手写
 testbench 按实际接线重新排列后再写入控制器 IA/IB/IC 通道。
 
 默认 Eigen 结果写入 `mcs_pmsm_nt_cctl.csv`，包含 PWM 比较值、三相电压电流、dq 电流、
 转矩、负载、编码器计数和七路原始 ADC code。测试同时检查 ADC/ePWM/eQEP、
 每载波一次 SOC、ADC 中断确认、三下桥采样窗口、桥臂无直通、数值有限性、
 限流和 300 rpm 速度闭环。
+大文件可直接用 `tools/cctl_studio/result_viewer/run_result_viewer.bat` 打开；该工具
+按需后台加载列、保留极值降采样，并支持多张图分别选曲线及联动缩放。
 
 ## 运行时分层
 
@@ -104,8 +110,8 @@ Release 应显示 `build=Release optimized=yes`，Debug 应显示
 电气时间常数足够小，因此默认取 1 阶 Euler，仍保持每个电路步更新一次电机，
 没有引入多速率保持或额外一拍延迟。设为 2 或 4 可进行精度对照。
 
-当前机器上 4 s、40,000,000 步、23 状态/729 拓扑的 Release Eigen 回归为
-9.55 s；直接输出到 `NUL` 的剖析运行约 9.11 s、4.39 Mstep/s。此前同一离散
+当前机器上 4 s、40,000,000 步、23 状态/729 拓扑的 Release Eigen 回归约为
+9.4 s；直接输出到 `NUL` 的剖析运行约 9.11 s、4.39 Mstep/s。此前同一离散
 耦合使用 RK4 时为 12.15 s。Euler 与 RK4 的末 50 ms 平均转速差约 0.003 rpm，
 闭环回归全部通过。80,000 条、约 22.45 MB CSV 的文件线程忙碌时间约 0.57 s，
 且与 9.11 s 求解并行，因此不是数百秒运行时间的原因。
@@ -117,7 +123,9 @@ fixed 能力没有删除：运行 `build_test.bat --with-fixed` 会额外生成 
 本次同配置回归约为 12.6 s，因此默认仍使用 Eigen。
 
 Eigen 归档只在 `PmsmCircuit` 构造时读取和校验，仿真步进期间没有文件 I/O。
-当前 23 状态、729 拓扑模型的 JSON 为 181,466,029 字节；原内嵌 Eigen 头约
+schema v2 JSON 在写盘时已保存去重矩阵池并采用紧凑序列化；当前 23 状态、
+729 拓扑模型约为 77.2 MB，运行矩阵池从 1,604,529 个逻辑系数压缩到 1,037,408 个，减少
+35.35%。原内嵌 Eigen 头约
 24.66 MB，拆分后头文件约 23 KB、归档约 8.33 MB。归档与 JSON 都是可再生文件，
 不纳入 Git；发布可执行程序时必须把 `pmsmcircuit.archive` 放在工作目录，或向
 `PmsmCircuit` 构造函数传入明确路径。
@@ -129,3 +137,9 @@ Eigen 归档只在 `PmsmCircuit` 构造时读取和校验，仿真步进期间�
 把同样的串行链改成每 100 ns 跨线程握手。若允许一拍延迟可采用并行 Jacobi
 协同仿真，但那是另一种数值模型，不能作为当前回归的透明加速。现阶段保留
 单一数值线程，同时让文件线程和控制台线程与它真正并行。
+
+主电路生成脚本支持环境变量 `DISCRETIZATION_METHOD=forward_euler`、
+`backward_euler` 或 `rk4`。RK4 对线性仿射模型预计算为单次矩阵推进，不增加
+运行时阶段数；但本电路的 pF 级调理/寄生电容使系统高度刚性，100 ns 步长的
+RK4 回归会在首步产生非有限值。因此工程默认保持后向欧拉，RK4 选项用于时间
+常数较温和的拓扑或进一步减小步长后的精度对照。

@@ -41,7 +41,8 @@ from switched_solver import (
 
 
 SCHEMA_NAME = "gmp.mna_solver.circuit_data"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+LEGACY_SCHEMA_VERSIONS = {1, SCHEMA_VERSION}
 DEFAULT_MATRIX_TOLERANCE = 1e-12
 
 
@@ -795,7 +796,10 @@ def build_circuit_data(
 
 def validate_circuit_data(document: Mapping) -> None:
     schema = document.get("schema", {})
-    if schema.get("name") != SCHEMA_NAME or schema.get("version") != SCHEMA_VERSION:
+    if (
+        schema.get("name") != SCHEMA_NAME
+        or schema.get("version") not in LEGACY_SCHEMA_VERSIONS
+    ):
         raise ValueError(f"unsupported circuit-data schema: {schema!r}")
     matrix_tolerance = float(
         document.get("solver", {}).get("matrix_tolerance", DEFAULT_MATRIX_TOLERANCE)
@@ -827,6 +831,53 @@ def validate_circuit_data(document: Mapping) -> None:
     state_count = len(document["state"]["names"])
     signal_count = len(document["signals"]["names"])
     input_count = sum(port["data_type"] == "double" for port in document["ports"]["inputs"])
+    matrix_storage = document.get("matrix_storage")
+    if matrix_storage is not None:
+        if matrix_storage.get("format") != "deduplicated_runtime_v1":
+            raise ValueError("unsupported circuit-data matrix storage format")
+        mappings = matrix_storage.get("topology_to_calculation_state", [])
+        calculation_states = matrix_storage.get("calculation_states", [])
+        if len(mappings) != len(topologies):
+            raise ValueError("matrix storage topology mapping has the wrong length")
+        if any(
+            not isinstance(index, int) or index < 0 or index >= len(calculation_states)
+            for index in mappings
+        ):
+            raise ValueError("matrix storage topology mapping contains an invalid index")
+        pool_shapes = {
+            "StateMatrix": (state_count, state_count),
+            "InputMatrix": (state_count, input_count),
+            "StateVector": (state_count,),
+            "SignalMatrix": (signal_count, state_count),
+            "SignalInputMatrix": (signal_count, input_count),
+            "SignalVector": (signal_count,),
+        }
+        pools = matrix_storage.get("pools", {})
+        for name, shape in pool_shapes.items():
+            if name not in pools:
+                raise ValueError(f"matrix storage is missing {name}")
+            for item in pools[name]:
+                if np.asarray(item, dtype=float).shape != shape:
+                    raise ValueError(f"matrix storage {name} has invalid dimensions")
+        for state in calculation_states:
+            if len(state) != 9:
+                raise ValueError("matrix storage calculation state must contain nine indices")
+            for pool_index, (_, pool_name, _, _) in zip(
+                state, matrix_storage.get("matrix_specs", [])
+            ):
+                if (
+                    not isinstance(pool_index, int)
+                    or pool_name not in pools
+                    or pool_index < 0
+                    or pool_index >= len(pools[pool_name])
+                ):
+                    raise ValueError(
+                        "matrix storage calculation state contains an invalid pool index"
+                    )
+        if len(matrix_storage.get("matrix_specs", [])) != 9:
+            raise ValueError("matrix storage must describe nine runtime matrices")
+        return
+
     for topology in topologies:
         for profile in ("normal", "short"):
             item = topology["discrete"][profile]
@@ -838,9 +889,92 @@ def validate_circuit_data(document: Mapping) -> None:
                 raise ValueError(f"{topology['name']} {profile}: invalid C dimensions")
 
 
-def write_circuit_data(path: str | Path, document: Mapping) -> None:
-    validate_circuit_data(document)
-    Path(path).write_text(json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+def compact_circuit_data(document: Mapping) -> dict:
+    """Return schema-v2 data with discrete runtime matrices interned once.
+
+    Continuous equations remain attached to each physical topology for analysis.
+    Only the matrices consumed on every simulation step are pooled.  Code
+    generation can therefore write its archive directly from this catalog.
+    """
+
+    if document.get("matrix_storage") is not None:
+        return dict(document)
+    # Imported lazily to keep the parser/data module usable without invoking the
+    # C++ renderer and to preserve loading of schema-v1 expanded documents.
+    from cpp_codegen import _MATRIX_SPECS, build_matrix_dedup_plan
+
+    tolerance = float(
+        document.get("solver", {}).get("matrix_tolerance", DEFAULT_MATRIX_TOLERANCE)
+    )
+    plan = build_matrix_dedup_plan(document, tolerance)
+    compact = dict(document)
+    compact["schema"] = {"name": SCHEMA_NAME, "version": SCHEMA_VERSION}
+    compact["topologies"] = []
+    for topology, state_index in zip(
+        document["topologies"], plan.topology_to_calculation_state
+    ):
+        item = {key: value for key, value in topology.items() if key != "discrete"}
+        item["calculation_state_index"] = state_index
+        compact["topologies"].append(item)
+    compact["matrix_storage"] = {
+        "format": "deduplicated_runtime_v1",
+        "tolerance": tolerance,
+        "matrix_specs": [list(spec) for spec in _MATRIX_SPECS],
+        "topology_to_calculation_state": plan.topology_to_calculation_state,
+        "calculation_states": [list(state) for state in plan.calculation_states],
+        "pools": {
+            name: [np.asarray(matrix, dtype=float).tolist() for matrix in matrices]
+            for name, matrices in plan.pools.items()
+        },
+        "statistics": {
+            "logical_states": plan.logical_state_count,
+            "unique_states": plan.unique_state_count,
+            "deduplicated_states": plan.deduplicated_state_count,
+            "coefficients_before": plan.coefficients_before,
+            "coefficients_after": plan.coefficients_after,
+        },
+    }
+    return compact
+
+
+def discrete_stability_summary(document: Mapping) -> dict[str, dict[str, float | int]]:
+    """Summarize open-loop discrete eigenvalue magnitudes for diagnostics."""
+
+    result: dict[str, dict[str, float | int]] = {}
+    for profile in ("normal", "short"):
+        maximum = 0.0
+        above_one = 0
+        nonfinite = 0
+        for topology in document["topologies"]:
+            matrix = np.asarray(topology["discrete"][profile]["A"], dtype=float)
+            if not np.all(np.isfinite(matrix)):
+                nonfinite += 1
+                maximum = math.inf
+                continue
+            radius = float(np.max(np.abs(np.linalg.eigvals(matrix)))) if matrix.size else 0.0
+            if not math.isfinite(radius):
+                nonfinite += 1
+                maximum = math.inf
+            else:
+                maximum = max(maximum, radius)
+                if radius > 1.0 + 1e-9:
+                    above_one += 1
+        result[profile] = {
+            "maximum_spectral_radius": maximum,
+            "states_above_one": above_one,
+            "states_nonfinite": nonfinite,
+        }
+    return result
+
+
+def write_circuit_data(path: str | Path, document: Mapping) -> dict:
+    compact = compact_circuit_data(document)
+    validate_circuit_data(compact)
+    Path(path).write_text(
+        json.dumps(compact, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    return compact
 
 
 def load_circuit_data(path: str | Path) -> dict:
@@ -899,6 +1033,27 @@ class CircuitDataSimulator:
         )
         self.body_on = [False] * len(document["switching"].get("switches", [])) if self.multi_mosfet else False
         self.last_topology = document["topologies"][0]["name"]
+        self.discrete_states = self._load_discrete_states()
+
+    def _load_discrete_states(self) -> list[dict[str, dict[str, np.ndarray]]]:
+        storage = self.document.get("matrix_storage")
+        if storage is None:
+            return [item["discrete"] for item in self.document["topologies"]]
+        pools = {
+            name: [np.asarray(matrix, dtype=float) for matrix in matrices]
+            for name, matrices in storage["pools"].items()
+        }
+        specs = storage["matrix_specs"]
+        result: list[dict[str, dict[str, np.ndarray]]] = []
+        for indices in storage["calculation_states"]:
+            fields: dict[str, dict[str, np.ndarray]] = {"normal": {}, "short": {}}
+            for index, (_, pool_name, profile, field) in zip(indices, specs):
+                fields[profile][field] = pools[pool_name][index]
+            # Output equations are independent of step profile.
+            for field in ("C", "D", "output_bias"):
+                fields["short"][field] = fields["normal"][field]
+            result.append(fields)
+        return result
 
     def reset(self, state: Sequence[float] | None = None) -> None:
         self.x = np.asarray(self.document["state"]["initial"] if state is None else state, dtype=float).copy()
@@ -1010,7 +1165,11 @@ class CircuitDataSimulator:
         u = np.asarray([supplied.get(_key(port["name"]), port["default"]) for port in self.external_inputs])
         key = self._select(pwm)
         topology = self.topologies[key]
-        item = topology["discrete"][profile]
+        state_index = topology.get("calculation_state_index")
+        if state_index is None:
+            item = topology["discrete"][profile]
+        else:
+            item = self.discrete_states[state_index][profile]
         self.x = np.asarray(item["A"]) @ self.x + np.asarray(item["B"]) @ u + np.asarray(item["bias"])
         self.signals = np.asarray(item["C"]) @ self.x + np.asarray(item["D"]) @ u + np.asarray(item["output_bias"])
         self.last_topology = topology["name"]
@@ -1122,7 +1281,11 @@ def _parser() -> argparse.ArgumentParser:
     export.add_argument("output")
     export.add_argument("--normal-dt", type=_number, default=100e-9)
     export.add_argument("--short-dt", type=_number, default=0.5e-9)
-    export.add_argument("--method", default="backward_euler")
+    export.add_argument(
+        "--method",
+        choices=("forward_euler", "backward_euler", "rk4"),
+        default="backward_euler",
+    )
     export.add_argument(
         "--matrix-tolerance", type=_number, default=DEFAULT_MATRIX_TOLERANCE
     )
@@ -1168,8 +1331,29 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             if export_bar is not None:
                 export_bar.finish()
-            write_circuit_data(args.output, document)
-            print(f"wrote {len(document['topologies'])} logical states to {args.output}")
+            stability = discrete_stability_summary(document)
+            document["solver"]["stability_diagnostic"] = stability
+            for profile in ("normal", "short"):
+                item = stability[profile]
+                print(
+                    f"{profile} max |eig|:   "
+                    f"{item['maximum_spectral_radius']:.12g} "
+                    f"({item['states_above_one']} states above one)"
+                )
+            if (
+                stability["normal"]["states_above_one"]
+                or stability["normal"]["states_nonfinite"]
+            ):
+                print(
+                    "warning: the selected normal-step discrete maps include open-loop "
+                    "growth; verify method/step stability in the target simulation"
+                )
+            compact = write_circuit_data(args.output, document)
+            statistics = compact["matrix_storage"]["statistics"]
+            print(
+                f"wrote {statistics['logical_states']} logical states / "
+                f"{statistics['unique_states']} unique calculation states to {args.output}"
+            )
         else:
             document = load_circuit_data(args.data)
             result = simulate_circuit_data(document, args.duration, args.pwm_frequency, args.duty)

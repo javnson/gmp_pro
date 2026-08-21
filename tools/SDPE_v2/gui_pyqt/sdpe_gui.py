@@ -101,6 +101,7 @@ from sdpe_v2.project_requirements import (
     load_project_requirements,
     merged_project_view,
     project_requirement_paths,
+    private_hardware_directory,
     resolve_duplicate_macros,
     resolve_common_requirement_paths,
     title_case_name,
@@ -2488,7 +2489,14 @@ class ProjectPage(SDPEPage):
         hw_layout = QVBoxLayout(hw_tab)
         replace_hw = QPushButton("Replace hardware")
         replace_hw.clicked.connect(self.replace_selected_hardware)
-        hw_layout.addLayout(row_buttons([QLabel("View"), self.hardware_view, replace_hw]))
+        private_hw = QPushButton("Make private copy")
+        private_hw.setToolTip(
+            "Copy the selected preset beside this project, then bind the project to the copy"
+        )
+        private_hw.clicked.connect(self.make_selected_hardware_private)
+        hw_layout.addLayout(
+            row_buttons([QLabel("View"), self.hardware_view, replace_hw, private_hw])
+        )
         hw_layout.addWidget(self.hardware_tree)
         hw_layout.addWidget(self.hardware)
 
@@ -4041,6 +4049,43 @@ class ProjectPage(SDPEPage):
             return
         self.replace_hardware_row(row)
 
+    def make_selected_hardware_private(self) -> None:
+        row = self.hardware.currentRow()
+        if row < 0 or not self.current_id:
+            return
+        old_entity = item_text(self.hardware, row, 0)
+        source = self.window.library.entity_files.get(old_entity)
+        if source is None:
+            self.error(f"Cannot locate hardware entity: {old_entity}")
+            return
+        default_id = f"{self.current_id}_{old_entity}"
+        new_id = prompt_identifier(
+            self, "Private Hardware Copy", "Private entity ID:", default_id
+        )
+        if not new_id:
+            return
+        if new_id in self.window.library.entity_files:
+            self.error(f"Entity already exists: {new_id}")
+            return
+        try:
+            data = read_json(source)
+            data["id"] = new_id
+            data["display_name"] = f"{data.get('display_name', old_entity)} ({self.current_id})"
+            data["macro_prefix"] = macro_name(new_id)
+            data["tags"] = list(dict.fromkeys([*data.get("tags", []), "project_private"]))
+            project_path = self.window.project_path(self.current_id)
+            destination = private_hardware_directory(project_path) / data["schema"] / f"{new_id}.json"
+            self.window.write_json(destination, data)
+            self.window.reload()
+            set_item(self.hardware, row, 0, new_id)
+            self.populate_hardware_info(row, new_id)
+            self.replace_project_entity_references(old_entity, new_id)
+            self.refresh_hardware_status()
+            self.mark_current_dirty()
+            self.message("Private hardware created", f"{old_entity} -> {new_id}\n{destination}")
+        except Exception as exc:  # pragma: no cover - GUI guard.
+            self.error(str(exc))
+
     def replace_hardware_row(self, row: int) -> None:
         old_entity = item_text(self.hardware, row, 0)
         selected = self.choose_entity_with_same_template(old_entity)
@@ -5157,7 +5202,20 @@ class MainWindow(QMainWindow):
         self.write_json(self.settings_path, data)
 
     def load_library(self) -> SDPELibrary:
-        return SDPELibrary(self.library_root, self.schema_dirs, self.entity_dirs).load()
+        entity_dirs = list(self.entity_dirs)
+        for project_root in self.project_dirs:
+            if project_root.is_file():
+                requirement_paths = [project_root]
+            elif project_root.exists():
+                requirement_paths = list(project_root.rglob("sdpe_requirement.json"))
+            else:
+                requirement_paths = []
+            entity_dirs.extend(private_hardware_directory(path) for path in requirement_paths)
+        return SDPELibrary(
+            self.library_root,
+            self.schema_dirs,
+            list(dict.fromkeys(entity_dirs)),
+        ).load()
 
     def generator(self, out_dir: Path | None = None) -> HeaderGenerator:
         return HeaderGenerator(

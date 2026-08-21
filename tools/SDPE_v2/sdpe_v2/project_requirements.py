@@ -15,6 +15,13 @@ COMMON_REQUIREMENTS_KEY = "common_requirements"
 LEGACY_COMMON_REQUIREMENT_KEY = "common_requirement"
 SOURCE_KEY = "__sdpe_source"
 GROUP_KEY = "__sdpe_group"
+PRIVATE_HARDWARE_DIRECTORY = "private_hardware"
+
+
+def private_hardware_directory(project_path: Path) -> Path:
+    """Return the entity-library directory owned by one project requirement."""
+
+    return project_path.resolve().parent / PRIVATE_HARDWARE_DIRECTORY
 
 
 def title_case_name(value: Any) -> str:
