@@ -889,6 +889,47 @@ def validate_circuit_data(document: Mapping) -> None:
                 raise ValueError(f"{topology['name']} {profile}: invalid C dimensions")
 
 
+def circuit_dimension_summary(document: Mapping) -> dict[str, int]:
+    """Return the mathematical and public-port dimensions of circuit data."""
+
+    input_ports = document["ports"]["inputs"]
+    analog_inputs = sum(port.get("data_type") == "double" for port in input_ports)
+    command_inputs = len(input_ports) - analog_inputs
+    return {
+        "states": len(document["state"]["names"]),
+        "analog_inputs": analog_inputs,
+        "signals": len(document["signals"]["names"]),
+        "external_inputs": len(input_ports),
+        "command_inputs": command_inputs,
+        "public_outputs": len(document["ports"]["outputs"]),
+    }
+
+
+def print_circuit_dimensions(document: Mapping) -> None:
+    """Print dimensions with u matching the actual B/D matrix column count."""
+
+    dimensions = circuit_dimension_summary(document)
+    print(
+        "state space:         "
+        f"x={dimensions['states']}, u={dimensions['analog_inputs']}, "
+        f"y={dimensions['signals']}"
+    )
+    print(
+        "matrix dimensions:   "
+        f"A={dimensions['states']}x{dimensions['states']}, "
+        f"B={dimensions['states']}x{dimensions['analog_inputs']}, "
+        f"C={dimensions['signals']}x{dimensions['states']}, "
+        f"D={dimensions['signals']}x{dimensions['analog_inputs']}"
+    )
+    print(
+        "external ports:      "
+        f"inputs={dimensions['external_inputs']} "
+        f"(analog={dimensions['analog_inputs']}, "
+        f"commands={dimensions['command_inputs']}), "
+        f"outputs={dimensions['public_outputs']}"
+    )
+
+
 def compact_circuit_data(document: Mapping) -> dict:
     """Return schema-v2 data with discrete runtime matrices interned once.
 
@@ -1331,6 +1372,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             if export_bar is not None:
                 export_bar.finish()
+            print_circuit_dimensions(document)
             stability = discrete_stability_summary(document)
             document["solver"]["stability_diagnostic"] = stability
             for profile in ("normal", "short"):

@@ -15,7 +15,11 @@ from typing import Callable, Mapping, Sequence
 
 import numpy as np
 
-from circuit_data import DEFAULT_MATRIX_TOLERANCE, load_circuit_data
+from circuit_data import (
+    DEFAULT_MATRIX_TOLERANCE,
+    load_circuit_data,
+    print_circuit_dimensions,
+)
 from console_progress import TimedProgressBar
 
 
@@ -1099,6 +1103,7 @@ def generate_cpp_project(
     if show_progress:
         print(f"circuit:             {document['circuit']['name']}")
         print(f"logical states:      {logical_count}")
+        print_circuit_dimensions(document)
         print(f"discretization:      {document['solver']['method']}")
         print(f"normal step:         {float(document['solver']['normal_step_s']):.12g} s")
         print(f"short step:          {float(document['solver']['short_step_s']):.12g} s")

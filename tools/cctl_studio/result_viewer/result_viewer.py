@@ -6,10 +6,21 @@ import argparse
 import sys
 from pathlib import Path
 
+import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from result_data import ResultFile, inspect_result_file, load_numeric_columns, minmax_decimate
+from result_data import (
+    IncrementalResultReader,
+    ResultChunk,
+    ResultFile,
+    inspect_result_file,
+    load_numeric_columns,
+    minmax_decimate,
+)
+
+
+LIVE_REFRESH_INTERVAL_MS = 50
 
 
 class WorkerSignals(QtCore.QObject):
@@ -32,6 +43,36 @@ class ColumnWorker(QtCore.QRunnable):
             self.signals.failed.emit(str(error))
 
 
+class LiveInitializeWorker(QtCore.QRunnable):
+    def __init__(self, result: ResultFile, columns: tuple[str, ...]):
+        super().__init__()
+        self.result = result
+        self.columns = columns
+        self.signals = WorkerSignals()
+
+    @QtCore.pyqtSlot()
+    def run(self) -> None:
+        try:
+            reader = IncrementalResultReader(self.result, self.columns)
+            self.signals.finished.emit((reader, reader.read_available()))
+        except Exception as error:  # GUI boundary.
+            self.signals.failed.emit(str(error))
+
+
+class LiveTailWorker(QtCore.QRunnable):
+    def __init__(self, reader: IncrementalResultReader):
+        super().__init__()
+        self.reader = reader
+        self.signals = WorkerSignals()
+
+    @QtCore.pyqtSlot()
+    def run(self) -> None:
+        try:
+            self.signals.finished.emit((self.reader, self.reader.read_available()))
+        except Exception as error:  # GUI boundary.
+            self.signals.failed.emit(str(error))
+
+
 class PlotPanel(QtWidgets.QFrame):
     activated = QtCore.pyqtSignal(object)
     remove_requested = QtCore.pyqtSignal(object)
@@ -41,6 +82,7 @@ class PlotPanel(QtWidgets.QFrame):
         self.setObjectName("PlotPanel")
         self.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.curves: dict[str, pg.PlotDataItem] = {}
+        self.x_name: str | None = None
         bar = QtWidgets.QHBoxLayout()
         self.title = QtWidgets.QLineEdit(f"Plot {number}")
         remove = QtWidgets.QToolButton(text="×")
@@ -90,8 +132,17 @@ class ResultViewer(QtWidgets.QMainWindow):
         self.panels: list[PlotPanel] = []
         self.active_panel: PlotPanel | None = None
         self.pending: tuple[PlotPanel, tuple[str, ...], str] | None = None
+        self.live_reader: IncrementalResultReader | None = None
+        self.live_initializing = False
+        self.live_poll_pending = False
+        self.live_skipped_rows = 0
+        self.live_generation = 0
+        self.file_generation = 0
         self.pool = QtCore.QThreadPool.globalInstance()
         self._build_ui()
+        self.live_timer = QtCore.QTimer(self)
+        self.live_timer.setInterval(LIVE_REFRESH_INTERVAL_MS)
+        self.live_timer.timeout.connect(self.poll_live_file)
         self.add_plot()
 
     def _build_ui(self) -> None:
@@ -123,6 +174,11 @@ class ResultViewer(QtWidgets.QMainWindow):
         self.maximum_points.setSingleStep(10_000)
         self.maximum_points.setValue(100_000)
         self.maximum_points.setToolTip("Per-curve display point limit; extrema are preserved")
+        self.dynamic_refresh = QtWidgets.QCheckBox("Dynamic refresh (20 Hz)")
+        self.dynamic_refresh.setToolTip(
+            "Incrementally read rows appended by a running simulation every 50 ms"
+        )
+        self.dynamic_refresh.toggled.connect(self.set_dynamic_refresh)
         auto_range = QtWidgets.QPushButton("Fit all plots")
         auto_range.clicked.connect(lambda: [panel.plot.autoRange() for panel in self.panels])
         self.status_label = QtWidgets.QLabel()
@@ -139,6 +195,7 @@ class ResultViewer(QtWidgets.QMainWindow):
         form.addWidget(add_plot)
         form.addWidget(self.link_x)
         form.addWidget(self.link_y)
+        form.addWidget(self.dynamic_refresh)
         form.addWidget(QtWidgets.QLabel("Maximum display points / curve"))
         form.addWidget(self.maximum_points)
         form.addWidget(auto_range)
@@ -168,6 +225,14 @@ class ResultViewer(QtWidgets.QMainWindow):
         except Exception as error:
             QtWidgets.QMessageBox.critical(self, "Cannot open result", str(error))
             return
+        self.live_timer.stop()
+        self.live_generation += 1
+        self.file_generation += 1
+        self.live_reader = None
+        self.live_initializing = False
+        self.live_poll_pending = False
+        self.live_skipped_rows = 0
+        self.pending = None
         self.cache.clear()
         self.file_label.setText(str(self.result.path))
         self.x_column.clear()
@@ -185,6 +250,7 @@ class ResultViewer(QtWidgets.QMainWindow):
             panel.plot.clear()
             panel.plot.addLegend()
             panel.curves.clear()
+            panel.x_name = None
         self.status_label.setText(f"{len(self.result.columns)} columns; select curves to load")
 
     def add_plot(self) -> None:
@@ -201,6 +267,7 @@ class ResultViewer(QtWidgets.QMainWindow):
             panel.plot.clear()
             panel.plot.addLegend()
             panel.curves.clear()
+            panel.x_name = None
             return
         self.panels.remove(panel)
         panel.deleteLater()
@@ -217,6 +284,7 @@ class ResultViewer(QtWidgets.QMainWindow):
             self.active_panel.plot.clear()
             self.active_panel.plot.addLegend()
             self.active_panel.curves.clear()
+            self.active_panel.x_name = None
 
     def remove_selected_curves(self) -> None:
         if self.active_panel is None:
@@ -240,32 +308,50 @@ class ResultViewer(QtWidgets.QMainWindow):
         missing = tuple(name for name in (x_name, *y_names) if name not in self.cache)
         if missing:
             self.pending = (self.active_panel, y_names, x_name)
-            self.status_label.setText("Loading selected columns in the background…")
-            worker = ColumnWorker(self.result, missing)
-            worker.signals.finished.connect(self._columns_loaded)
-            worker.signals.failed.connect(self._load_failed)
-            self.pool.start(worker)
+            if self.dynamic_refresh.isChecked():
+                names = tuple(dict.fromkeys((*self.cache, x_name, *y_names)))
+                self._start_live_initialization(names)
+            else:
+                self.status_label.setText("Loading selected columns in the background…")
+                generation = self.file_generation
+                worker = ColumnWorker(self.result, missing)
+                worker.signals.finished.connect(
+                    lambda columns, token=generation: self._columns_loaded(token, columns)
+                )
+                worker.signals.failed.connect(
+                    lambda message, token=generation: self._load_failed(token, message)
+                )
+                self.pool.start(worker)
         else:
             self._draw(self.active_panel, y_names, x_name)
 
-    @QtCore.pyqtSlot(object)
-    def _columns_loaded(self, columns: object) -> None:
+    def _columns_loaded(self, generation: int, columns: object) -> None:
+        if generation != self.file_generation:
+            return
         self.cache.update(columns)
         pending, self.pending = self.pending, None
         if pending is not None:
             self._draw(*pending)
+        if self.dynamic_refresh.isChecked():
+            self._initialize_live_reader()
 
-    @QtCore.pyqtSlot(str)
-    def _load_failed(self, message: str) -> None:
+    def _load_failed(self, generation: int, message: str) -> None:
+        if generation != self.file_generation:
+            return
         self.pending = None
         self.status_label.setText("Load failed")
         QtWidgets.QMessageBox.critical(self, "Cannot load columns", message)
 
     def _draw(self, panel: PlotPanel, y_names: tuple[str, ...], x_name: str) -> None:
         x = self.cache[x_name]
+        panel.x_name = x_name
         limit = self.maximum_points.value()
+        displayed_rows = len(x)
         for y_name in y_names:
-            xd, yd = minmax_decimate(x, self.cache[y_name], limit)
+            y = self.cache[y_name]
+            common_rows = min(len(x), len(y))
+            displayed_rows = min(displayed_rows, common_rows)
+            xd, yd = minmax_decimate(x[:common_rows], y[:common_rows], limit)
             if y_name in panel.curves:
                 panel.curves[y_name].setData(xd, yd)
             else:
@@ -274,7 +360,156 @@ class ResultViewer(QtWidgets.QMainWindow):
         panel.plot.setLabel("bottom", x_name)
         panel.plot.autoRange()
         self.status_label.setText(
-            f"Loaded {len(x):,} rows; displaying at most {limit:,} points per curve"
+            f"Loaded {displayed_rows:,} common rows; displaying at most "
+            f"{limit:,} points per curve"
+        )
+
+    @QtCore.pyqtSlot(bool)
+    def set_dynamic_refresh(self, enabled: bool) -> None:
+        was_live_initializing = self.live_initializing
+        self.live_timer.stop()
+        self.live_generation += 1
+        self.live_reader = None
+        self.live_poll_pending = False
+        if enabled:
+            self._initialize_live_reader()
+        else:
+            self.live_initializing = False
+            if was_live_initializing:
+                self.pending = None
+            self.status_label.setText("Dynamic refresh disabled")
+
+    def _initialize_live_reader(self) -> None:
+        if (
+            not self.dynamic_refresh.isChecked()
+            or self.result is None
+            or self.pending is not None
+            or self.live_initializing
+        ):
+            return
+        names = tuple(self.cache)
+        if not names:
+            self.status_label.setText(
+                "Dynamic refresh is enabled; select curves to begin reading"
+            )
+            return
+        self._start_live_initialization(names)
+
+    def _start_live_initialization(self, names: tuple[str, ...]) -> None:
+        if self.result is None:
+            return
+        self.live_timer.stop()
+        self.live_generation += 1
+        generation = self.live_generation
+        self.live_reader = None
+        self.live_poll_pending = False
+        self.live_initializing = True
+        self.live_skipped_rows = 0
+        self.status_label.setText("Preparing the 20 Hz incremental reader…")
+        worker = LiveInitializeWorker(self.result, names)
+        worker.signals.finished.connect(
+            lambda payload, token=generation: self._live_initialized(token, payload)
+        )
+        worker.signals.failed.connect(
+            lambda message, token=generation: self._live_failed(token, message)
+        )
+        self.pool.start(worker)
+
+    def _live_initialized(self, generation: int, payload: object) -> None:
+        if generation != self.live_generation:
+            return
+        self.live_initializing = False
+        reader, chunk = payload
+        if (
+            not self.dynamic_refresh.isChecked()
+            or self.result is None
+            or reader.result.path != self.result.path
+        ):
+            return
+        self.live_reader = reader
+        self.live_skipped_rows += int(chunk.skipped_trailing_row)
+        for name, values in chunk.columns.items():
+            self.cache[name] = values
+        pending, self.pending = self.pending, None
+        if pending is not None:
+            self._draw(*pending)
+        self._refresh_all_plots()
+        self.live_timer.start(LIVE_REFRESH_INTERVAL_MS)
+        self._set_live_status(chunk)
+
+    @QtCore.pyqtSlot()
+    def poll_live_file(self) -> None:
+        if self.live_reader is None or self.live_poll_pending:
+            return
+        self.live_poll_pending = True
+        generation = self.live_generation
+        worker = LiveTailWorker(self.live_reader)
+        worker.signals.finished.connect(
+            lambda payload, token=generation: self._live_tail_loaded(token, payload)
+        )
+        worker.signals.failed.connect(
+            lambda message, token=generation: self._live_failed(token, message)
+        )
+        self.pool.start(worker)
+
+    def _live_tail_loaded(self, generation: int, payload: object) -> None:
+        if generation != self.live_generation:
+            return
+        reader, chunk = payload
+        if reader is not self.live_reader:
+            return
+        self.live_poll_pending = False
+        if chunk.reset:
+            self.live_skipped_rows = 0
+        self.live_skipped_rows += int(chunk.skipped_trailing_row)
+        for name, values in chunk.columns.items():
+            if chunk.reset:
+                self.cache[name] = values
+            elif values.size:
+                existing = self.cache.get(name)
+                self.cache[name] = (
+                    values if existing is None or not existing.size
+                    else np.concatenate((existing, values))
+                )
+        if any(values.size for values in chunk.columns.values()) or chunk.reset:
+            self._refresh_all_plots()
+        self._set_live_status(chunk)
+
+    def _live_failed(self, generation: int, message: str) -> None:
+        if generation != self.live_generation:
+            return
+        self.live_poll_pending = False
+        self.live_initializing = False
+        self.live_timer.stop()
+        self.live_reader = None
+        self.pending = None
+        self.status_label.setText(f"Dynamic refresh stopped: {message}")
+
+    def _refresh_all_plots(self) -> None:
+        limit = self.maximum_points.value()
+        for panel in self.panels:
+            if panel.x_name is None or panel.x_name not in self.cache:
+                continue
+            x = self.cache[panel.x_name]
+            for y_name, curve in panel.curves.items():
+                if y_name not in self.cache:
+                    continue
+                y = self.cache[y_name]
+                common_rows = min(len(x), len(y))
+                xd, yd = minmax_decimate(
+                    x[:common_rows], y[:common_rows], limit
+                )
+                curve.setData(xd, yd)
+
+    def _set_live_status(self, chunk: ResultChunk) -> None:
+        rows = max((len(values) for values in self.cache.values()), default=0)
+        suffix = ""
+        if chunk.incomplete_tail:
+            suffix = "; incomplete final line deferred"
+        if self.live_skipped_rows:
+            suffix += f"; malformed trailing rows ignored={self.live_skipped_rows}"
+        self.status_label.setText(
+            f"Live 20 Hz: {rows:,} complete rows loaded{suffix}"
         )
 
     def apply_links(self) -> None:

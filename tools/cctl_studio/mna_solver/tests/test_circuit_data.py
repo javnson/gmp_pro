@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import contextlib
+import io
 import json
 import struct
 import sys
@@ -64,6 +66,36 @@ class CircuitDataTests(unittest.TestCase):
             short = np.asarray(topology["discrete"]["short"]["A"])
             self.assertEqual(normal.shape, (3, 3))
             self.assertFalse(np.array_equal(normal, short))
+
+    def test_dimension_summary_matches_state_space_and_public_ports(self) -> None:
+        dimensions = data.circuit_dimension_summary(self.document)
+        self.assertEqual(dimensions["states"], 3)
+        self.assertEqual(dimensions["analog_inputs"], 1)
+        self.assertEqual(dimensions["command_inputs"], 1)
+        self.assertEqual(dimensions["external_inputs"], 2)
+        self.assertEqual(dimensions["signals"], len(self.document["signals"]["names"]))
+        self.assertEqual(dimensions["public_outputs"], 2)
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            data.print_circuit_dimensions(self.document)
+        self.assertIn("state space:         x=3, u=1, y=", output.getvalue())
+        self.assertIn("matrix dimensions:   A=3x3, B=3x1", output.getvalue())
+        self.assertIn("inputs=2 (analog=1, commands=1), outputs=2", output.getvalue())
+
+    def test_cpp_generation_progress_reports_dimensions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "buck.json"
+            data.write_circuit_data(data_path, self.document)
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                codegen.generate_cpp_project(
+                    data_path,
+                    Path(directory) / "cpp",
+                    show_progress=True,
+                )
+        self.assertIn("state space:         x=3, u=1, y=", output.getvalue())
+        self.assertIn("external ports:      inputs=2", output.getvalue())
 
     def test_vadc_outputs_are_marked_as_adc_sample_voltages(self) -> None:
         names = ["V(VADC_VDC)", "V(VADC_VA)", "V(VADC_IA)", "V(OUT)"]

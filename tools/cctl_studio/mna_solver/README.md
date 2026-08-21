@@ -301,8 +301,9 @@ D/S and A/K mode-selection signals.
 Both `circuit_data.py export` and `cpp_codegen.py` accept
 `--matrix-tolerance`. A schema-v2 JSON file is already pooled at export time,
 so code generation rejects a different tolerance and asks for re-export rather
-than silently changing equivalence. Their console output reports logical state count, discretization method,
-normal/startup step sizes, tolerance, timed progress with ETA, unique and
+than silently changing equivalence. Their console output reports logical state
+count, state-space dimensions `x/u/y`, external analog/command input and public
+output port counts, discretization method, normal/startup step sizes, tolerance, timed progress with ETA, unique and
 deduplicated calculation-state counts, and per-pool sharing. Redirected output
 uses sparse progress records instead of carriage-return animation. At the
 current default tolerance the INV case keeps all 729 complete calculation
