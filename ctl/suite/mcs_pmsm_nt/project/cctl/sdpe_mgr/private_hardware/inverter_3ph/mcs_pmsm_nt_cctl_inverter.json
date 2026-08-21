@@ -23,7 +23,7 @@
     "phase_current_sense_type": "SENSOR_TYPE_SHUNT",
     "phase_current_topology": "CS_TOPOLOGY_LOW_SIDE",
     "phase_shunt_resistance_ohm": 0.005,
-    "phase_current_gain_v_v": 15.0,
+    "phase_current_gain_v_v": 11.0,
     "phase_current_bias_v": 1.65,
     "bus_current_channel_count": 0,
     "bus_current_sense_type": "SENSOR_NONE",
@@ -39,6 +39,6 @@
     "bus_current_gain_v_a": 1.0,
     "bus_current_bias_v": 0.0,
     "verification_status": "simulation_calibrated",
-    "source_reference": "gmp_3ph_2136sinv_dual plus PMSM.CIR: 5 mOhm shunts, gain 15, and 47k/1k voltage dividers"
+    "source_reference": "gmp_3ph_2136sinv_dual plus PMSM.CIR: 5 mOhm shunts, effective gain 11 from 22k/(1k+1k), and 47k/1k voltage dividers"
   }
 }

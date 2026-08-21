@@ -43,20 +43,77 @@ def main() -> int:
         * float(hardware["phase_current_gain_v_v"])
     )
     expected_voltage = float(hardware["bus_voltage_gain_v_v"])
-    checks = (
-        ("phase A current", "IPMSM1_A", "V(VADC_IC)", expected_current),
-        ("phase B current", "IPMSM1_B", "V(VADC_IB)", expected_current),
-        ("phase C current", "IPMSM1_C", "V(VADC_IA)", expected_current),
-        ("DC bus voltage", "VS1", "V(VADC_VDC)", expected_voltage),
-    )
+    checks = tuple(
+        (
+            f"phase {phase} current",
+            f"IPMSM1_{phase}",
+            f"V(VADC_I{phase})",
+            expected_current,
+        )
+        for phase in "ABC"
+    ) + (("DC bus voltage", "VS1", "V(VADC_VDC)", expected_voltage),)
     for label, source, output, expected in checks:
         actual = float(gain[signals.index(output), inputs.index(source)])
         if not np.isclose(actual, expected, rtol=1e-4, atol=1e-9):
             raise RuntimeError(f"{label} gain mismatch: model={actual}, SDPE={expected}")
         print(f"{label:<18} model={actual:.12g}  SDPE={expected:.12g}")
+
+    for measured_phase in "ABC":
+        for source_phase in "ABC":
+            if measured_phase == source_phase:
+                continue
+            actual = float(
+                gain[
+                    signals.index(f"V(VADC_I{measured_phase})"),
+                    inputs.index(f"IPMSM1_{source_phase}"),
+                ]
+            )
+            if not np.isclose(actual, 0.0, rtol=0.0, atol=1e-9):
+                raise RuntimeError(
+                    f"phase-current cross coupling I{source_phase}->"
+                    f"VADC_I{measured_phase}: {actual}"
+                )
+
+    phase_gates = {"A": ("PWM1", "PWM2"), "B": ("PWM3", "PWM4"),
+                   "C": ("PWM5", "PWM6")}
+    for phase, (upper_pwm, lower_pwm) in phase_gates.items():
+        paths = []
+        for switch in switches:
+            pwm = switch["pwm_port"]
+            other_lower = pwm in {"PWM2", "PWM4", "PWM6"} and pwm != lower_pwm
+            paths.append("channel" if pwm == upper_pwm or other_lower else "off")
+        topology = next(
+            item for item in document["topologies"]
+            if item["mosfet_paths"] == paths
+        )
+        phase_model = simulator.discrete_states[
+            topology["calculation_state_index"]
+        ]["normal"]
+        phase_gain = (
+            phase_model["C"]
+            @ np.linalg.solve(identity - phase_model["A"], phase_model["B"])
+            + phase_model["D"]
+        )
+        responses = {
+            output_phase: float(
+                phase_gain[
+                    signals.index(f"VPMSM1_{output_phase}"),
+                    inputs.index("VS1"),
+                ]
+            )
+            for output_phase in "ABC"
+        }
+        if responses[phase] < 0.9 or any(
+            abs(value) > 1e-3
+            for output_phase, value in responses.items()
+            if output_phase != phase
+        ):
+            raise RuntimeError(
+                f"{phase}-phase PWM bridge routing mismatch: {responses}"
+            )
+        print(f"phase {phase} PWM bridge routing: {responses}")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

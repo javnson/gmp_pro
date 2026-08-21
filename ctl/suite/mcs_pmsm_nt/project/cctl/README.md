@@ -41,13 +41,14 @@ The netlist exposes seven final conditioning nodes named `VADC_VDC`,
 `role=adc_sample_voltage` and an `adc_channel`. Conversion is
 `floor(clamp(VADC,0,Vref)/Vref*2^N)`, saturated to `2^N-1` (3.3 V, 12 bit in
 this project). The project-private `mcs_pmsm_nt_cctl_inverter` SDPE entity binds
-the 2136SINV simulation calibration: 1/48 voltage dividers, 5 mOhm times 15 or
-0.075 V/A current sensitivity, and 1.65 V current bias. The netlist uses 30 kOhm
-feedback resistors to match the global 2136SINV gain. Before compilation,
+the 2136SINV simulation calibration: 1/48 voltage dividers, 5 mOhm times 11 or
+0.055 V/A current sensitivity, and 1.65 V current bias. The netlist's 22 kOhm
+feedback and two series 1 kOhm input resistors give an effective gain of 11. Before compilation,
 `hw/validate_generated_model.py` recovers these DC gains from the generated
-matrices and compares them with the private SDPE parameters.
-The handwritten binding also follows the netlist's physical A/B/C shunt routing,
-which is labeled `VADC_IC/IB/IA` respectively. CSV records include all seven raw
+matrices, compares them with the private SDPE parameters, rejects phase-current
+cross coupling, and verifies A-to-PWM1/2, B-to-PWM3/4, C-to-PWM5/6 bridge routing.
+The physical A/B/C shunt paths now map directly to `VADC_IA/IB/IC`; the handwritten
+binding performs no A/C swap. CSV records include all seven raw
 ADC result codes.
 Open large result files with `tools/cctl_studio/result_viewer/run_result_viewer.bat`;
 it loads selected columns in the background, preserves extrema while decimating,

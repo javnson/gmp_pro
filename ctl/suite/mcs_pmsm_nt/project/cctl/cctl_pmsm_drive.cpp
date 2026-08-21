@@ -197,13 +197,39 @@ epwm_outputs sample_epwm(std::array<cctl::ti_epwm<double>, 3U> &epwm,
 
 void set_gate_inputs(PmsmCircuit::Inputs &input, const epwm_outputs &output)
 {
-    /* Project-local PMSM.CIR maps A->PWM5/6, B->PWM3/4, C->PWM1/2. */
-    input.PWM5 = output[0].upper;
-    input.PWM6 = output[0].lower;
+    /* Project-local PMSM.CIR maps A->PWM1/2, B->PWM3/4, C->PWM5/6. */
+    input.PWM1 = output[0].upper;
+    input.PWM2 = output[0].lower;
     input.PWM3 = output[1].upper;
     input.PWM4 = output[1].lower;
-    input.PWM1 = output[2].upper;
-    input.PWM2 = output[2].lower;
+    input.PWM5 = output[2].upper;
+    input.PWM6 = output[2].lower;
+}
+
+bool verify_gate_phase_mapping() noexcept
+{
+    epwm_outputs output{};
+    PmsmCircuit::Inputs input;
+    output[0] = {1U, 0U, false};
+    output[1] = {0U, 1U, false};
+    output[2] = {0U, 1U, false};
+    set_gate_inputs(input, output);
+    if (input.PWM1 != 1U || input.PWM2 != 0U || input.PWM3 != 0U ||
+        input.PWM4 != 1U || input.PWM5 != 0U || input.PWM6 != 1U)
+        return false;
+
+    output[0] = {0U, 1U, false};
+    output[1] = {1U, 0U, false};
+    set_gate_inputs(input, output);
+    if (input.PWM1 != 0U || input.PWM2 != 1U || input.PWM3 != 1U ||
+        input.PWM4 != 0U || input.PWM5 != 0U || input.PWM6 != 1U)
+        return false;
+
+    output[1] = {0U, 1U, false};
+    output[2] = {1U, 0U, false};
+    set_gate_inputs(input, output);
+    return input.PWM1 == 0U && input.PWM2 == 1U && input.PWM3 == 0U &&
+           input.PWM4 == 1U && input.PWM5 == 1U && input.PWM6 == 0U;
 }
 
 bool all_low_sides_conducting(const epwm_outputs &output) noexcept
@@ -230,6 +256,8 @@ class pmsm_drive_topology
     {
         if (!verify_peripheral_models())
             throw std::runtime_error("SDPE-configured TI peripheral self-test failed");
+        if (!verify_gate_phase_mapping())
+            throw std::runtime_error("ePWM-to-netlist phase mapping self-test failed");
 
         setup_peripheral();
         ctl_init();

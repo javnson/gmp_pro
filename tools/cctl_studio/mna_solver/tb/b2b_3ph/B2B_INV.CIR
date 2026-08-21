@@ -1,0 +1,97 @@
+B2B_INV (TINA Netlist Editor format)
+**************************************
+**  This file was created by TINA   **
+**         www.tina.com             ** 
+**      (c) DesignSoft, Inc.        **          
+**     www.designsoftware.com       **
+**************************************
+.LIB "<TINADIR>\EXAMPLES\SPICE\TSPICE.LIB"
+.LIB "<TINADIR>\SPICELIB\Operational Amplifiers.LIB"
+.TEMP 27
+.AC DEC 20 10 1MEG
+.TRAN 2N 1U
+.DC LIN VPWM3 0 1 10M
+
+.PROBE V([UBUS]) I(VAM3) I(VAM2) I(VAM1) V(32,28)
+.PROBE V(31,28) V(30,28)
+
+VS4         9 8 5
+VS3         10 8 5
+VS2         11 8 5
+VPWM3       12 10 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM4       13 IB_SENSOR DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM1       14 11 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM2       15 IA_SENSOR DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM5       16 9 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM6       17 IC_SENSOR DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM9       18 19 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM10      21 IB2_SENSOR DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM7       22 23 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM8       24 IA2_SENSOR DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM11      25 26 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM12      27 IC2_SENSOR DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VAM3        26 33 ; Current Arrow
+VAM2        19 34 ; Current Arrow
+VAM1        23 35 ; Current Arrow
+R17         8 0 1MEG 
+R20         IC_SENSOR 0 5M 
+R19         IB_SENSOR 0 5M 
+R18         IA_SENSOR 0 5M 
+MT18        UBUS 12 10 10  ME_2N6755_N_1 NRD=0 NRS=0 
+MT17        10 13 IB_SENSOR IB_SENSOR  ME_2N6755_N_1 NRD=0 NRS=0 
+MT16        UBUS 14 11 11  ME_2N6755_N_1 NRD=0 NRS=0 
+MT15        11 15 IA_SENSOR IA_SENSOR  ME_2N6755_N_1 NRD=0 NRS=0 
+MT14        UBUS 16 9 9  ME_2N6755_N_1 NRD=0 NRS=0 
+C9          UBUS 0 100U 
+MT13        9 17 IC_SENSOR IC_SENSOR  ME_2N6755_N_1 NRD=0 NRS=0 
+C8          UBUS 0 100U 
+R16         IC2_SENSOR 0 5M 
+R15         IB2_SENSOR 0 5M 
+R14         IA2_SENSOR 0 5M 
+MT12        20 18 19 19  ME_2N6755_N_1 NRD=0 NRS=0 
+MT11        19 21 IB2_SENSOR IB2_SENSOR  ME_2N6755_N_1 NRD=0 NRS=0 
+MT10        20 22 23 23  ME_2N6755_N_1 NRD=0 NRS=0 
+MT9         23 24 IA2_SENSOR IA2_SENSOR  ME_2N6755_N_1 NRD=0 NRS=0 
+MT8         20 25 26 26  ME_2N6755_N_1 NRD=0 NRS=0 
+R13         UBUS 20 50M 
+C7          20 0 100U 
+MT7         26 27 IC2_SENSOR IC2_SENSOR  ME_2N6755_N_1 NRD=0 NRS=0 
+C6          20 0 100U 
+R12         28 0 1MEG 
+R11         29 0 1MEG 
+R10         30 29 1MEG 
+R9          31 29 1MEG 
+R8          32 29 1MEG 
+R7          32 28 10 
+R6          31 28 10 
+R5          30 28 10 
+C5          32 29 5U 
+C4          31 29 5U 
+C3          30 29 5U 
+L3          36 32 1M IC=0 
+R4          33 36 50M 
+L2          37 31 1M IC=0 
+R2          34 37 50M 
+L1          38 30 1M IC=0 
+R1          35 38 50M 
+
+.MODEL ME_2N6755_N_1 NMOS( LEVEL=3 VTO=3.128 KP=21.14U PHI=600M GAMMA=0 TOX=100N 
++      UO=600 VMAX=0 DELTA=0 THETA=0 ETA=0 
++      L=2U W=1.1 RD=64.68M RS=120.7M RG=5.839 
++      RB=0 RDS=600K IS=44.14F N=1 PB=800M 
++      CBD=1.261N CBS=0 MJ=500M TT=370N CGSO=725.6P 
++      CGDO=310.6P CGBO=0 KF=0 AF=1 )
+
+.END

@@ -45,12 +45,13 @@ ADC、带比较事件触发输出的中心对齐互补 ePWM（含 DBRED/DBFED �
 `floor(clamp(VADC, 0, Vref) / Vref * 2^N)`，并在满量程饱和到 `2^N-1`；
 本工程使用 `Vref=3.3 V`、`N=12`。工程通过
 `sdpe_mgr/private_hardware/inverter_3ph/mcs_pmsm_nt_cctl_inverter.json` 绑定
-2136SINV 的私有仿真标定：电压分压为 `1/48`，电流灵敏度为
-`5 mOhm * 15 = 0.075 V/A`，零电流偏置为 1.65 V。网表的六个运放反馈电阻为
-30 kΩ，与全局 `gmp_3ph_2136sinv_dual` 的 15 倍参数一致；
+2136SINV 的私有仿真标定：电压分压为 `1/48`，当前网表的电流灵敏度为
+`5 mOhm * 11 = 0.055 V/A`，零电流偏置为 1.65 V。网表每相使用 22 kΩ
+反馈和两段串联的 1 kΩ 输入电阻，因此闭环有效增益为 11；
 `hw/validate_generated_model.py` 会在编译前从生成矩阵反算三相电流和母线电压
-DC 增益，并与私有 SDPE 参数比较。该网表的物理 A/B/C 下桥采样网络分别标为 `VADC_IC/IB/IA`，因此手写
-testbench 按实际接线重新排列后再写入控制器 IA/IB/IC 通道。
+DC 增益，并与私有 SDPE 参数比较，同时检查三相采样交叉耦合和
+A→PWM1/2、B→PWM3/4、C→PWM5/6 的桥臂路由。物理 A/B/C 下桥采样网络
+现在分别直接对应 `VADC_IA/IB/IC`，testbench 不再交换 A/C 通道。
 
 默认 Eigen 结果写入 `mcs_pmsm_nt_cctl.csv`，包含 PWM 比较值、三相电压电流、dq 电流、
 转矩、负载、编码器计数和七路原始 ADC code。测试同时检查 ADC/ePWM/eQEP、

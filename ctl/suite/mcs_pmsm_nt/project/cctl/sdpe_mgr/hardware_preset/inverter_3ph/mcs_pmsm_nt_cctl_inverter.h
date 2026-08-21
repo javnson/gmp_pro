@@ -122,7 +122,7 @@ extern "C"
  * @brief Current signal-chain gain; zero means configurable/unknown.
  * @unit V/V
  */
-#define MCS_PMSM_NT_CCTL_INVERTER_PH_CSA_GAIN_V_V (15.0f)
+#define MCS_PMSM_NT_CCTL_INVERTER_PH_CSA_GAIN_V_V (11.0f)
 
 /**
  * @brief Zero-current ADC bias; zero may mean differential/unknown.
@@ -220,7 +220,7 @@ extern "C"
 /**
  * @brief Primary board manual, schematic or internal design reference.
  */
-#define MCS_PMSM_NT_CCTL_INVERTER_SOURCE_REFERENCE "gmp_3ph_2136sinv_dual plus PMSM.CIR: 5 mOhm shunts, gain 15, and 47k/1k voltage dividers"
+#define MCS_PMSM_NT_CCTL_INVERTER_SOURCE_REFERENCE "gmp_3ph_2136sinv_dual plus PMSM.CIR: 5 mOhm shunts, effective gain 11 from 22k/(1k+1k), and 47k/1k voltage dividers"
 
 // Derived macros
 /**
