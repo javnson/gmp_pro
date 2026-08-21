@@ -35,6 +35,14 @@ void gmp_csp_startup(void);
 //
 void gmp_csp_loop(void);
 
+#if defined SPECIFY_ENABLE_CSP_RUNTIME_EXIT
+/**
+ * @brief Query whether a finite hosted CSP has completed its lifecycle work.
+ * @return Nonzero requests that gmp_base_entry() leave its background loop.
+ */
+fast_gt gmp_csp_should_exit(void);
+#endif
+
 // This function is the last function before mainloop.
 // This function is implemented by CSP
 //

@@ -5,6 +5,38 @@ inverter, and `cctl::pmsm_cs` current-source PMSM in one process. It removes the
 Windows/Simulink network transport. Each control transaction follows
 `ePWM SOC -> ADC latch/interrupt -> controller callbacks -> ePWM update`.
 
+## Maintained runtime boundaries
+
+The selected `csp|cctl` module owns the executable `main()` and calls
+`gmp_base_entry()`. The ordinary GMP order initializes `setup_peripheral()`,
+`ctl_init()`, and project `init()`. The project `init()` only registers build
+metadata, the persistent topology, and callbacks with the CSP. The CSP then
+starts services in `gmp_csp_post_process()`, advances one plant step per
+`gmp_csp_loop()`, and finalizes in `gmp_csp_exit()`. This project must not add
+another process entry or initialize the controller again from a plant callback.
+
+Project `xplt/mcu_simulation.hpp/.cpp` aggregates the seven ADC inputs, three
+complementary ePWM modules, ADC SOC/interrupt dispatch, and eQEP model. The
+C-compatible `xplt.peripheral.*` files contain only controller-visible register
+storage, scaling-channel initialization, and the simulated ADC ISR. That ISR is
+the only project site that calls `gmp_base_ctl_step()`; it is reached from ePWM
+SOC after ADC and encoder registers are latched, never from the plant main loop.
+`xplt.ctl_interface.h` maps control callbacks and routes state-machine output
+enable/disable through the CSP.
+Generic TI-style peripheral primitives remain under `cctl/peripheral_if`.
+
+Chip background code and the control ISR have independent schedules. The SDPE
+value `CCTL_SIM_USER_CODE_FREQUENCY_HZ` is currently 33 kHz; the simulated MCU
+compute allocator calls user `mainloop()` and controller-background
+`ctl_mainloop()` at that rate instead of running an arbitrary number of user
+loops per control interrupt. ADC still raises the 20 kHz control interrupt and
+exclusively owns `gmp_base_ctl_step()`. A 4 s regression therefore expects
+132000 user/background dispatches and 80000 control calculations.
+
+Controller arithmetic uses the CSP default `ctrl_gt=float`, while peripheral
+and motor models use `sim_real_gt=double`. See `csp/cctl/doc/README.md` for the
+complete scalar and lifecycle contract.
+
 Run `build_test.bat`. The seven-stage flow generates the target SDPE bindings,
 deploys the selected sources, generates `gmp_config.cmake`, regenerates the
 project-local main circuit, builds, and runs the regression. It locates GMP
@@ -55,9 +87,10 @@ it loads selected columns in the background, preserves extrema while decimating,
 and supports independent multi-panel curves with linked zoom.
 
 The reusable `cctl/dsa` SPSC record ring is allocation-free and lock-free after
-initialization. The `csp/cctl` host runtime exposes `initialize`, `step`,
-`interface_transfer`, `run`, and `finalize`, and owns simulation, batched file
-output, and one-second console progress workers. The SDPE defaults are a 32 MB
+initialization. The `csp/cctl` host runtime exposes `initialize`, `start`,
+`step`, `interface_transfer`, `run`, and `finalize`. The standard GMP main
+thread owns simulation while workers handle batched file output and one-second
+console progress. The SDPE defaults are a 32 MB
 ring and 1 MB output batches. A full ring drops observations instead of blocking
 the numerical solver. The final summary reports queued, written, dropped, peak
 ring occupancy, and the output worker's actual formatting/writing busy time.
@@ -146,8 +179,8 @@ needs that motor result. Control boundaries must also update gates before the
 circuit step. Splitting this chain across workers would add a cross-thread
 handoff every 100 ns without overlap. A Jacobi-style one-step lag could overlap
 work, but changes the numerical model and is not a transparent optimization.
-The exact solver therefore remains one numerical worker while file and console
-workers run concurrently with it.
+The exact solver therefore remains on the GMP numerical main thread while file
+and console workers run concurrently with it.
 
 `hw/generate_code.bat` accepts `DISCRETIZATION_METHOD=forward_euler`,
 `backward_euler`, or `rk4`. The affine-LTI RK4 backend is precomputed into one

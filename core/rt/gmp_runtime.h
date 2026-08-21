@@ -41,6 +41,15 @@ void gmp_base_init(void)
     // CSP Startup function
     //
     gmp_csp_startup();
+
+#if defined SPECIFY_ENABLE_CSP_RUNTIME_EXIT
+    // A hosted CSP may reject process options before project initialization.
+    // gmp_base_entry() will still execute the normal loop/exit unwinding path.
+    if (gmp_csp_should_exit())
+    {
+        return;
+    }
+#endif
 #endif // SPECIFY_DISABLE_CSP
 
     // platform related function, initialize peripheral
@@ -104,13 +113,16 @@ void gmp_base_loop(void)
 
     // Call user general loop routine
     //
+#if !defined SPECIFY_CSP_MANAGES_USER_MAINLOOP
     mainloop();
+#endif // automatic user mainloop
 
-#if !defined SPECIFY_DISABLE_GMP_CTL
+#if !defined SPECIFY_DISABLE_GMP_CTL && \
+    !defined SPECIFY_CSP_MANAGES_CTL_MAINLOOP
     // Call controller loop routine
     //
     ctl_mainloop();
-#endif // SPECIFY_DISABLE_GMP_CTL
+#endif // automatic CTL mainloop
 }
 
 // This function should be called when Chip setup is completed.
@@ -133,6 +145,15 @@ void gmp_base_entry(void)
 #endif // SPECIFY_PC_ENVIRONMENT
     {
         gmp_base_loop();
+
+#if !defined SPECIFY_DISABLE_CSP && defined SPECIFY_ENABLE_CSP_RUNTIME_EXIT
+        // Hosted CSPs may finish before their defensive maximum iteration
+        // count.  The normal gmp_csp_exit() path still runs below.
+        if (gmp_csp_should_exit())
+        {
+            break;
+        }
+#endif
     }
 
 #if !defined SPECIFY_DISABLE_CSP

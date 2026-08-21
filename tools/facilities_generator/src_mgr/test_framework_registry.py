@@ -62,6 +62,22 @@ class FrameworkRegistryTests(unittest.TestCase):
             [("ctl", "filters|lowpass"), ("ctl", "filters|highpass")],
         )
 
+    def test_multiple_concrete_csps_are_rejected(self):
+        self.registry["modules"]["csp"] = {
+            "cctl": {"depends_on": ["core|std"]},
+            "c28x_syscfg": {"depends_on": []},
+        }
+        config = {
+            "selected_modules": [
+                {"root": "csp", "module": "cctl"},
+                {"root": "csp", "module": "c28x_syscfg"},
+            ]
+        }
+        with self.assertRaisesRegex(
+            RegistrySelectionError, "at most one concrete CSP"
+        ):
+            resolve_selected_modules(self.registry, config)
+
 
 if __name__ == "__main__":
     unittest.main()

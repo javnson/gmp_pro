@@ -1,8 +1,12 @@
-/** @file xplt.ctl_interface.h @brief ADC/eQEP/ePWM binding for direct simulation. */
+/**
+ * @file xplt.ctl_interface.h
+ * @brief C controller callbacks bound to the simulated MCU registers.
+ */
 #ifndef MCS_PMSM_NT_CCTL_XPLT_CTL_INTERFACE_H
 #define MCS_PMSM_NT_CCTL_XPLT_CTL_INTERFACE_H
 
 #include <xplt.peripheral.h>
+#include <csp.general.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -37,12 +41,12 @@ GMP_STATIC_INLINE void ctl_output_callback(void)
 GMP_STATIC_INLINE void ctl_fast_enable_output(void)
 {
     clear_all_controllers();
-    cctl_pwm_output_enabled = 1;
+    csp_sl_enable_output();
 }
 
 GMP_STATIC_INLINE void ctl_fast_disable_output(void)
 {
-    cctl_pwm_output_enabled = 0;
+    csp_sl_disable_output();
     cctl_pwm_compare[phase_U] = 0;
     cctl_pwm_compare[phase_V] = 0;
     cctl_pwm_compare[phase_W] = 0;

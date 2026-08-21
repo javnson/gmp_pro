@@ -15,6 +15,7 @@ endif()
 set(GMP_GENERATED_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/crc16.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/csp_cctl.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gmp_src/csp_cctl_main.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/ctl_cia402_callback_fn.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/ctl_cia402_state_machine.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/ctl_component_interface.c"
@@ -41,6 +42,7 @@ set(GMP_GENERATED_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_datalink.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_dl_facility.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_runtime.c"
+    "${CMAKE_CURRENT_LIST_DIR}/../xplt/mcu_simulation.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/../xplt/xplt.peripheral.cpp"
 )
 target_sources(${GMP_CMAKE_TARGET} PRIVATE ${GMP_GENERATED_SOURCES})
@@ -48,6 +50,5 @@ target_sources(${GMP_CMAKE_TARGET} PRIVATE ${GMP_GENERATED_SOURCES})
 target_include_directories(${GMP_CMAKE_TARGET} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/../xplt"
     "${GMP_PRO_ROOT}"
-    "${GMP_PRO_ROOT}/csp/c28x_syscfg"
     "${GMP_PRO_ROOT}/csp/cctl"
 )

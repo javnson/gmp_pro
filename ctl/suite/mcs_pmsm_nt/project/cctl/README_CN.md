@@ -6,6 +6,34 @@ Windows/Simulink 网络通信层，因此每一个控制周期都严格执行
 `ePWM SOC -> ADC 锁存/中断 -> ctl_input_callback -> ctl_dispatch ->
 ctl_output_callback -> ePWM 更新`。
 
+## 可维护的运行边界
+
+工程选择的 `csp|cctl` 模块拥有唯一的可执行程序 `main()`，并从
+`gmp_base_entry()` 进入。标准 GMP 顺序会先执行 `setup_peripheral()`、
+`ctl_init()` 和工程 `init()`。工程 `init()` 只向 CSP 注册构建信息、持久拓扑和
+回调；CSP 在 `gmp_csp_post_process()` 启动服务，在每次 `gmp_csp_loop()` 中推进
+一个被控对象步，并在 `gmp_csp_exit()` 统一注销。工程不得再定义第二个进程入口，
+也不应在被控对象回调中重复初始化控制器。
+
+工程私有的 `xplt/mcu_simulation.hpp/.cpp` 聚合七路 ADC 输入、三路互补 ePWM、
+ADC SOC/中断分发和 eQEP。C 兼容的 `xplt.peripheral.*` 只保存控制器可见的
+寄存器、标度通道以及模拟 ADC ISR。该 ISR 是工程中唯一调用
+`gmp_base_ctl_step()` 的位置：ePWM SOC 触发 ADC 并锁存 ADC、编码器寄存器后才
+进入 ISR，不会从被控对象 mainloop 调用控制步。`xplt.ctl_interface.h` 负责控制器
+回调映射，并把状态机的输出使能/禁用连接到 CSP。通用 TI 风格外设原语仍位于
+`cctl/peripheral_if`。
+
+芯片后台代码与控制 ISR 使用两套独立调度。SDPE 的
+`CCTL_SIM_USER_CODE_FREQUENCY_HZ` 当前为 33 kHz；芯片算力调度器按该频率调用
+用户 `mainloop()` 和控制器后台 `ctl_mainloop()`，不再采用“每次控制中断执行
+若干次用户代码”的旧模型。ADC 仍以 20 kHz 产生控制中断并独占
+`gmp_base_ctl_step()`。因此 4 s 回归应得到 132000 次用户/后台调用和 80000 次
+控制计算，两者互不绑定。
+
+控制器计算保持 CSP 默认的 `ctrl_gt=float`，外设和电机模型使用
+`sim_real_gt=double`。完整的数值类型与生命周期约定见
+`csp/cctl/doc/README_CN.md`。
+
 运行 `build_test.bat` 即可完成 SDPE、GMP 源文件、CMake 接口、主电路代码、
 编译和闭环回归这七个阶段。脚本只从环境变量 `GMP_PRO_LOCATION` 定位 GMP；
 生成物位于系统临时目录 `%TEMP%\gmp_mcs_pmsm_nt_cctl_build`。
@@ -63,8 +91,9 @@ A→PWM1/2、B→PWM3/4、C→PWM5/6 的桥臂路由。物理 A/B/C 下桥采样
 ## 运行时分层
 
 `cctl/dsa/spsc_record_ring.hpp` 是与平台无关的预分配 SPSC 无锁定长记录环。
-`csp/cctl` 在其上实现 `initialize`、`step`、`interface_transfer`、`run` 和
-`finalize`，并启动仿真、文件输出、控制台进度三个线程。仿真线程只进行一次
+`csp/cctl` 在其上实现 `initialize`、`start`、`step`、`interface_transfer`、
+`run` 和 `finalize`。标准 GMP 主线程执行仿真，文件输出和控制台进度由两个
+服务线程完成。仿真热路径只进行一次
 非阻塞记录拷贝；32 MB 环满时丢弃新记录而不阻塞求解器。文件线程按 1 MB
 批量格式化和写入，控制台线程每 1 s 更新进度、ETA、已完成仿真时间、瞬时
 求解吞吐率（Mstep/s）、队列占用和丢弃数。最终摘要还会给出环形队列峰值及
@@ -137,7 +166,7 @@ schema v2 JSON 在写盘时已保存去重矩阵池并采用紧凑序列化；�
 `controller -> circuit[n] -> motor[n] -> circuit[n+1]`；拆成三个计算线程只会
 把同样的串行链改成每 100 ns 跨线程握手。若允许一拍延迟可采用并行 Jacobi
 协同仿真，但那是另一种数值模型，不能作为当前回归的透明加速。现阶段保留
-单一数值线程，同时让文件线程和控制台线程与它真正并行。
+GMP 数值主线程，同时让文件线程和控制台线程与它真正并行。
 
 主电路生成脚本支持环境变量 `DISCRETIZATION_METHOD=forward_euler`、
 `backward_euler` 或 `rk4`。RK4 对线性仿射模型预计算为单次矩阵推进，不增加

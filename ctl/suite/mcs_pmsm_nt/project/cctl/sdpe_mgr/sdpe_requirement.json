@@ -5,7 +5,7 @@
   "description": "Direct host bindings for the controller, TI-style peripherals, generated MNA inverter, PMSM plant, and the CCTL host CSP.",
   "suite": "mcs_pmsm_nt",
   "version": "1.0.0",
-  "updated_at": "2026-08-20",
+  "updated_at": "2026-08-21",
   "output_header": "ctrl_settings.h",
   "common_requirements": ["../../../sdpe_general/sdpe_requirement.json"],
   "hardware": [
@@ -32,7 +32,7 @@
     {
       "name": "Simulation Runtime",
       "requirements": [
-        "Plant Step", "Control Frequency", "Simulation Duration", "Simulation DC Bus",
+        "Plant Step", "Control Frequency", "User Code Frequency", "Simulation Duration", "Simulation DC Bus",
         "Load Torque Start", "Load Torque", "Startup Short Steps", "Output Ring Bytes",
         "PMSM Integration Order", "Output Batch Bytes", "Progress Interval", "Simulation Chunk Steps",
         "Realtime Priority", "Pause On Exit", "Output Filename"
@@ -82,6 +82,7 @@
 
     { "role": "Plant Step", "macro": "CCTL_SIM_PLANT_STEP_S", "binding": { "literal": "1.0e-7" } },
     { "role": "Control Frequency", "macro": "CCTL_SIM_CONTROL_FREQUENCY_HZ", "binding": { "literal": "20.0e3" } },
+    { "role": "User Code Frequency", "macro": "CCTL_SIM_USER_CODE_FREQUENCY_HZ", "binding": { "literal": "33.0e3" } },
     { "role": "Simulation Duration", "macro": "CCTL_SIM_DURATION_S", "binding": { "literal": "4.0" } },
     { "role": "Simulation DC Bus", "macro": "CCTL_SIM_DC_BUS_V", "binding": { "literal": "48.0" } },
     { "role": "Load Torque Start", "macro": "CCTL_SIM_LOAD_TORQUE_START_S", "binding": { "literal": "0.5" } },

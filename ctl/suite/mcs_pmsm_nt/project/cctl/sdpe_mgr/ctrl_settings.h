@@ -29,7 +29,7 @@ extern "C"
 #define MCS_PMSM_NT_CCTL_SDPE_PROJECT_ID "mcs_pmsm_nt_cctl"
 #define MCS_PMSM_NT_CCTL_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_CCTL_SDPE_PROJECT_VERSION "1.0.0"
-#define MCS_PMSM_NT_CCTL_SDPE_PROJECT_UPDATED_AT "2026-08-20"
+#define MCS_PMSM_NT_CCTL_SDPE_PROJECT_UPDATED_AT "2026-08-21"
 
 //=================================================================================================
 /**
@@ -197,6 +197,11 @@ extern "C"
  * @brief Control Frequency
  */
 #define CCTL_SIM_CONTROL_FREQUENCY_HZ 20.0e3
+
+/**
+ * @brief User Code Frequency
+ */
+#define CCTL_SIM_USER_CODE_FREQUENCY_HZ 33.0e3
 
 /**
  * @brief Simulation Duration

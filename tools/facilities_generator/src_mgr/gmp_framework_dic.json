@@ -6899,11 +6899,12 @@
         "csp": {
             "cctl": {
                 "type": "module",
-                "description": "Direct hosted CCTL simulation runtime with lock-free output and progress workers",
+                "description": "Hosted CCTL CSP with standard GMP lifecycle, simulation types, lock-free output, and progress workers",
                 "src_patterns": [
                     "${GMP_PRO_LOCATION}/csp/cctl/src/*.cpp"
                 ],
                 "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/cctl/*.h",
                     "${GMP_PRO_LOCATION}/csp/cctl/*.hpp"
                 ],
                 "inc_dirs": [
@@ -6911,7 +6912,9 @@
                 ],
                 "help_docs": [
                     "${GMP_PRO_LOCATION}/csp/cctl/README.md",
-                    "${GMP_PRO_LOCATION}/csp/cctl/README_CN.md"
+                    "${GMP_PRO_LOCATION}/csp/cctl/README_CN.md",
+                    "${GMP_PRO_LOCATION}/csp/cctl/doc/README.md",
+                    "${GMP_PRO_LOCATION}/csp/cctl/doc/README_CN.md"
                 ],
                 "depends_on": [
                     "core|rt",
@@ -6922,15 +6925,15 @@
                         "id": "sys_compile",
                         "summary": "Compilation Passed",
                         "completed": true,
-                        "date": "2026-08-20",
-                        "reply": "MSVC C++17 source-manager build passed with generated short include paths"
+                        "date": "2026-08-21",
+                        "reply": "MSVC C++17 Release build passed through the CSP-owned gmp_base_entry lifecycle"
                     },
                     {
                         "id": "sys_sim",
                         "summary": "Simulation / Principle Verified",
                         "completed": true,
-                        "date": "2026-08-20",
-                        "reply": "40,000,000-step three-thread PMSM drive regression wrote 80,000 records with zero drops"
+                        "date": "2026-08-21",
+                        "reply": "40,000,000-step PMSM regression passed after MCU peripheral and CSP lifecycle separation"
                     },
                     {
                         "id": "sys_hw",

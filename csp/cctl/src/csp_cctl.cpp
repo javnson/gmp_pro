@@ -1,3 +1,8 @@
+/**
+ * @file csp_cctl.cpp
+ * @brief Main-thread simulation runtime with two hosted service workers.
+ */
+
 #include <csp_cctl.hpp>
 #include <cctl/dsa/spsc_record_ring.hpp>
 
@@ -67,6 +72,86 @@ std::size_t console_column_count() noexcept
 }
 } // namespace
 
+compute_budget_scheduler::compute_budget_scheduler(
+    double simulation_step_s, double task_frequency_hz,
+    bool dispatch_at_start)
+{
+    initialize(simulation_step_s, task_frequency_hz, dispatch_at_start);
+}
+
+void compute_budget_scheduler::initialize(double simulation_step_s,
+                                          double task_frequency_hz,
+                                          bool dispatch_at_start)
+{
+    if (!(simulation_step_s > 0.0) ||
+        !(task_frequency_hz > 0.0) ||
+        !std::isfinite(simulation_step_s) ||
+        !std::isfinite(task_frequency_hz))
+        throw std::invalid_argument("invalid MCU compute scheduler frequency");
+    executions_per_step_ =
+        static_cast<long double>(simulation_step_s) *
+        static_cast<long double>(task_frequency_hz);
+    phase_ = 0.0L;
+    total_executions_ = 0U;
+    dispatch_at_start_ = dispatch_at_start;
+    first_step_ = true;
+}
+
+std::size_t compute_budget_scheduler::consume() noexcept
+{
+    std::size_t executions = 0U;
+    if (first_step_)
+    {
+        first_step_ = false;
+        if (dispatch_at_start_)
+            ++executions;
+    }
+    else
+    {
+        phase_ += executions_per_step_;
+        executions += static_cast<std::size_t>(phase_);
+        phase_ -= static_cast<long double>(executions);
+    }
+    total_executions_ += executions;
+    return executions;
+}
+
+std::size_t compute_budget_scheduler::total_executions() const noexcept
+{
+    return total_executions_;
+}
+
+simulation_system::simulation_system(embedded_chip_simulation &chip,
+                                     peripheral_simulation &peripherals,
+                                     circuit_simulation &circuit) noexcept
+    : chip_(chip), peripherals_(peripherals), circuit_(circuit)
+{
+}
+
+void simulation_system::initialize()
+{
+    chip_.initialize_embedded_chip();
+    peripherals_.initialize_peripherals();
+    circuit_.initialize_circuit();
+}
+
+void simulation_system::step(std::size_t step_index, double time_s,
+                             simulation_runtime &runtime)
+{
+    const simulation_step_context context{step_index, time_s, runtime};
+    chip_.step_embedded_chip(context);
+    peripherals_.apply_peripheral_outputs(context);
+    circuit_.step_circuit(context);
+    peripherals_.sample_peripheral_inputs(context);
+}
+
+void simulation_system::finalize()
+{
+    circuit_.finalize_circuit();
+    peripherals_.finalize_peripherals();
+    chip_.finalize_embedded_chip();
+}
+
 class simulation_runtime::implementation
 {
   public:
@@ -106,6 +191,8 @@ class simulation_runtime::implementation
         interactive_console_ = false;
         progress_anchor_saved_ = false;
         progress_rate_initialized_ = false;
+        callback_initialized_ = false;
+        callback_finalized_ = false;
         initialized_ = true;
     }
 
@@ -114,13 +201,46 @@ class simulation_runtime::implementation
     std::size_t completed_steps() const noexcept;
     std::size_t buffered_records() const noexcept;
 
+    void start()
+    {
+        if (!initialized_)
+            throw std::logic_error("initialize() must be called before start()");
+        if (running_)
+            throw std::logic_error("CCTL simulation is already running");
+
+        running_ = true;
+        configure_process_priority();
+        start_time_ = clock_type::now();
+        try
+        {
+            if (callbacks_.initialize)
+                callbacks_.initialize();
+            callback_initialized_ = true;
+            file_thread_ = std::thread([this] { file_worker(); });
+            console_thread_ = std::thread([this] { console_worker(); });
+        }
+        catch (const std::exception &error)
+        {
+            fail(std::string("cannot start CCTL runtime: ") + error.what());
+            simulation_done_.store(true, std::memory_order_release);
+            finalize();
+            throw;
+        }
+    }
+
     bool step(simulation_runtime &owner)
     {
+        if (!running_)
+            throw std::logic_error("start() must be called before step()");
         const std::size_t index = completed_steps_.load(std::memory_order_relaxed);
         if (index >= config_.total_steps || stop_requested_.load(std::memory_order_acquire))
             return false;
-        callbacks_.step(index, static_cast<double>(index) * config_.plant_step_s,
-                        owner);
+        if (callbacks_.step)
+            callbacks_.step(index,
+                            static_cast<double>(index) * config_.plant_step_s,
+                            owner);
+        else
+            callbacks_.step_range(index, index + 1U, owner);
         completed_steps_.store(index + 1U, std::memory_order_release);
         return index + 1U < config_.total_steps;
     }
@@ -163,27 +283,25 @@ class simulation_runtime::implementation
 
     simulation_summary run(simulation_runtime &owner)
     {
-        if (!initialized_)
-            throw std::logic_error("initialize() must be called before run()");
-        if (running_)
-            throw std::logic_error("CCTL simulation is already running");
-
-        running_ = true;
-        configure_process_priority();
-        start_time_ = clock_type::now();
+        start();
         try
         {
-            file_thread_ = std::thread([this] { file_worker(); });
-            console_thread_ = std::thread([this] { console_worker(); });
-            simulation_thread_ =
-                std::thread([this, &owner] { simulation_worker(owner); });
+            if (callbacks_.step_range)
+                while (step_range(owner))
+                {
+                }
+            else
+                while (step(owner))
+                {
+                }
         }
         catch (const std::exception &error)
         {
-            fail(std::string("cannot start CCTL worker threads: ") + error.what());
-            simulation_done_.store(true, std::memory_order_release);
-            finalize();
-            throw;
+            fail(error.what());
+        }
+        catch (...)
+        {
+            fail("unknown exception in the CCTL simulation loop");
         }
         finalize();
         return summary_;
@@ -191,14 +309,31 @@ class simulation_runtime::implementation
 
     void finalize()
     {
-        if (simulation_thread_.joinable())
-            simulation_thread_.join();
+        if (!running_)
+            return;
+
+        if (callback_initialized_ && !callback_finalized_ && callbacks_.finalize)
+        {
+            try
+            {
+                callbacks_.finalize();
+            }
+            catch (const std::exception &error)
+            {
+                fail(error.what());
+            }
+            catch (...)
+            {
+                fail("unknown exception while finalizing the CCTL plant");
+            }
+            callback_finalized_ = true;
+        }
+
+        simulation_done_.store(true, std::memory_order_release);
         if (file_thread_.joinable())
             file_thread_.join();
         if (console_thread_.joinable())
             console_thread_.join();
-        if (!running_)
-            return;
 
         restore_process_priority();
 
@@ -221,34 +356,6 @@ class simulation_runtime::implementation
         if (summary_.message.empty())
             summary_.message = summary_.success ? "simulation completed" : "simulation stopped";
         running_ = false;
-    }
-
-    void simulation_worker(simulation_runtime &owner) noexcept
-    {
-        try
-        {
-            if (callbacks_.initialize)
-                callbacks_.initialize();
-            if (callbacks_.step_range)
-                while (step_range(owner))
-                {
-                }
-            else
-                while (step(owner))
-                {
-                }
-            if (callbacks_.finalize)
-                callbacks_.finalize();
-        }
-        catch (const std::exception &error)
-        {
-            fail(error.what());
-        }
-        catch (...)
-        {
-            fail("unknown exception in the CCTL simulation worker");
-        }
-        simulation_done_.store(true, std::memory_order_release);
     }
 
     void file_worker() noexcept
@@ -482,7 +589,6 @@ class simulation_runtime::implementation
     simulation_callbacks callbacks_;
     ::cctl::dsa::spsc_record_ring ring_;
     simulation_summary summary_;
-    std::thread simulation_thread_;
     std::thread file_thread_;
     std::thread console_thread_;
     clock_type::time_point start_time_{};
@@ -504,6 +610,8 @@ class simulation_runtime::implementation
     bool interactive_console_{};
     bool progress_anchor_saved_{};
     bool progress_rate_initialized_{};
+    bool callback_initialized_{};
+    bool callback_finalized_{};
     bool initialized_{};
     bool running_{};
 };
@@ -521,6 +629,11 @@ void simulation_runtime::initialize(simulation_config config,
                                     simulation_callbacks callbacks)
 {
     impl_->initialize(std::move(config), std::move(callbacks));
+}
+
+void simulation_runtime::start()
+{
+    impl_->start();
 }
 
 bool simulation_runtime::step()
@@ -542,6 +655,11 @@ simulation_summary simulation_runtime::run()
 void simulation_runtime::finalize()
 {
     impl_->finalize();
+}
+
+void simulation_runtime::fail(const std::string &message) noexcept
+{
+    impl_->fail(message);
 }
 
 std::size_t simulation_runtime::completed_steps() const noexcept
@@ -581,6 +699,12 @@ void simulation_runtime::print_summary(std::ostream &stream) const
            << ", bytes=" << value.output_bytes
            << ", writer_busy=" << value.output_worker_busy_time_s
            << " s (asynchronous)\n";
+}
+
+void simulation_runtime::print_project_summary(std::ostream &stream) const
+{
+    if (impl_->callbacks_.print_summary)
+        impl_->callbacks_.print_summary(stream);
 }
 
 void simulation_runtime::pause_if_requested(bool suppress_pause) const

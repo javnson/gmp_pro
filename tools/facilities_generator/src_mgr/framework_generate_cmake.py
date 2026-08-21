@@ -69,6 +69,22 @@ def _parse_include_summary(summary_path: Path) -> list[str]:
     return paths
 
 
+def _collect_legacy_include_dirs(manager_dir: Path) -> list[str]:
+    """Return legacy include-summary paths only for header-sync workspaces.
+
+    A src_only workspace resolves its complete dependency closure from the
+    registry.  Its summary is commonly an old machine-local artifact and may
+    point at a different CSP whose standard header names would shadow the
+    selected platform.
+    """
+    config_path = manager_dir / "gmp_framework_config.json"
+    if config_path.is_file():
+        config = json.loads(config_path.read_text(encoding="utf-8-sig"))
+        if config.get("sync_mode", "all") == "src_only":
+            return []
+    return _parse_include_summary(manager_dir / "gmp_compiler_includes.txt")
+
+
 def _collect_registered_include_dirs(
     manager_dir: Path,
     gmp_root: Path,
@@ -194,11 +210,10 @@ def generate_cmake(workspace: Path, output: Path | None = None) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     raw_include_paths = _collect_registered_include_dirs(manager_dir, gmp_root)
-    # Preserve explicitly emitted legacy paths for old manager configurations,
-    # while the registry-derived set above remains authoritative for src_only.
-    raw_include_paths.extend(
-        _parse_include_summary(manager_dir / "gmp_compiler_includes.txt")
-    )
+    # Header-sync workspaces may still carry explicitly emitted external paths.
+    # src_only workspaces must use the registry exclusively so a stale summary
+    # cannot shadow the selected CSP's standard csp.* headers.
+    raw_include_paths.extend(_collect_legacy_include_dirs(manager_dir))
     include_paths = {
         _render_include_path(path, manager_dir, project_root, output_path.parent, gmp_root)
         for path in raw_include_paths

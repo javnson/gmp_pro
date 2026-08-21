@@ -7,7 +7,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from framework_generate_cmake import _collect_registered_include_dirs
+from framework_generate_cmake import (
+    _collect_legacy_include_dirs,
+    _collect_registered_include_dirs,
+)
 
 
 class FrameworkGenerateCMakeTests(unittest.TestCase):
@@ -96,6 +99,19 @@ class FrameworkGenerateCMakeTests(unittest.TestCase):
                 _collect_registered_include_dirs(manager, root, registry),
                 [include_dir.resolve().as_posix()],
             )
+
+    def test_src_only_ignores_stale_legacy_csp_include_summary(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            manager = Path(temporary) / "gmp_src_mgr"
+            manager.mkdir()
+            (manager / "gmp_framework_config.json").write_text(
+                json.dumps({"sync_mode": "src_only"}), encoding="utf-8"
+            )
+            (manager / "gmp_compiler_includes.txt").write_text(
+                "E:/old-gmp/csp/c28x_syscfg\n", encoding="utf-8"
+            )
+
+            self.assertEqual(_collect_legacy_include_dirs(manager), [])
 
 
 if __name__ == "__main__":

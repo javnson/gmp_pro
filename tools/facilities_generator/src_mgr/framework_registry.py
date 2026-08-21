@@ -48,4 +48,12 @@ def resolve_selected_modules(registry: dict, local_config: dict) -> list[tuple[s
                 )
             dependency_root, dependency_module = dependency.split("|", 1)
             pending.append((dependency_root, dependency_module))
+
+    selected_csps = [module for root, module in resolved if root == "csp"]
+    if len(selected_csps) > 1:
+        formatted = ", ".join(f"csp|{module}" for module in selected_csps)
+        raise RegistrySelectionError(
+            "A project may resolve at most one concrete CSP; "
+            f"multiple CSP modules were selected: {formatted}"
+        )
     return resolved
