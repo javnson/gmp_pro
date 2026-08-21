@@ -179,14 +179,10 @@ void stage_adc_inputs(cctl::ti_adc<double, 8U> &adc,
     adc.set_input_voltage(CCTL_ADC_UA, inverter_output.VADC_VA);
     adc.set_input_voltage(CCTL_ADC_UB, inverter_output.VADC_VB);
     adc.set_input_voltage(CCTL_ADC_UC, inverter_output.VADC_VC);
-    /*
-     * PMSM.CIR routes the physical A/B/C low-side shunts to the nets named
-     * IC/IB/IA respectively.  Keep the controller channels in physical phase
-     * order; the VADC names describe PCB ADC pins, not motor phase order.
-     */
-    adc.set_input_voltage(CCTL_ADC_IA, inverter_output.VADC_IC);
+
+    adc.set_input_voltage(CCTL_ADC_IA, inverter_output.VADC_IA);
     adc.set_input_voltage(CCTL_ADC_IB, inverter_output.VADC_IB);
-    adc.set_input_voltage(CCTL_ADC_IC, inverter_output.VADC_IA);
+    adc.set_input_voltage(CCTL_ADC_IC, inverter_output.VADC_IC);
 }
 
 using epwm_outputs = std::array<cctl::ti_epwm_gate_pair, 3U>;

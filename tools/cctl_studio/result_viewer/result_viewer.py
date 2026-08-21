@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
 import numpy as np
-import pyqtgraph as pg
+
+# pyqtgraph otherwise auto-selects the first installed Qt binding.  GMP's
+# installer currently provides both PySide6 and PyQt5, while this application
+# uses PyQt5 widgets explicitly; mixing those runtimes produces a misleading
+# "Must construct a QApplication" failure at the first PlotWidget.
+os.environ["PYQTGRAPH_QT_LIB"] = "PyQt5"
 from PyQt5 import QtCore, QtGui, QtWidgets
+import pyqtgraph as pg
 
 from result_data import (
     IncrementalResultReader,
@@ -73,34 +80,61 @@ class LiveTailWorker(QtCore.QRunnable):
             self.signals.failed.emit(str(error))
 
 
+class EditableTitleLabel(pg.LabelItem):
+    double_clicked = QtCore.pyqtSignal()
+
+    def mouseDoubleClickEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
+        self.double_clicked.emit()
+        event.accept()
+
+
 class PlotPanel(QtWidgets.QFrame):
     activated = QtCore.pyqtSignal(object)
-    remove_requested = QtCore.pyqtSignal(object)
+    title_changed = QtCore.pyqtSignal()
 
     def __init__(self, number: int):
         super().__init__()
         self.setObjectName("PlotPanel")
         self.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.setMinimumHeight(140)
         self.curves: dict[str, pg.PlotDataItem] = {}
         self.x_name: str | None = None
-        bar = QtWidgets.QHBoxLayout()
-        self.title = QtWidgets.QLineEdit(f"Plot {number}")
-        remove = QtWidgets.QToolButton(text="×")
-        remove.setToolTip("Remove this plot")
-        remove.clicked.connect(lambda: self.remove_requested.emit(self))
-        bar.addWidget(self.title)
-        bar.addWidget(remove)
+        self.title_text = f"Plot {number}"
         self.plot = pg.PlotWidget()
         self.plot.installEventFilter(self)
+        self.plot.scene().sigMouseClicked.connect(
+            lambda _event: self.activated.emit(self)
+        )
         self.plot.showGrid(x=True, y=True, alpha=0.25)
         self.plot.addLegend()
         self.plot.setDownsampling(auto=True, mode="peak")
         self.plot.setClipToView(True)
+        plot_item = self.plot.getPlotItem()
+        old_title = plot_item.titleLabel
+        plot_item.layout.removeItem(old_title)
+        old_title.setParentItem(None)
+        self.title_label = EditableTitleLabel(justify="center")
+        self.title_label.double_clicked.connect(self.edit_title)
+        plot_item.layout.addItem(self.title_label, 0, 1)
+        plot_item.titleLabel = self.title_label
         layout = QtWidgets.QVBoxLayout(self)
-        layout.addLayout(bar)
+        layout.setContentsMargins(3, 3, 3, 3)
         layout.addWidget(self.plot)
-        self.title.textChanged.connect(self.plot.setTitle)
-        self.plot.setTitle(self.title.text())
+        self.plot.setTitle(self.title_text)
+
+    def edit_title(self) -> None:
+        self.activated.emit(self)
+        title, accepted = QtWidgets.QInputDialog.getText(
+            self,
+            "Edit plot title",
+            "Title",
+            QtWidgets.QLineEdit.Normal,
+            self.title_text,
+        )
+        if accepted and title.strip():
+            self.title_text = title.strip()
+            self.plot.setTitle(self.title_text)
+            self.title_changed.emit()
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         self.activated.emit(self)
@@ -115,6 +149,23 @@ class PlotPanel(QtWidgets.QFrame):
         self.setStyleSheet(
             "QFrame#PlotPanel { border: 2px solid #3584e4; }" if active else ""
         )
+
+    def set_interaction_mode(self, mode: str) -> None:
+        view = self.plot.getViewBox()
+        if mode == "pan":
+            view.setMouseEnabled(x=True, y=True)
+            view.setMouseMode(view.PanMode)
+        elif mode == "x_zoom":
+            view.setMouseEnabled(x=True, y=False)
+            view.setMouseMode(view.RectMode)
+        elif mode == "y_zoom":
+            view.setMouseEnabled(x=False, y=True)
+            view.setMouseMode(view.RectMode)
+        elif mode == "box_zoom":
+            view.setMouseEnabled(x=True, y=True)
+            view.setMouseMode(view.RectMode)
+        else:
+            raise ValueError(f"unknown plot interaction mode: {mode}")
 
 
 class ResultViewer(QtWidgets.QMainWindow):
@@ -138,8 +189,11 @@ class ResultViewer(QtWidgets.QMainWindow):
         self.live_skipped_rows = 0
         self.live_generation = 0
         self.file_generation = 0
+        self.interaction_mode = "pan"
+        self.next_plot_number = 1
         self.pool = QtCore.QThreadPool.globalInstance()
         self._build_ui()
+        self._build_toolbar()
         self.live_timer = QtCore.QTimer(self)
         self.live_timer.setInterval(LIVE_REFRESH_INTERVAL_MS)
         self.live_timer.timeout.connect(self.poll_live_file)
@@ -156,12 +210,25 @@ class ResultViewer(QtWidgets.QMainWindow):
         self.x_column = QtWidgets.QComboBox()
         self.columns = QtWidgets.QListWidget()
         self.columns.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.columns.itemDoubleClicked.connect(self.add_double_clicked_curve)
         add_plot = QtWidgets.QPushButton("Add plot")
         add_plot.clicked.connect(self.add_plot)
+        remove_plot = QtWidgets.QPushButton("Remove active plot")
+        remove_plot.clicked.connect(self.remove_active_plot)
         add_curves = QtWidgets.QPushButton("Add selected curves")
         add_curves.clicked.connect(self.add_selected_curves)
-        remove_curves = QtWidgets.QPushButton("Remove selected curves")
+        self.active_curve_label = QtWidgets.QLabel("Curves in active plot")
+        self.active_curves = QtWidgets.QListWidget()
+        self.active_curves.setSelectionMode(
+            QtWidgets.QAbstractItemView.ExtendedSelection
+        )
+        remove_curves = QtWidgets.QPushButton("Remove curves from active plot")
         remove_curves.clicked.connect(self.remove_selected_curves)
+        QtWidgets.QShortcut(
+            QtGui.QKeySequence.Delete,
+            self.active_curves,
+            activated=self.remove_selected_curves,
+        )
         clear_curves = QtWidgets.QPushButton("Clear active plot")
         clear_curves.clicked.connect(self.clear_active_plot)
         self.link_x = QtWidgets.QCheckBox("Link X zoom across plots")
@@ -179,8 +246,6 @@ class ResultViewer(QtWidgets.QMainWindow):
             "Incrementally read rows appended by a running simulation every 50 ms"
         )
         self.dynamic_refresh.toggled.connect(self.set_dynamic_refresh)
-        auto_range = QtWidgets.QPushButton("Fit all plots")
-        auto_range.clicked.connect(lambda: [panel.plot.autoRange() for panel in self.panels])
         self.status_label = QtWidgets.QLabel()
         self.status_label.setWordWrap(True)
         form.addWidget(open_button)
@@ -190,27 +255,56 @@ class ResultViewer(QtWidgets.QMainWindow):
         form.addWidget(QtWidgets.QLabel("Y columns (multi-select)"))
         form.addWidget(self.columns, 1)
         form.addWidget(add_curves)
+        form.addWidget(self.active_curve_label)
+        form.addWidget(self.active_curves)
         form.addWidget(remove_curves)
         form.addWidget(clear_curves)
         form.addWidget(add_plot)
+        form.addWidget(remove_plot)
         form.addWidget(self.link_x)
         form.addWidget(self.link_y)
         form.addWidget(self.dynamic_refresh)
         form.addWidget(QtWidgets.QLabel("Maximum display points / curve"))
         form.addWidget(self.maximum_points)
-        form.addWidget(auto_range)
         form.addWidget(self.status_label)
 
-        scroll = QtWidgets.QScrollArea()
-        scroll.setWidgetResizable(True)
-        self.plot_host = QtWidgets.QWidget()
-        self.plot_layout = QtWidgets.QVBoxLayout(self.plot_host)
-        self.plot_layout.addStretch(1)
-        scroll.setWidget(self.plot_host)
+        self.plot_splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
+        self.plot_splitter.setChildrenCollapsible(False)
+        self.plot_splitter.setHandleWidth(8)
         root.addWidget(controls)
-        root.addWidget(scroll)
+        root.addWidget(self.plot_splitter)
         root.setSizes([300, 1150])
         self.setCentralWidget(root)
+
+    def _build_toolbar(self) -> None:
+        toolbar = self.addToolBar("Plot interaction")
+        toolbar.setMovable(False)
+        group = QtWidgets.QActionGroup(self)
+        group.setExclusive(True)
+        actions = (
+            ("Pan", "pan", "Pan in both axes"),
+            ("Horizontal zoom", "x_zoom", "Drag a rectangle to zoom only X"),
+            ("Vertical zoom", "y_zoom", "Drag a rectangle to zoom only Y"),
+            ("Magnifier", "box_zoom", "Drag a rectangle to zoom X and Y"),
+        )
+        self.interaction_actions: dict[str, QtWidgets.QAction] = {}
+        for text, mode, tip in actions:
+            action = toolbar.addAction(text)
+            action.setCheckable(True)
+            action.setToolTip(tip)
+            action.triggered.connect(
+                lambda _checked, selected=mode: self.set_interaction_mode(selected)
+            )
+            group.addAction(action)
+            self.interaction_actions[mode] = action
+        self.interaction_actions["pan"].setChecked(True)
+        toolbar.addSeparator()
+        fit_active = toolbar.addAction("Fit active")
+        fit_active.triggered.connect(self.fit_active_plot)
+        fit_all = toolbar.addAction("Fit all")
+        fit_all.triggered.connect(
+            lambda: [panel.plot.autoRange() for panel in self.panels]
+        )
 
     def open_dialog(self) -> None:
         path, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -251,16 +345,27 @@ class ResultViewer(QtWidgets.QMainWindow):
             panel.plot.addLegend()
             panel.curves.clear()
             panel.x_name = None
+        self._sync_active_curve_list()
         self.status_label.setText(f"{len(self.result.columns)} columns; select curves to load")
 
     def add_plot(self) -> None:
-        panel = PlotPanel(len(self.panels) + 1)
+        panel = PlotPanel(self.next_plot_number)
+        self.next_plot_number += 1
         panel.activated.connect(self.set_active_panel)
-        panel.remove_requested.connect(self.remove_plot)
-        self.plot_layout.insertWidget(self.plot_layout.count() - 1, panel)
+        panel.title_changed.connect(self._sync_active_curve_list)
+        panel.set_interaction_mode(self.interaction_mode)
+        previous_sizes = self.plot_splitter.sizes()
+        self.plot_splitter.addWidget(panel)
         self.panels.append(panel)
+        if previous_sizes:
+            target = max(180, sum(previous_sizes) // len(previous_sizes))
+            self.plot_splitter.setSizes([*previous_sizes, target])
         self.set_active_panel(panel)
         self.apply_links()
+
+    def remove_active_plot(self) -> None:
+        if self.active_panel is not None:
+            self.remove_plot(self.active_panel)
 
     def remove_plot(self, panel: PlotPanel) -> None:
         if len(self.panels) == 1:
@@ -268,8 +373,10 @@ class ResultViewer(QtWidgets.QMainWindow):
             panel.plot.addLegend()
             panel.curves.clear()
             panel.x_name = None
+            self._sync_active_curve_list()
             return
         self.panels.remove(panel)
+        panel.setParent(None)
         panel.deleteLater()
         self.set_active_panel(self.panels[-1])
         self.apply_links()
@@ -278,6 +385,17 @@ class ResultViewer(QtWidgets.QMainWindow):
         self.active_panel = selected
         for panel in self.panels:
             panel.set_active(panel is selected)
+        self._sync_active_curve_list()
+
+    def _sync_active_curve_list(self) -> None:
+        self.active_curves.clear()
+        if self.active_panel is None:
+            self.active_curve_label.setText("Curves in active plot")
+            return
+        self.active_curve_label.setText(
+            f"Curves in active plot: {self.active_panel.title_text}"
+        )
+        self.active_curves.addItems(self.active_panel.curves)
 
     def clear_active_plot(self) -> None:
         if self.active_panel is not None:
@@ -285,26 +403,38 @@ class ResultViewer(QtWidgets.QMainWindow):
             self.active_panel.plot.addLegend()
             self.active_panel.curves.clear()
             self.active_panel.x_name = None
+            self._sync_active_curve_list()
 
     def remove_selected_curves(self) -> None:
         if self.active_panel is None:
             return
-        for item in self.columns.selectedItems():
+        for item in self.active_curves.selectedItems():
             curve = self.active_panel.curves.pop(item.text(), None)
             if curve is not None:
                 self.active_panel.plot.removeItem(curve)
+        self._sync_active_curve_list()
+
+    def add_double_clicked_curve(self, item: QtWidgets.QListWidgetItem) -> None:
+        self._request_curves((item.text(),))
 
     def add_selected_curves(self) -> None:
+        y_names = tuple(item.text() for item in self.columns.selectedItems())
+        if not y_names:
+            self.status_label.setText("Select one or more Y columns")
+            return
+        self._request_curves(y_names)
+
+    def _request_curves(self, y_names: tuple[str, ...]) -> None:
         if self.result is None or self.active_panel is None:
             return
         if self.pending is not None:
             self.status_label.setText("A column load is already in progress…")
             return
-        y_names = tuple(item.text() for item in self.columns.selectedItems())
-        if not y_names:
-            self.status_label.setText("Select one or more Y columns")
-            return
         x_name = self.x_column.currentText()
+        y_names = tuple(name for name in dict.fromkeys(y_names) if name != x_name)
+        if not y_names:
+            self.status_label.setText("The X column cannot also be a Y curve")
+            return
         missing = tuple(name for name in (x_name, *y_names) if name not in self.cache)
         if missing:
             self.pending = (self.active_panel, y_names, x_name)
@@ -357,12 +487,26 @@ class ResultViewer(QtWidgets.QMainWindow):
             else:
                 color = self.COLORS[len(panel.curves) % len(self.COLORS)]
                 panel.curves[y_name] = panel.plot.plot(xd, yd, pen=pg.mkPen(color, width=1.2), name=y_name)
+        if panel is self.active_panel:
+            self._sync_active_curve_list()
         panel.plot.setLabel("bottom", x_name)
         panel.plot.autoRange()
         self.status_label.setText(
             f"Loaded {displayed_rows:,} common rows; displaying at most "
             f"{limit:,} points per curve"
         )
+
+    def set_interaction_mode(self, mode: str) -> None:
+        self.interaction_mode = mode
+        for panel in self.panels:
+            panel.set_interaction_mode(mode)
+        action = self.interaction_actions.get(mode)
+        if action is not None:
+            action.setChecked(True)
+
+    def fit_active_plot(self) -> None:
+        if self.active_panel is not None:
+            self.active_panel.plot.autoRange()
 
     @QtCore.pyqtSlot(bool)
     def set_dynamic_refresh(self, enabled: bool) -> None:
@@ -515,17 +659,25 @@ class ResultViewer(QtWidgets.QMainWindow):
     def apply_links(self) -> None:
         if not self.panels:
             return
-        leader = self.panels[0].plot
-        for panel in self.panels:
-            panel.plot.setXLink(leader if self.link_x.isChecked() and panel is not self.panels[0] else None)
-            panel.plot.setYLink(leader if self.link_y.isChecked() and panel is not self.panels[0] else None)
+        views = [panel.plot.getViewBox() for panel in self.panels]
+        # Clear both dimensions first so a previous X+Y link cannot survive a
+        # transition to one-axis-only linking.
+        for view in views:
+            view.setXLink(None)
+            view.setYLink(None)
+        leader = views[0]
+        for view in views[1:]:
+            if self.link_x.isChecked():
+                view.setXLink(leader)
+            if self.link_y.isChecked():
+                view.setYLink(leader)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="GMP CCTL large-result viewer")
     parser.add_argument("file", nargs="?")
     args = parser.parse_args(argv)
-    app = QtWidgets.QApplication(sys.argv[:1])
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv[:1])
     pg.setConfigOptions(antialias=False, background="w", foreground="k")
     viewer = ResultViewer()
     if args.file:
