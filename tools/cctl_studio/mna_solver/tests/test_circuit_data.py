@@ -280,6 +280,48 @@ class CircuitDataTests(unittest.TestCase):
             self.assertIn(f"std::uint32_t {pwm}", header)
         self.assertIn("std::array<bool, 4> body_on_", header)
 
+    def test_binary_mosfet_mode_exports_two_states_per_switch(self) -> None:
+        source = FSBB_DIR / "FSBB.CIR"
+        circuit = mna.parse_netlist(source)
+        self.assertEqual(
+            switched.piecewise_topology_count(
+                circuit, include_mosfet_body_diodes=False
+            ),
+            16,
+        )
+        model = switched.build_piecewise_model(
+            circuit, include_mosfet_body_diodes=False
+        )
+        self.assertIsInstance(model, switched.MultiMosfetLinearModel)
+        self.assertFalse(model.includes_body_diode_states)
+        self.assertEqual(len(model.topologies), 16)
+
+        document = data.build_circuit_data(
+            model,
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+        )
+        data.validate_circuit_data(document)
+        self.assertEqual(document["switching"]["kind"], "multi_mosfet_binary")
+        self.assertFalse(
+            document["switching"]["selection_uses_previous_terminal_voltage"]
+        )
+
+        simulator = data.CircuitDataSimulator(document)
+        simulator.step_normal(
+            {"PWM1": 1, "PWM2": 0, "PWM3": 1, "PWM4": 0}, {"VS1": 5.0}
+        )
+        self.assertIn("MOS1_CHANNEL", simulator.last_topology)
+
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "FSBB.json"
+            data.write_circuit_data(data_path, document)
+            files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
+            header = files["header"].read_text(encoding="utf-8")
+        self.assertIn("static constexpr std::size_t topology_count = 16", header)
+        self.assertNotIn("body_on_", header)
+
     def test_single_phase_inverter_exports_differential_voltage_probe(self) -> None:
         source = SINV_DIR / "SINV.CIR"
         document = data.build_circuit_data(

@@ -185,6 +185,7 @@ class MultiMosfetLinearModel:
     gate_sources: list[Element]
     parameters: list[MosfetSwitchParameters]
     topologies: dict[MultiMosfetTopologyKey, LinearTopology]
+    includes_body_diode_states: bool = True
 
 
 @dataclass
@@ -708,8 +709,9 @@ def build_multi_mosfet_model(
     circuit: Circuit,
     device_overrides: Mapping[str, float] | None = None,
     progress: ProgressCallback | None = None,
+    include_body_diode_states: bool = True,
 ) -> MultiMosfetLinearModel:
-    """Build all 3**N channel/off/body-diode topologies for an NMOS network."""
+    """Build the selected channel/off[/body-diode] NMOS topology family."""
 
     mosfets = [element for element in circuit.elements if element.kind == "M"]
     diodes = [element for element in circuit.elements if element.kind == "D"]
@@ -724,8 +726,10 @@ def build_multi_mosfet_model(
         derive_mosfet_parameters(circuit, mosfet, device_overrides) for mosfet in mosfets
     ]
     topologies: dict[MultiMosfetTopologyKey, LinearTopology] = {}
-    choices = (MosfetPath.OFF, MosfetPath.CHANNEL, MosfetPath.BODY_DIODE)
-    topology_count = 3 ** len(mosfets)
+    choices: tuple[MosfetPath, ...] = (MosfetPath.OFF, MosfetPath.CHANNEL)
+    if include_body_diode_states:
+        choices += (MosfetPath.BODY_DIODE,)
+    topology_count = len(choices) ** len(mosfets)
     for topology_index, paths in enumerate(
         itertools.product(choices, repeat=len(mosfets)), start=1
     ):
@@ -752,7 +756,12 @@ def build_multi_mosfet_model(
         ):
             raise NetlistError("multi-MOS expansion produced incompatible topology coordinates")
     return MultiMosfetLinearModel(
-        circuit, mosfets, gate_sources, parameters, topologies
+        circuit,
+        mosfets,
+        gate_sources,
+        parameters,
+        topologies,
+        include_body_diode_states,
     )
 
 
@@ -1053,7 +1062,9 @@ def build_multi_diode_switch_model(
     )
 
 
-def piecewise_topology_count(circuit: Circuit) -> int:
+def piecewise_topology_count(
+    circuit: Circuit, *, include_mosfet_body_diodes: bool = True
+) -> int:
     """Return the number of logical PWL states before constructing matrices."""
 
     diode_count = sum(element.kind == "D" for element in circuit.elements)
@@ -1064,7 +1075,11 @@ def piecewise_topology_count(circuit: Circuit) -> int:
     if not mosfet_count and (diode_count or switch_count):
         return 2 ** (diode_count + switch_count)
     if not diode_count and mosfet_count:
-        return 3**mosfet_count
+        return (3 if include_mosfet_body_diodes else 2) ** mosfet_count
+    if not include_mosfet_body_diodes and mosfet_count:
+        raise NetlistError(
+            "ideal bidirectional MOS mode does not support explicit diode devices"
+        )
     if mosfet_count and diode_count and (mosfet_count != 1 or diode_count != 1):
         return 3**mosfet_count * 2**diode_count
     return 6
@@ -1074,6 +1089,8 @@ def build_piecewise_model(
     circuit: Circuit,
     device_overrides: Mapping[str, float] | None = None,
     progress: ProgressCallback | None = None,
+    *,
+    include_mosfet_body_diodes: bool = True,
 ) -> PiecewiseLinearModel | MultiMosfetLinearModel | MultiMosfetDiodeLinearModel | MultiDiodeSwitchLinearModel:
     """Build the supported diode, MOSFET, and VSWITCH PWL topology family."""
 
@@ -1085,7 +1102,16 @@ def build_piecewise_model(
     if not mosfets and (diodes or switches):
         return build_multi_diode_switch_model(circuit, device_overrides, progress)
     if not diodes and mosfets:
-        return build_multi_mosfet_model(circuit, device_overrides, progress)
+        return build_multi_mosfet_model(
+            circuit,
+            device_overrides,
+            progress,
+            include_body_diode_states=include_mosfet_body_diodes,
+        )
+    if not include_mosfet_body_diodes and mosfets:
+        raise NetlistError(
+            "ideal bidirectional MOS mode does not support explicit diode devices"
+        )
     if mosfets and diodes and (len(mosfets) != 1 or len(diodes) != 1):
         return build_multi_mosfet_diode_model(circuit, device_overrides, progress)
 

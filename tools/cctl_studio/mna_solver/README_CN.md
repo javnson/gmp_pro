@@ -355,8 +355,15 @@ tools\cctl_studio\mna_solver\tb\sinv\build_test.bat
 tools\cctl_studio\mna_solver\tb\rectifier\build_test.bat
 tools\cctl_studio\mna_solver\tb\inv\build_test.bat
 tools\cctl_studio\mna_solver\tb\buck_npc\build_test.bat
+tools\cctl_studio\mna_solver\tb\b2b_3ph\build_test.bat
 tools\cctl_studio\mna_solver\tb\pmsm\build_test.bat
 ```
+
+纯多 MOS 电路可以显式增加 `--ideal-mosfet-switches`，把每只 MOS 建模为
+双向导通通道/关断两种状态。该选项不包含体二极管，逻辑状态数从 `3^N`
+降为 `2^N`，默认关闭；只能用于同步互补导通使此近似合理的场景。
+`b2b_3ph` 压力案例使用该选项，把十二管的预计算规模从 531441 降到仍足以
+测试性能的 4096 个状态。
 
 SINV testbench 令 `PWM1=PWM3`、`PWM2=PWM4`，作为两组双极性 SPWM 对角
 开关信号，并检查同一桥臂不重叠以及每个载波周期确实包含 1 us 双关断区。
@@ -371,6 +378,16 @@ INV testbench 使用相差 120° 的三路正弦参考驱动三个互补桥臂�
 泄放电阻 R8--R10 外，新网表还通过 1 MΩ 的 R12 和 R11 分别把负载星点 1、
 电容星点 2 显式参考到地。六管全关断拓扑的代数块因此满秩，全部 729 个
 MNA 拓扑都能直接降阶，不需要求解器隐式添加参考支路。
+
+`b2b_3ph` 案例把 32 Vrms 线电压、50 Hz 的三相电网经过每相
+`1 mH + 50 mΩ` 网侧电抗器接入 PWM1--PWM6 有源整流桥；PWM7--PWM12 以
+30 Hz、0.8 调制度驱动输出桥。因为三相电压由 testbench 直接生成，整流桥
+直接使用已知角度前馈，不引入 PLL，也不宣称验证闭环控制功能。生成模型为
+23 状态、3 个模拟输入、35 个内部输出信号和 4096 个唯一计算状态，Eigen
+archive 约 36.8 MB。2 s、2000 万步回归中母线稳定在约 57 V，网侧输入约 81 W，
+运行时访问 50 个拓扑，并输出 `b2b_3ph_open_loop.csv`。网侧电抗器也是必要的
+物理元件：理想电网电压源若直接连接 MOSFET `Coss`，会形成 index-2 的
+电容/电压源割集，无法写入当前普通 `x_dot=Ax+Bu` 数据边界。
 
 整流器把 TINA 控制源 `VSWGPIO1` 映射为公开的 `uint32_t SWGPIO1` 端口。
 `SWGPIO1=0` 时保留 10 Ω 充电电阻，`SWGPIO1=1` 时通过等效 1 mΩ 路径闭合
@@ -408,7 +425,8 @@ DC 传递函数和状态矩阵 `A=-1000`。
   描述符拓扑会报告奇异错误；
 - 初值目前使用降阶后的状态坐标；把物理电容电压、励磁电流映射为初值属于
   后续工作；
-- 已支持不含独立二极管的多 MOS 电路，拓扑数量按 `3^N` 增长；纯二极管/
+- 已支持不含独立二极管的多 MOS 电路，默认拓扑数量按 `3^N` 增长，也可为
+  同步桥压力测试显式选择忽略体二极管的 `2^N` 模式；纯二极管/
   VSWITCH 网络按 `2^N` 增长；同时含 MOSFET 与多个独立二极管或 VSWITCH
   的通用组合展开仍待实现；
 - 将同一数据文件后端扩展为 Verilog/定点矩阵实现属于下一阶段。

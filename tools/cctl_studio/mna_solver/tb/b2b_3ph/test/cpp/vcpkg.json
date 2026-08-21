@@ -1,0 +1,7 @@
+{
+  "name": "gmp-b2binvcircuit-testbench",
+  "version-string": "1.0.0",
+  "dependencies": [
+    "eigen3"
+  ]
+}

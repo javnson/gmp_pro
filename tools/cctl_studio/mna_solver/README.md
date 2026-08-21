@@ -330,8 +330,8 @@ tb\buck\
 └── test\cpp\               handwritten testbench, CMakeLists and vcpkg.json
 ```
 
-`boost`, `fsbb`, `sinv`, `rectifier`, `inv`, `buck_npc`, and `pmsm` follow the same
-contract.
+`boost`, `fsbb`, `sinv`, `rectifier`, `inv`, `buck_npc`, `b2b_3ph`, and `pmsm`
+follow the same contract.
 
 Every BAT entry point and CMake test project resolves the solver and installer
 directly through the `GMP_PRO_LOCATION` environment variable. The CMake files do
@@ -367,6 +367,14 @@ The CLI and every supplied case default to `eigen`. Select `--backend fixed`, or
 change a case's `MATRIX_BACKEND`, only when the allocation-free fixed backend is
 specifically required. Fixed generation remains supported but is not part of the
 default generation or build path.
+
+Pure multi-MOS circuits may additionally pass `--ideal-mosfet-switches` to use
+two-state channel/off bidirectional switches. The option deliberately omits
+body-diode conduction and reduces the logical family from `3^N` to `2^N`; it is
+off by default and must only be used when synchronized complementary channel
+conduction makes that approximation appropriate. The B2B stress case uses it
+to retain 4096 precomputed states instead of attempting to materialize 531441
+three-path states.
 
 Only the calculation class artifacts are generated. Testbench source, CMake
 files, waveform scheduling, CSV policy, and acceptance limits are deliberately
@@ -424,6 +432,7 @@ tools\cctl_studio\mna_solver\tb\sinv\build_test.bat
 tools\cctl_studio\mna_solver\tb\rectifier\build_test.bat
 tools\cctl_studio\mna_solver\tb\inv\build_test.bat
 tools\cctl_studio\mna_solver\tb\buck_npc\build_test.bat
+tools\cctl_studio\mna_solver\tb\b2b_3ph\build_test.bat
 tools\cctl_studio\mna_solver\tb\pmsm\build_test.bat
 ```
 
@@ -443,7 +452,20 @@ deadtime, balanced voltage/current fundamentals, phase separation, and
 leakage branches R8--R10, the netlist explicitly references load neutral node 1
 and capacitor neutral node 2 to ground through 1 MOhm R12 and R11. The all-off
 topology's algebraic block is therefore full rank, and all 729 topologies reduce
-without an implicit solver-added reference.
+directly without solver-added reference branches.
+
+The `b2b_3ph` stress case connects a 32 Vrms line-to-line, 50 Hz generated grid
+to PWM1--PWM6 through explicit per-phase 1 mH/50 mOhm grid reactors. PWM7--PWM12
+produce a balanced 30 Hz output at modulation 0.8. Because the testbench already
+knows the generated grid angle, the active rectifier uses direct angle feedforward
+without a PLL or closed-loop-control claim. Its ideal bidirectional MOS mode has
+23 states, three analog inputs, 35 internal output signals and 4096 unique
+calculation states; the Eigen archive is about 36.8 MB. The 2 s, 20-million-step regression
+settles near a 57 V DC link, transfers about 81 W from the grid, visits 50 runtime
+topologies, and writes `b2b_3ph_open_loop.csv`. The series grid reactors are also
+physically required: connecting ideal grid voltage sources directly to MOSFET
+`Coss` forms an index-2 capacitor/source cutset that cannot be represented by the
+current ordinary `x_dot=Ax+Bu` boundary.
 
 The rectifier maps TINA's `VSWGPIO1` control source to the public
 `uint32_t SWGPIO1` port. `SWGPIO1=0` retains the 10 ohm charging resistor and
@@ -492,7 +514,8 @@ verify both the DC transfer and `A=-1000` state matrix.
   singular.
 - Initial conditions are state-coordinate values. Mapping physical capacitor
   voltages/inductor currents to initial state coordinates is future work.
-- MOS-only multi-switch circuits are supported and grow as `3^N` topologies.
+- MOS-only multi-switch circuits default to `3^N` topologies; synchronized
+  bridge stress tests may explicitly select the body-diode-free `2^N` mode.
   Diode/VSWITCH-only networks grow as `2^N`. Mixed circuits containing both
   MOSFETs and multiple independent diodes or VSWITCH devices still need the
   general combinational device expansion. A Verilog/fixed-point backend over

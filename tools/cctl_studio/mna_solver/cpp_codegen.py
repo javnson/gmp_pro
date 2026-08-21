@@ -807,6 +807,21 @@ def render_header(
         switch_state_members = (
             f"    std::array<bool, {len(switching['diodes'])}> diode_on_{{}};"
         )
+    elif switching.get("kind") == "multi_mosfet_binary":
+        pwm_field_by_name = {
+            str(port["name"]).upper(): field for port, field in zip(pwm_ports, pwm_fields)
+        }
+        switch_lines = []
+        for switch in switching["switches"]:
+            field = pwm_field_by_name[str(switch["pwm_port"]).upper()]
+            switch_lines.append(
+                f"        topology_index = topology_index * 2U + (inputs.{field} != 0U ? 1U : 0U);"
+            )
+        reset_switch_state = ""
+        selection_body = "\n".join(
+            ["        std::size_t topology_index = 0U;", *switch_lines, "        return topology_index;"]
+        )
+        switch_state_members = ""
     elif switching.get("kind") in {"multi_mosfet", "multi_mosfet_diode"}:
         switch_lines: list[str] = []
         pwm_field_by_name = {

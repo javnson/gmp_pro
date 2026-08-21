@@ -244,6 +244,10 @@ def _build_multi_mosfet_circuit_data(
     pmsm_documents = _decorate_pmsm_ports(model.source_circuit, input_ports, output_ports)
 
     mixed_model = isinstance(model, MultiMosfetDiodeLinearModel)
+    binary_mosfet_model = (
+        isinstance(model, MultiMosfetLinearModel)
+        and not model.includes_body_diode_states
+    )
     diode_documents = []
     diode_selection = []
     if mixed_model:
@@ -379,11 +383,19 @@ def _build_multi_mosfet_circuit_data(
             "pmsm_current_sources": pmsm_documents,
         },
         "switching": {
-            "kind": "multi_mosfet_diode" if mixed_model else "multi_mosfet",
+            "kind": (
+                "multi_mosfet_diode"
+                if mixed_model
+                else (
+                    "multi_mosfet_binary"
+                    if binary_mosfet_model
+                    else "multi_mosfet"
+                )
+            ),
             "switches": switch_documents,
             "diodes": diode_selection,
             "voltage_hysteresis_V": voltage_hysteresis,
-            "selection_uses_previous_terminal_voltage": True,
+            "selection_uses_previous_terminal_voltage": not binary_mosfet_model,
             "topology_order": topology_order,
             "topology_count": len(topology_documents),
         },
@@ -816,6 +828,13 @@ def validate_circuit_data(document: Mapping) -> None:
     switches = switching.get("switches", [])
     if switching.get("kind") == "multi_mosfet" and expected_topologies != 3 ** len(switches):
         raise ValueError("multi-MOS topology count must be 3**number_of_switches")
+    if (
+        switching.get("kind") == "multi_mosfet_binary"
+        and expected_topologies != 2 ** len(switches)
+    ):
+        raise ValueError(
+            "binary multi-MOS topology count must be 2**number_of_switches"
+        )
     if switching.get("kind") == "multi_mosfet_diode":
         diode_count = len(switching.get("diodes", []))
         if expected_topologies != 3 ** len(switches) * 2**diode_count:
@@ -1042,7 +1061,12 @@ class CircuitDataSimulator:
         self.document = document
         self.switching_kind = document["switching"].get("kind", "single_diode_mosfet")
         self.multi_mosfet_diode = self.switching_kind == "multi_mosfet_diode"
-        self.multi_mosfet = self.switching_kind in {"multi_mosfet", "multi_mosfet_diode"}
+        self.binary_mosfet = self.switching_kind == "multi_mosfet_binary"
+        self.multi_mosfet = self.switching_kind in {
+            "multi_mosfet",
+            "multi_mosfet_binary",
+            "multi_mosfet_diode",
+        }
         self.multi_diode_switch = self.switching_kind == "multi_diode_switch"
         if self.multi_mosfet_diode:
             self.topologies = {
@@ -1144,6 +1168,13 @@ class CircuitDataSimulator:
             unknown = set(supplied) - {_key(port["name"]) for port in self.pwm_ports}
             if unknown:
                 raise ValueError("unknown PWM input(s): " + ", ".join(sorted(unknown)))
+            if self.binary_mosfet:
+                return tuple(
+                    MosfetPath.CHANNEL.value
+                    if supplied.get(_key(switch["pwm_port"]), 0)
+                    else MosfetPath.OFF.value
+                    for switch in self.document["switching"]["switches"]
+                )
             paths: list[str] = []
             hysteresis = self.document["switching"]["voltage_hysteresis_V"]
             for index, switch in enumerate(self.document["switching"]["switches"]):
@@ -1331,6 +1362,14 @@ def _parser() -> argparse.ArgumentParser:
         "--matrix-tolerance", type=_number, default=DEFAULT_MATRIX_TOLERANCE
     )
     export.add_argument("--no-progress", action="store_true")
+    export.add_argument(
+        "--ideal-mosfet-switches",
+        action="store_true",
+        help=(
+            "use two-state bidirectional channel/off MOS models; this omits "
+            "body-diode conduction and is intended for synchronized bridge stress tests"
+        ),
+    )
     export.add_argument("--device-param", action="append", default=[], metavar="NAME=VALUE")
     simulate = commands.add_parser("simulate")
     simulate.add_argument("data")
@@ -1345,18 +1384,34 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "export":
             circuit = parse_netlist(args.netlist)
-            topology_count = piecewise_topology_count(circuit)
+            include_body_diodes = not args.ideal_mosfet_switches
+            topology_count = piecewise_topology_count(
+                circuit, include_mosfet_body_diodes=include_body_diodes
+            )
             print(f"circuit:             {circuit.title}")
             print(f"logical states:      {topology_count}")
             print(f"discretization:      {args.method}")
             print(f"normal step:         {args.normal_dt:.12g} s")
             print(f"short step:          {args.short_dt:.12g} s")
             print(f"matrix tolerance:    {args.matrix_tolerance:.12g}")
-            build_bar = None if args.no_progress else TimedProgressBar("Building MNA states", topology_count)
+            print(
+                "MOS switch model:     "
+                + (
+                    "channel/off (ideal bidirectional)"
+                    if args.ideal_mosfet_switches
+                    else "channel/off/body diode"
+                )
+            )
+            build_bar = (
+                None
+                if args.no_progress
+                else TimedProgressBar("Building MNA states", topology_count)
+            )
             model = build_piecewise_model(
                 circuit,
                 _assignments(args.device_param),
                 None if build_bar is None else build_bar.update,
+                include_mosfet_body_diodes=include_body_diodes,
             )
             if build_bar is not None:
                 build_bar.finish()
