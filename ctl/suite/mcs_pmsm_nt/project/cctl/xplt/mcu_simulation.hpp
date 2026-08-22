@@ -12,7 +12,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 
 namespace mcs::cctl_xplt
 {
@@ -37,35 +36,30 @@ using epwm_outputs = std::array<::cctl::ti_epwm_gate_pair, 3U>;
 class mcu_simulation
 {
   public:
+    using adc_type = ::cctl::ti_adc<sim_real_gt, 8U>;
+    using epwm_type = ::cctl::ti_epwm<sim_real_gt>;
+    using eqep_type = ::cctl::ti_eqep<sim_real_gt>;
+
     /** Construct all peripherals from the project SDPE macros. */
     mcu_simulation();
 
     /** Reset peripherals and validate their configured timing contract. */
     void initialize();
 
-    /** Sample all three ePWM modules at one absolute TBCLK count. */
-    epwm_outputs sample_epwm(std::uint64_t absolute_tbclk_count);
+    /** Bind the ADC-complete ISR once during simulated MCU construction. */
+    void set_adc_interrupt_handler(adc_type::interrupt_handler_type handler,
+                                   void *context = nullptr) noexcept;
 
-    /** Stage conditioned voltages without starting an ADC conversion. */
-    void stage_adc_inputs(const adc_pin_voltages &inputs);
+    /** Sample all MCU output peripherals for the current plant step. */
+    const epwm_outputs &control_outputs(std::uint64_t absolute_tbclk_count);
 
-    /** Latch ADC inputs and immediately dispatch the configured ISR callback. */
-    void trigger_adc(const std::function<void()> &interrupt_handler);
-
-    /** Copy ADC result registers into the C controller peripheral storage. */
-    void transfer_adc_results_to_controller() const;
-
-    /** Sample rotor position into the C controller's eQEP register storage. */
-    void sample_encoder(sim_real_gt mechanical_angle_rad);
-
-    /** Acknowledge the simulated ADC interrupt. */
-    void acknowledge_adc_interrupt() noexcept;
-
-    /** Copy controller compare registers and CSP output state into ePWM. */
-    void transfer_pwm_from_controller() noexcept;
-
-    /** @return True while an ADC interrupt is pending acknowledgement. */
-    bool adc_interrupt_pending() const noexcept;
+    /**
+     * Service one SOC transaction: latch inputs, run the ISR, then write PWM.
+     * This function is called only after control_outputs() reports ADC SOC.
+     * @return True when this call completed an ADC conversion and ISR.
+     */
+    bool control_inputs(const adc_pin_voltages &adc_inputs,
+                        sim_real_gt mechanical_angle_rad);
 
     /** @return Number of ADC SOC events observed since initialization. */
     std::uint64_t adc_trigger_count() const noexcept;
@@ -77,14 +71,13 @@ class mcu_simulation
     static bool all_low_sides_conducting(const epwm_outputs &outputs) noexcept;
 
   private:
-    static ::cctl::ti_adc_config<sim_real_gt> make_adc_config();
-    static ::cctl::ti_epwm_config<sim_real_gt>
-    make_epwm_config(bool adc_trigger = false);
     static bool verify_peripheral_models();
+    void write_epwm_outputs_after_isr() noexcept;
 
-    ::cctl::ti_adc<sim_real_gt, 8U> adc_;
-    ::cctl::ti_eqep<sim_real_gt> eqep_;
-    std::array<::cctl::ti_epwm<sim_real_gt>, 3U> epwm_;
+    adc_type adc_;
+    eqep_type eqep_;
+    std::array<epwm_type, 3U> epwm_;
+    epwm_outputs outputs_{};
 };
 
 } // namespace mcs::cctl_xplt

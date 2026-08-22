@@ -7,20 +7,42 @@
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
-#include <utility>
 
 namespace cctl
 {
 
-/** Configuration shared by one C2000-style ADC module. */
-template <typename T> struct ti_adc_config
+/** Immutable configuration shared by one C2000-style ADC module. */
+template <typename T> class ti_adc_config
 {
-    std::uint16_t resolution_bits;
-    T reference_voltage_v;
-
+  public:
     ti_adc_config() : resolution_bits(12U), reference_voltage_v(T(3.3))
     {
     }
+
+    /** @return Configured converter resolution. */
+    std::uint16_t resolution() const noexcept
+    {
+        return resolution_bits;
+    }
+
+    /** @return Configured positive reference voltage. */
+    T reference_voltage() const noexcept
+    {
+        return reference_voltage_v;
+    }
+
+  private:
+    template <typename, std::size_t> friend class ti_adc;
+
+    ti_adc_config(std::uint16_t requested_resolution_bits,
+                  T requested_reference_voltage_v)
+        : resolution_bits(requested_resolution_bits),
+          reference_voltage_v(requested_reference_voltage_v)
+    {
+    }
+
+    std::uint16_t resolution_bits;
+    T reference_voltage_v;
 };
 
 /**
@@ -37,6 +59,21 @@ template <typename T = double, std::size_t Channels = 16U> class ti_adc
     typedef T scalar_type;
     typedef std::uint32_t result_type;
     typedef ti_adc_config<T> config_type;
+    typedef void (*interrupt_handler_type)(void *context);
+
+    /** Build a validated ADC configuration without exposing field mutation. */
+    static config_type make_config(std::uint16_t resolution_bits,
+                                   T reference_voltage_v)
+    {
+        return config_type(resolution_bits, reference_voltage_v);
+    }
+
+    /** Construct an ADC directly from user-facing configuration arguments. */
+    static ti_adc make(std::uint16_t resolution_bits,
+                       T reference_voltage_v)
+    {
+        return ti_adc(make_config(resolution_bits, reference_voltage_v));
+    }
 
     ti_adc()
     {
@@ -63,6 +100,20 @@ template <typename T = double, std::size_t Channels = 16U> class ti_adc
         trigger_count_ = 0U;
     }
 
+    /** Reset conversion state while retaining configuration and ISR binding. */
+    void reset()
+    {
+        initialize(config_);
+    }
+
+    /** Bind the conversion-complete interrupt dispatched by trigger(). */
+    void set_interrupt_handler(interrupt_handler_type handler,
+                               void *context = nullptr) noexcept
+    {
+        interrupt_handler_ = handler;
+        interrupt_context_ = context;
+    }
+
     result_type sample_adc_voltage(std::size_t channel, T adc_voltage_v)
     {
         validate_channel(channel);
@@ -84,6 +135,13 @@ template <typename T = double, std::size_t Channels = 16U> class ti_adc
         input_voltage_[channel] = adc_voltage_v;
     }
 
+    /** Replace every sample-and-hold input without exposing ADC storage. */
+    void set_input_voltages(const std::array<T, Channels> &adc_voltages_v)
+    {
+        for (std::size_t channel = 0U; channel < Channels; ++channel)
+            set_input_voltage(channel, adc_voltages_v[channel]);
+    }
+
     T input_voltage(std::size_t channel) const
     {
         validate_channel(channel);
@@ -93,18 +151,32 @@ template <typename T = double, std::size_t Channels = 16U> class ti_adc
     /** Latch all staged analog inputs and raise the ADC interrupt flag. */
     bool trigger()
     {
-        for (std::size_t channel = 0U; channel < Channels; ++channel)
-            sample_adc_voltage(channel, input_voltage_[channel]);
-        interrupt_pending_ = true;
-        ++trigger_count_;
+        latch_conversion();
+        dispatch_interrupt();
         return true;
     }
 
-    /** Latch inputs and immediately dispatch an ADC-complete interrupt. */
-    template <typename InterruptHandler> void trigger(InterruptHandler &&handler)
+    /** Copy result registers through the ADC boundary with type conversion. */
+    template <typename Destination>
+    void transfer_results(Destination *destination,
+                          std::size_t destination_count) const
     {
-        trigger();
-        std::forward<InterruptHandler>(handler)();
+        if (destination_count > Channels ||
+            (destination == nullptr && destination_count != 0U))
+            throw std::invalid_argument("invalid TI ADC result destination");
+        for (std::size_t channel = 0U; channel < destination_count; ++channel)
+            destination[channel] = static_cast<Destination>(result_[channel]);
+    }
+
+    /** Latch, transfer result registers, then dispatch the bound ISR. */
+    template <typename Destination>
+    bool trigger_and_transfer(Destination *destination,
+                              std::size_t destination_count)
+    {
+        latch_conversion();
+        transfer_results(destination, destination_count);
+        dispatch_interrupt();
+        return true;
     }
 
     bool interrupt_pending() const noexcept
@@ -155,6 +227,20 @@ template <typename T = double, std::size_t Channels = 16U> class ti_adc
     }
 
   private:
+    void latch_conversion()
+    {
+        for (std::size_t channel = 0U; channel < Channels; ++channel)
+            sample_adc_voltage(channel, input_voltage_[channel]);
+        interrupt_pending_ = true;
+        ++trigger_count_;
+    }
+
+    void dispatch_interrupt()
+    {
+        if (interrupt_handler_ != nullptr)
+            interrupt_handler_(interrupt_context_);
+    }
+
     static void validate_channel(std::size_t channel)
     {
         if (channel >= Channels)
@@ -168,6 +254,8 @@ template <typename T = double, std::size_t Channels = 16U> class ti_adc
     result_type maximum_code_{};
     std::uint64_t trigger_count_{};
     bool interrupt_pending_{};
+    interrupt_handler_type interrupt_handler_{};
+    void *interrupt_context_{};
 };
 
 } // namespace cctl

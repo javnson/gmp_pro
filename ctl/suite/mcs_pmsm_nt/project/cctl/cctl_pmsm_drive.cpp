@@ -162,6 +162,8 @@ class pmsm_drive_topology final
     explicit pmsm_drive_topology(bool profile_enabled = false)
         : motor_(motor_parameters()), profile_enabled_(profile_enabled)
     {
+        mcu_.set_adc_interrupt_handler(
+            &pmsm_drive_topology::dispatch_adc_interrupt, this);
     }
 
     /** Controller storage is initialized by ctl_init() before this hook. */
@@ -212,7 +214,7 @@ class pmsm_drive_topology final
             context.step_index % kProfileSamplePeriod == 0U;
         profile_begin_ = sample_profile_step_ ? profile_clock::now()
                                               : profile_clock::time_point{};
-        pwm_output_ = mcu_.sample_epwm(
+        pwm_output_ = mcu_.control_outputs(
             static_cast<std::uint64_t>(context.step_index) *
             kTbclkCountsPerPlantStep);
         inverter_input_ = {};
@@ -270,26 +272,25 @@ class pmsm_drive_topology final
     {
         if (pwm_output_[0].adc_trigger)
         {
-            if (pwm_output_[1].adc_trigger || pwm_output_[2].adc_trigger)
-                throw std::runtime_error("more than one ePWM module drives ADC SOC");
             if (mcu_.output_enabled() &&
                 !mcs::cctl_xplt::mcu_simulation::all_low_sides_conducting(
                     pwm_output_))
                 throw std::runtime_error(
                     "ADC SOC occurred outside the three-low-side sampling window");
 
-            mcs::cctl_xplt::adc_pin_voltages adc_inputs;
-            adc_inputs.dc_link_voltage = inverter_output_.VADC_VDC;
-            adc_inputs.phase_voltage = {inverter_output_.VADC_VA,
-                                        inverter_output_.VADC_VB,
-                                        inverter_output_.VADC_VC};
-            adc_inputs.phase_current = {inverter_output_.VADC_IA,
-                                        inverter_output_.VADC_IB,
-                                        inverter_output_.VADC_IC};
-            mcu_.stage_adc_inputs(adc_inputs);
-            mcu_.trigger_adc([this, &context] {
-                adc_interrupt(context.time_s, context.runtime);
-            });
+            const mcs::cctl_xplt::adc_pin_voltages adc_inputs{
+                inverter_output_.VADC_VDC,
+                {inverter_output_.VADC_VA, inverter_output_.VADC_VB,
+                 inverter_output_.VADC_VC},
+                {inverter_output_.VADC_IA, inverter_output_.VADC_IB,
+                 inverter_output_.VADC_IC}};
+            if (!mcu_.control_inputs(adc_inputs,
+                                     motor_.output.mechanical_angle_rad))
+                throw std::runtime_error(
+                    "ePWM SOC was not accepted by MCU input peripherals");
+            ever_enabled_ = ever_enabled_ || mcu_.output_enabled();
+            const simulation_record record = make_record(context.time_s);
+            context.runtime.interface_transfer(&record, sizeof(record));
         }
         if (sample_profile_step_)
         {
@@ -383,26 +384,19 @@ class pmsm_drive_topology final
     }
 
   private:
-    /** Execute the ADC-complete ISR and publish one decimated CSV record. */
-    void adc_interrupt(double time_s,
-                       gmp::csp::cctl::simulation_runtime &runtime)
+    /** Type-erased ADC callback registered once with the peripheral model. */
+    static void dispatch_adc_interrupt(void *context)
+    {
+        static_cast<pmsm_drive_topology *>(context)->adc_interrupt();
+    }
+
+    /** Execute only the control work owned by the ADC-complete ISR. */
+    void adc_interrupt()
     {
         const auto profile_begin = profile_enabled_ ? profile_clock::now()
                                                     : profile_clock::time_point{};
-        if (!mcu_.adc_interrupt_pending())
-            throw std::runtime_error("ADC interrupt dispatched without completion");
-        mcu_.transfer_adc_results_to_controller();
-        mcu_.sample_encoder(motor_.output.mechanical_angle_rad);
-
         cctl_adc_interrupt();
         ++controller_steps_;
-
-        mcu_.transfer_pwm_from_controller();
-        ever_enabled_ = ever_enabled_ || mcu_.output_enabled();
-        mcu_.acknowledge_adc_interrupt();
-
-        const simulation_record record = make_record(time_s);
-        runtime.interface_transfer(&record, sizeof(record));
         if (profile_enabled_)
         {
             profile_controller_ns_ += elapsed_ns(profile_begin, profile_clock::now());

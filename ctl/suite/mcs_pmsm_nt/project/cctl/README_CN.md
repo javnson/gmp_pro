@@ -23,6 +23,13 @@ ADC SOC/中断分发和 eQEP。C 兼容的 `xplt.peripheral.*` 只保存控制�
 回调映射，并把状态机的输出使能/禁用连接到 CSP。通用 TI 风格外设原语仍位于
 `cctl/peripheral_if`。
 
+运行期的 MCU 聚合接口只分成 `control_outputs()` 和 `control_inputs()`：前者
+采样 PWM/SOC 输出并送给主电路，后者一次性接收 ADC 调理电压和转子位置，并在
+SOC 到来时完成 ADC 锁存、结果寄存器搬运、eQEP 搬运、ISR、PWM 寄存器更新和
+中断确认。工程不逐个操作 ADC/PWM/QEP 成员。通用外设通过静态 `make()` 接收
+SDPE 形参；配置对象是只读值对象。构造函数只创建一次配置，`initialize()` 仅
+复位已有外设状态。ADC 内部保存 ISR 函数指针，并保证结果搬运发生在 ISR 之前。
+
 芯片后台代码与控制 ISR 使用两套独立调度。SDPE 的
 `CCTL_SIM_USER_CODE_FREQUENCY_HZ` 当前为 33 kHz；芯片算力调度器按该频率调用
 用户 `mainloop()` 和控制器后台 `ctl_mainloop()`，不再采用“每次控制中断执行

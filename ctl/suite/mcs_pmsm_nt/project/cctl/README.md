@@ -25,6 +25,17 @@ SOC after ADC and encoder registers are latched, never from the plant main loop.
 enable/disable through the CSP.
 Generic TI-style peripheral primitives remain under `cctl/peripheral_if`.
 
+The MCU aggregate exposes only `control_outputs()` and `control_inputs()` on
+the runtime data path. The former samples PWM/SOC outputs for the plant; the
+latter accepts all conditioned ADC voltages plus rotor position and, on SOC,
+performs ADC latching, result-register transfer, eQEP transfer, ISR dispatch,
+PWM-register application, and interrupt acknowledgement. Project code does not
+operate ADC/PWM/QEP members individually. Generic peripherals accept SDPE
+arguments through static `make()` factories and expose immutable configuration
+values. Construction creates the configuration once, while `initialize()` only
+resets existing state. The ADC stores its ISR function pointer and transfers
+result registers before dispatch.
+
 Chip background code and the control ISR have independent schedules. The SDPE
 value `CCTL_SIM_USER_CODE_FREQUENCY_HZ` is currently 33 kHz; the simulated MCU
 compute allocator calls user `mainloop()` and controller-background

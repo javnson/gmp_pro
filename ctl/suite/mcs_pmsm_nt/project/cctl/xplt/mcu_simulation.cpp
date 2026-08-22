@@ -15,104 +15,78 @@
 namespace mcs::cctl_xplt
 {
 
-::cctl::ti_adc_config<sim_real_gt> mcu_simulation::make_adc_config()
-{
-    ::cctl::ti_adc_config<sim_real_gt> config;
-    config.resolution_bits = CCTL_SIM_ADC_RESOLUTION_BITS;
-    config.reference_voltage_v = sim_real_gt(CCTL_SIM_ADC_REFERENCE_V);
-    return config;
-}
-
-::cctl::ti_epwm_config<sim_real_gt>
-mcu_simulation::make_epwm_config(bool adc_trigger)
-{
-    ::cctl::ti_epwm_config<sim_real_gt> config;
-    config.time_base_clock_hz = sim_real_gt(CCTL_SIM_EPWM_TBCLK_HZ);
-    config.period_count = CCTL_SIM_EPWM_PERIOD_COUNT;
-    config.rising_edge_delay_count = CCTL_SIM_EPWM_DBRED_COUNT;
-    config.falling_edge_delay_count = CCTL_SIM_EPWM_DBFED_COUNT;
-    config.upper_active_above_compare = true;
-    config.adc_trigger_event =
-        adc_trigger ? ::cctl::ti_epwm_trigger_event::compare_b_up
-                    : ::cctl::ti_epwm_trigger_event::disabled;
-    config.adc_trigger_compare_count = CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT;
-    return config;
-}
-
 mcu_simulation::mcu_simulation()
-    : adc_(make_adc_config()), eqep_(CCTL_SIM_EQEP_COUNTS_PER_REV),
-      epwm_{::cctl::ti_epwm<sim_real_gt>(make_epwm_config(true)),
-            ::cctl::ti_epwm<sim_real_gt>(make_epwm_config()),
-            ::cctl::ti_epwm<sim_real_gt>(make_epwm_config())}
+    : adc_(adc_type::make(CCTL_SIM_ADC_RESOLUTION_BITS,
+                          sim_real_gt(CCTL_SIM_ADC_REFERENCE_V))),
+      eqep_(eqep_type::make(CCTL_SIM_EQEP_COUNTS_PER_REV)),
+      epwm_{epwm_type::make(
+                sim_real_gt(CCTL_SIM_EPWM_TBCLK_HZ),
+                CCTL_SIM_EPWM_PERIOD_COUNT, CCTL_SIM_EPWM_DBRED_COUNT,
+                CCTL_SIM_EPWM_DBFED_COUNT, true,
+                ::cctl::ti_epwm_trigger_event::compare_b_up,
+                CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT),
+            epwm_type::make(
+                sim_real_gt(CCTL_SIM_EPWM_TBCLK_HZ),
+                CCTL_SIM_EPWM_PERIOD_COUNT, CCTL_SIM_EPWM_DBRED_COUNT,
+                CCTL_SIM_EPWM_DBFED_COUNT),
+            epwm_type::make(
+                sim_real_gt(CCTL_SIM_EPWM_TBCLK_HZ),
+                CCTL_SIM_EPWM_PERIOD_COUNT, CCTL_SIM_EPWM_DBRED_COUNT,
+                CCTL_SIM_EPWM_DBFED_COUNT)}
 {
 }
 
 void mcu_simulation::initialize()
 {
-    adc_.initialize(make_adc_config());
-    eqep_.initialize(CCTL_SIM_EQEP_COUNTS_PER_REV);
-    epwm_[0].initialize(make_epwm_config(true));
-    epwm_[1].initialize(make_epwm_config());
-    epwm_[2].initialize(make_epwm_config());
+    adc_.reset();
+    eqep_.reset();
+    for (epwm_type &module : epwm_)
+        module.reset();
+    outputs_ = {};
     if (!verify_peripheral_models())
         throw std::runtime_error(
             "SDPE-configured TI peripheral self-test failed");
 }
 
-epwm_outputs mcu_simulation::sample_epwm(
+void mcu_simulation::set_adc_interrupt_handler(
+    adc_type::interrupt_handler_type handler, void *context) noexcept
+{
+    adc_.set_interrupt_handler(handler, context);
+}
+
+const epwm_outputs &mcu_simulation::control_outputs(
     std::uint64_t absolute_tbclk_count)
 {
-    return {epwm_[0].sample_time_base_count(absolute_tbclk_count),
-            epwm_[1].sample_time_base_count(absolute_tbclk_count),
-            epwm_[2].sample_time_base_count(absolute_tbclk_count)};
+    outputs_ = {epwm_[0].sample_time_base_count(absolute_tbclk_count),
+                epwm_[1].sample_time_base_count(absolute_tbclk_count),
+                epwm_[2].sample_time_base_count(absolute_tbclk_count)};
+    return outputs_;
 }
 
-void mcu_simulation::stage_adc_inputs(const adc_pin_voltages &inputs)
+bool mcu_simulation::control_inputs(const adc_pin_voltages &inputs,
+                                    sim_real_gt mechanical_angle_rad)
 {
-    adc_.set_input_voltage(CCTL_ADC_UDC, inputs.dc_link_voltage);
-    adc_.set_input_voltage(CCTL_ADC_UA, inputs.phase_voltage[0]);
-    adc_.set_input_voltage(CCTL_ADC_UB, inputs.phase_voltage[1]);
-    adc_.set_input_voltage(CCTL_ADC_UC, inputs.phase_voltage[2]);
-    adc_.set_input_voltage(CCTL_ADC_IA, inputs.phase_current[0]);
-    adc_.set_input_voltage(CCTL_ADC_IB, inputs.phase_current[1]);
-    adc_.set_input_voltage(CCTL_ADC_IC, inputs.phase_current[2]);
-}
+    /* ePWM decides whether the control transaction exists at this step. */
+    if (!outputs_[0].adc_trigger)
+        return false;
+    if (outputs_[1].adc_trigger || outputs_[2].adc_trigger)
+        throw std::runtime_error("more than one ePWM module drives ADC SOC");
 
-void mcu_simulation::trigger_adc(
-    const std::function<void()> &interrupt_handler)
-{
-    adc_.trigger(interrupt_handler);
-}
+    const std::array<sim_real_gt, 8U> voltages{
+        inputs.dc_link_voltage, inputs.phase_voltage[0],
+        inputs.phase_voltage[1], inputs.phase_voltage[2],
+        inputs.phase_current[0], inputs.phase_current[1],
+        inputs.phase_current[2], sim_real_gt(0)};
+    adc_.set_input_voltages(voltages);
 
-void mcu_simulation::transfer_adc_results_to_controller() const
-{
-    for (std::size_t channel = 0U; channel < CCTL_ADC_COUNT; ++channel)
-        cctl_adc_result[channel] = static_cast<adc_gt>(adc_.result(channel));
-}
+    /* Prepare MCU input registers before entering the synchronous ADC ISR. */
+    eqep_.sample_to(mechanical_angle_rad, cctl_encoder_position);
+    adc_.trigger_and_transfer(cctl_adc_result, CCTL_ADC_COUNT);
 
-void mcu_simulation::sample_encoder(sim_real_gt mechanical_angle_rad)
-{
-    cctl_encoder_position = eqep_.sample_mechanical_angle(mechanical_angle_rad);
-}
-
-void mcu_simulation::acknowledge_adc_interrupt() noexcept
-{
+    /* gmp_base_ctl_step() has returned; publish its new PWM register values. */
+    write_epwm_outputs_after_isr();
     adc_.acknowledge_interrupt();
-}
-
-void mcu_simulation::transfer_pwm_from_controller() noexcept
-{
-    const bool enabled = csp_cctl_output_is_enabled() != 0;
-    for (std::size_t phase = 0U; phase < epwm_.size(); ++phase)
-    {
-        epwm_[phase].set_compare_a(cctl_pwm_compare[phase]);
-        epwm_[phase].set_enabled(enabled);
-    }
-}
-
-bool mcu_simulation::adc_interrupt_pending() const noexcept
-{
-    return adc_.interrupt_pending();
+    return true;
 }
 
 std::uint64_t mcu_simulation::adc_trigger_count() const noexcept
@@ -127,6 +101,13 @@ bool mcu_simulation::output_enabled() const noexcept
     });
 }
 
+void mcu_simulation::write_epwm_outputs_after_isr() noexcept
+{
+    const bool enabled = csp_cctl_output_is_enabled() != 0;
+    for (std::size_t phase = 0U; phase < epwm_.size(); ++phase)
+        epwm_[phase].apply_control(cctl_pwm_compare[phase], enabled);
+}
+
 bool mcu_simulation::all_low_sides_conducting(
     const epwm_outputs &outputs) noexcept
 {
@@ -137,31 +118,49 @@ bool mcu_simulation::all_low_sides_conducting(
 
 bool mcu_simulation::verify_peripheral_models()
 {
-    ::cctl::ti_adc<sim_real_gt, 1U> adc(make_adc_config());
-    bool adc_interrupt_called = false;
+    auto adc = ::cctl::ti_adc<sim_real_gt, 1U>::make(
+        CCTL_SIM_ADC_RESOLUTION_BITS,
+        sim_real_gt(CCTL_SIM_ADC_REFERENCE_V));
+    struct adc_test_context
+    {
+        bool interrupt_called{};
+        std::uint32_t *transferred_result{};
+    };
+    std::uint32_t transferred_result = 0U;
+    adc_test_context adc_context{false, &transferred_result};
+    adc.set_interrupt_handler(
+        [](void *context) {
+            auto &test = *static_cast<adc_test_context *>(context);
+            test.interrupt_called = *test.transferred_result != 0U;
+        },
+        &adc_context);
     adc.set_input_voltage(0U, sim_real_gt(CCTL_SIM_ADC_REFERENCE_V) /
                                   sim_real_gt(2));
-    adc.trigger([&adc_interrupt_called] { adc_interrupt_called = true; });
-    if (!adc_interrupt_called || !adc.interrupt_pending() ||
+    adc.trigger_and_transfer(&transferred_result, 1U);
+    if (!adc_context.interrupt_called || !adc.interrupt_pending() ||
         adc.trigger_count() != 1U ||
+        transferred_result != (adc.maximum_code() + 1U) / 2U ||
         adc.result(0U) != (adc.maximum_code() + 1U) / 2U)
         return false;
     adc.acknowledge_interrupt();
     if (adc.interrupt_pending())
         return false;
 
-    ::cctl::ti_eqep<sim_real_gt> eqep(CCTL_SIM_EQEP_COUNTS_PER_REV);
+    auto eqep = ::cctl::ti_eqep<sim_real_gt>::make(
+        CCTL_SIM_EQEP_COUNTS_PER_REV);
     if (eqep.sample_mechanical_angle(
             sim_real_gt(0.5L * 3.14159265358979323846L)) !=
         CCTL_SIM_EQEP_COUNTS_PER_REV / 4U)
         return false;
 
-    ::cctl::ti_epwm<sim_real_gt> time_epwm(make_epwm_config(true));
-    ::cctl::ti_epwm<sim_real_gt> count_epwm(make_epwm_config(true));
-    time_epwm.set_enabled(true);
-    count_epwm.set_enabled(true);
-    time_epwm.set_compare_a(CCTL_SIM_EPWM_PERIOD_COUNT / 2U);
-    count_epwm.set_compare_a(CCTL_SIM_EPWM_PERIOD_COUNT / 2U);
+    auto time_epwm = ::cctl::ti_epwm<sim_real_gt>::make(
+        sim_real_gt(CCTL_SIM_EPWM_TBCLK_HZ), CCTL_SIM_EPWM_PERIOD_COUNT,
+        CCTL_SIM_EPWM_DBRED_COUNT, CCTL_SIM_EPWM_DBFED_COUNT, true,
+        ::cctl::ti_epwm_trigger_event::compare_b_up,
+        CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT);
+    auto count_epwm = time_epwm;
+    time_epwm.apply_control(CCTL_SIM_EPWM_PERIOD_COUNT / 2U, true);
+    count_epwm.apply_control(CCTL_SIM_EPWM_PERIOD_COUNT / 2U, true);
     std::size_t adc_triggers = 0U;
     for (std::size_t index = 0U;
          index < 2U * (CCTL_SIM_EPWM_PERIOD_COUNT + 1U); ++index)

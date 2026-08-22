@@ -12,6 +12,12 @@ namespace cctl
 template <typename T = double> class ti_eqep
 {
   public:
+    /** Construct an eQEP from the user-selected encoder resolution. */
+    static ti_eqep make(std::uint32_t counts_per_revolution)
+    {
+        return ti_eqep(counts_per_revolution);
+    }
+
     explicit ti_eqep(std::uint32_t counts_per_revolution = 16384U)
     {
         initialize(counts_per_revolution);
@@ -24,6 +30,12 @@ template <typename T = double> class ti_eqep
         counts_per_revolution_ = counts_per_revolution;
         position_count_ = 0U;
         revolution_count_ = 0;
+    }
+
+    /** Reset position while retaining the encoder resolution. */
+    void reset()
+    {
+        initialize(counts_per_revolution_);
     }
 
     std::uint32_t sample_mechanical_angle(T mechanical_angle_rad)
@@ -41,6 +53,14 @@ template <typename T = double> class ti_eqep
         if (position_count_ >= counts_per_revolution_)
             position_count_ = counts_per_revolution_ - 1U;
         return position_count_;
+    }
+
+    /** Sample an angle and transfer QPOSCNT through the peripheral boundary. */
+    template <typename Destination>
+    void sample_to(T mechanical_angle_rad, Destination &destination)
+    {
+        destination = static_cast<Destination>(
+            sample_mechanical_angle(mechanical_angle_rad));
     }
 
     std::uint32_t position_count() const noexcept

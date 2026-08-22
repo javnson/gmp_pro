@@ -15,6 +15,10 @@
 | `circuit_solver` | 历史 Python 改进节点分析实验 |
 | `component` | 尚未由 `cctl.hpp` 导出的早期 C++ 接口实验 |
 
+`peripheral_if` 中的 ADC、ePWM 和 eQEP 通过各自的静态 `make()` 接收用户参数，
+配置对象创建后只读。ADC 可以保存带上下文的 ISR 函数指针，并通过
+`trigger_and_transfer()` 在分发中断前完成结果寄存器搬运。
+
 当前硬件 suite 默认仍采用 `ctl`。正式嵌入式控制工程应优先从 `ctl/component` 和 `ctl/suite` 开始；只有在确实需要 C++ 类型或上位机数值模型时再使用 CCTL。
 
 ## 已验证的 PMSM 平均值仿真核心
@@ -25,6 +29,6 @@
 
 `ctl/suite/mcs_pmsm_nt/project/cctl` 进一步把开关型 MNA 主电路、
 `pmsm_cs` 电流源电机、上述外设和现有 PMSM 控制器直接链接在同一个进程中；
-100 ns 被控对象通过固定 500 分频驱动 20 kHz 控制器，不需要网络通信。
-该工程的三个仿真线程由 `csp/cctl` 管理，仿真与文件线程之间复用 `dsa` 的
-32 MB 无锁记录环。
+100 ns 被控对象由 ePWM SOC/ADC ISR 驱动 20 kHz 控制器，同时 MCU 算力调度器
+独立执行 33 kHz 用户后台任务，不需要网络通信。仿真主线程及文件、控制台两个
+服务线程由 `csp/cctl` 管理，仿真与文件线程之间复用 `dsa` 的 32 MB 无锁记录环。

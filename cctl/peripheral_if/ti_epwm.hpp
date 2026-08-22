@@ -17,17 +17,10 @@ enum class ti_epwm_trigger_event
     compare_b_down,
 };
 
-/** C2000 ePWM parameters used by the host-side center-aligned model. */
-template <typename T> struct ti_epwm_config
+/** Immutable C2000 ePWM parameters for the host center-aligned model. */
+template <typename T> class ti_epwm_config
 {
-    T time_base_clock_hz;
-    std::uint32_t period_count;
-    std::uint32_t rising_edge_delay_count;
-    std::uint32_t falling_edge_delay_count;
-    bool upper_active_above_compare;
-    ti_epwm_trigger_event adc_trigger_event;
-    std::uint32_t adc_trigger_compare_count;
-
+  public:
     ti_epwm_config()
         : time_base_clock_hz(T(100e6)), period_count(2499U),
           rising_edge_delay_count(100U), falling_edge_delay_count(100U),
@@ -36,6 +29,64 @@ template <typename T> struct ti_epwm_config
           adc_trigger_compare_count(0U)
     {
     }
+
+    /** @return Configured ePWM time-base clock frequency. */
+    T time_base_clock() const noexcept { return time_base_clock_hz; }
+    /** @return Configured TBPRD value. */
+    std::uint32_t period() const noexcept { return period_count; }
+    /** @return Configured rising-edge dead-time count. */
+    std::uint32_t rising_edge_delay() const noexcept
+    {
+        return rising_edge_delay_count;
+    }
+    /** @return Configured falling-edge dead-time count. */
+    std::uint32_t falling_edge_delay() const noexcept
+    {
+        return falling_edge_delay_count;
+    }
+    /** @return Whether the upper output is active above CMPA. */
+    bool upper_is_active_above_compare() const noexcept
+    {
+        return upper_active_above_compare;
+    }
+    /** @return Configured ADC SOC event selection. */
+    ti_epwm_trigger_event trigger_event() const noexcept
+    {
+        return adc_trigger_event;
+    }
+    /** @return Configured ADC SOC comparison count. */
+    std::uint32_t trigger_compare() const noexcept
+    {
+        return adc_trigger_compare_count;
+    }
+
+  private:
+    template <typename> friend class ti_epwm;
+
+    ti_epwm_config(T requested_time_base_clock_hz,
+                   std::uint32_t requested_period_count,
+                   std::uint32_t requested_rising_edge_delay_count,
+                   std::uint32_t requested_falling_edge_delay_count,
+                   bool requested_upper_active_above_compare,
+                   ti_epwm_trigger_event requested_adc_trigger_event,
+                   std::uint32_t requested_adc_trigger_compare_count)
+        : time_base_clock_hz(requested_time_base_clock_hz),
+          period_count(requested_period_count),
+          rising_edge_delay_count(requested_rising_edge_delay_count),
+          falling_edge_delay_count(requested_falling_edge_delay_count),
+          upper_active_above_compare(requested_upper_active_above_compare),
+          adc_trigger_event(requested_adc_trigger_event),
+          adc_trigger_compare_count(requested_adc_trigger_compare_count)
+    {
+    }
+
+    T time_base_clock_hz;
+    std::uint32_t period_count;
+    std::uint32_t rising_edge_delay_count;
+    std::uint32_t falling_edge_delay_count;
+    bool upper_active_above_compare;
+    ti_epwm_trigger_event adc_trigger_event;
+    std::uint32_t adc_trigger_compare_count;
 };
 
 struct ti_epwm_gate_pair
@@ -59,6 +110,39 @@ template <typename T = double> class ti_epwm
     typedef T scalar_type;
     typedef ti_epwm_config<T> config_type;
     typedef ti_epwm_gate_pair output_type;
+
+    /** Build an ePWM configuration from explicit user-facing parameters. */
+    static config_type make_config(
+        T time_base_clock_hz, std::uint32_t period_count,
+        std::uint32_t rising_edge_delay_count,
+        std::uint32_t falling_edge_delay_count,
+        bool upper_active_above_compare = true,
+        ti_epwm_trigger_event adc_trigger_event =
+            ti_epwm_trigger_event::disabled,
+        std::uint32_t adc_trigger_compare_count = 0U)
+    {
+        return config_type(time_base_clock_hz, period_count,
+                           rising_edge_delay_count,
+                           falling_edge_delay_count,
+                           upper_active_above_compare, adc_trigger_event,
+                           adc_trigger_compare_count);
+    }
+
+    /** Construct an ePWM directly from explicit user-facing parameters. */
+    static ti_epwm make(
+        T time_base_clock_hz, std::uint32_t period_count,
+        std::uint32_t rising_edge_delay_count,
+        std::uint32_t falling_edge_delay_count,
+        bool upper_active_above_compare = true,
+        ti_epwm_trigger_event adc_trigger_event =
+            ti_epwm_trigger_event::disabled,
+        std::uint32_t adc_trigger_compare_count = 0U)
+    {
+        return ti_epwm(make_config(
+            time_base_clock_hz, period_count, rising_edge_delay_count,
+            falling_edge_delay_count, upper_active_above_compare,
+            adc_trigger_event, adc_trigger_compare_count));
+    }
 
     ti_epwm()
     {
@@ -84,6 +168,19 @@ template <typename T = double> class ti_epwm
         compare_a_ = config_.period_count / 2U;
         enabled_ = false;
         last_adc_trigger_cycle_ = std::numeric_limits<std::int64_t>::min();
+    }
+
+    /** Reset carrier state while retaining the configured hardware values. */
+    void reset()
+    {
+        initialize(config_);
+    }
+
+    /** Apply the controller compare and output-enable registers atomically. */
+    void apply_control(std::int32_t compare_count, bool enabled) noexcept
+    {
+        set_compare_a(compare_count);
+        set_enabled(enabled);
     }
 
     void set_compare_a(std::int32_t compare_count) noexcept
