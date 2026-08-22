@@ -60,13 +60,19 @@ gmp_csp_startup
 ```
 
 `gmp_csp_startup()` 统一解析 `--no-pause`、`--realtime-priority`、
-`--normal-priority`、`--no-realtime-priority`、`--profile`、`--build-info`
+`--normal-priority`、`--no-realtime-priority`、`--profile`、`--build-info`、`--viewer`、`--continuous`
 和 `--output <路径>`。工程在标准 C 链接的 `init()` 中通过 `command_line()`
 读取结果，并注册构建信息和仿真配置。`gmp_csp_post_process()` 初始化被控对象并
 启动文件、控制台两个服务线程；每次 `gmp_csp_loop()` 只推进一个仿真步。每个
 完整仿真周期之后，
 核心框架通过 `gmp_csp_should_exit()` 判断是否结束。`gmp_csp_exit()` 负责校验、
 汇合线程、打印摘要、恢复优先级和按配置暂停。
+
+`--continuous` 会忽略 `total_steps`，持续推进仿真，直到控制台输入 `q` 或 `Q`。
+按键由控制台服务线程每 25 ms 非阻塞检测，不进入数值热路径。退出仍走标准
+`gmp_csp_exit()`：调用模型 finalize、排空全部 CSV 队列、汇合服务线程并打印
+摘要。与 `--viewer` 同时使用时，Viewer 自动启用 20 Hz 刷新和默认 0.1 s
+滚动时间窗。
 
 CCTL CSP 同时定义 `SPECIFY_CSP_MANAGES_USER_MAINLOOP` 和
 `SPECIFY_CSP_MANAGES_CTL_MAINLOOP`。被控对象步长通常远小于 MCU 后台任务周期，
@@ -100,8 +106,9 @@ CSP 自己实现 `gmp_csp_startup()`、`gmp_csp_post_process()`、`gmp_csp_loop(
 ## 仿真运行时
 
 `simulation_runtime::initialize(config, callbacks)` 校验并保存一次运行。配置必须
-提供正数 `total_steps`、有限且大于零的 `plant_step_s`、非零 POD 记录大小、
-输出文件名和记录格式化函数；环容量、批量长度、刷新周期和暂停策略应来自
+提供正数 `total_steps`、有限且大于零的 `plant_step_s`，以及至少一个
+`simulation_output_config`。每个输出独立定义 POD 记录大小、SPSC 环容量、批量
+长度、CSV 路径、表头和格式化函数；原单记录配置保留为兼容入口。刷新周期和暂停策略应来自
 SDPE，输出路径和优先级可由 CSP 命令行覆盖。
 
 回调职责如下：
@@ -117,9 +124,18 @@ SDPE，输出路径和优先级可由 CSP 命令行覆盖。
 阻塞完成整段仿真。`run()` 是在调用线程执行同样序列的独立便利接口；只有文件
 输出和控制台进度是工作线程。`finalize()` 负责汇合二者，并且可重复调用。
 
-`interface_transfer(record, size)` 在热路径中把记录非阻塞复制到 SPSC 环。
+`interface_transfer(stream_index, record, size)` 在热路径中把记录非阻塞复制到
+指定输出的 SPSC 环；不带 stream index 的重载写入第 0 个输出。
 记录必须可平凡复制，大小必须与配置完全一致。环满时返回 `false` 并丢弃新记录，
-不会阻塞求解器。
+不会阻塞求解器。所有输出仍由同一个文件线程轮询和批量写入；各流独立统计
+queued/written/dropped/bytes。`--viewer` 会通过 `GMP_PRO_LOCATION` 找到 Viewer，
+传入全部输出路径并启用 20 Hz 动态刷新。
+
+控制中断计数和仿真毫秒时基属于 CSP。ADC ISR 调用
+`csp_cctl_notify_controller_interrupt()` 后再分派 `gmp_base_ctl_step()`；工程外设层
+不得自行维护 controller tick 或实现 `gmp_base_get_system_tick()`。CSP 还提供
+16 通道控制速率软件示波器 `csp_cctl_scope_write/read()`，供控制代码发布要写入
+控制 CSV 的 `float` 变量。
 
 `completed_steps()`、`buffered_records()`、`config()` 和 `summary()` 提供只读
 状态；`print_summary(stream)` 打印通用性能/I/O 信息；工程打印完拓扑摘要后可

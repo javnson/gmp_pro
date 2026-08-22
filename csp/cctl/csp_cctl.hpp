@@ -12,6 +12,7 @@
 #include <iosfwd>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace gmp::csp::cctl
 {
@@ -140,6 +141,8 @@ struct command_line_options
     bool request_realtime_priority{};
     bool profile_enabled{};
     bool print_build_info{};
+    bool launch_viewer{};
+    bool continuous{};
     std::string output_path;
 };
 
@@ -166,6 +169,18 @@ struct simulation_callbacks
     std::function<void(std::ostream &)> print_summary;
 };
 
+/** @brief One independently sampled asynchronous CSV output stream. */
+struct simulation_output_config
+{
+    std::string name;
+    std::size_t record_size{};
+    std::size_t ring_bytes{32U * 1024U * 1024U};
+    std::size_t batch_bytes{1024U * 1024U};
+    std::string path;
+    std::string header;
+    std::function<void(const void *, std::ostream &)> write_record;
+};
+
 /** @brief Runtime and output policy, normally populated from project SDPE. */
 struct simulation_config
 {
@@ -183,6 +198,24 @@ struct simulation_config
     std::size_t console_bar_width{64U};
     bool request_realtime_priority{false};
     bool pause_on_exit{true};
+    /** Independent output streams. Empty selects the legacy single stream. */
+    std::vector<simulation_output_config> outputs;
+    /** Launch the GMP result viewer with every output in 20 Hz live mode. */
+    bool launch_viewer{};
+    /** Ignore total_steps and run until the console receives q. */
+    bool continuous{};
+};
+
+/** @brief Per-file output statistics for a multi-rate simulation. */
+struct simulation_output_summary
+{
+    std::string name;
+    std::string path;
+    std::size_t queued_records{};
+    std::size_t written_records{};
+    std::size_t dropped_records{};
+    std::size_t peak_queued_records{};
+    std::uint64_t output_bytes{};
 };
 
 /** @brief Final statistics collected after simulation and workers finish. */
@@ -203,7 +236,10 @@ struct simulation_summary
     double realtime_factor{};
     bool realtime_priority_requested{};
     bool realtime_priority_applied{};
+    bool continuous{};
+    bool stopped_by_user{};
     std::string priority_message;
+    std::vector<simulation_output_summary> outputs;
 };
 
 /**
@@ -232,6 +268,9 @@ class simulation_runtime
     bool step();
     /** Nonblocking-copy one fixed-size record into the output SPSC ring. */
     bool interface_transfer(const void *record, std::size_t record_size);
+    /** Nonblocking-copy a record to one independently configured output. */
+    bool interface_transfer(std::size_t stream_index, const void *record,
+                            std::size_t record_size);
     /** Convenience blocking run using the caller plus two service workers. */
     simulation_summary run();
     /** Join workers and materialize the final summary if still running. */

@@ -203,3 +203,9 @@ accuracy experiments.
 
 Manual execution pauses through `system("@pause")` by default. CTest passes
 `--no-pause`; `--output <path>` overrides the CSV destination.
+
+For continuous observation, run
+`mcs_pmsm_nt_cctl.exe --continuous --viewer`. The CSP ignores the finite 4 s
+regression horizon until the console receives `q`; the viewer refreshes at
+20 Hz with a default trailing 0.1 s window. Normal shutdown drains both CSV
+queues before reporting the result.

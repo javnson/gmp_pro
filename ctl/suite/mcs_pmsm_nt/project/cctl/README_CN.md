@@ -110,6 +110,16 @@ A→PWM1/2、B→PWM3/4、C→PWM5/6 的桥臂路由。物理 A/B/C 下桥采样
 在扣除百分比后尽量撑满整行，并在窗口缩放后自动调整。输出重定向到文件或
 CTest 时只打印最终状态，避免日志中出现控制序列和逐秒输出。
 
+本工程输出两个独立采样率的文件：`*_circuit.csv` 按 SDPE 参数
+`CCTL_SIM_CIRCUIT_RECORD_FREQUENCY_HZ`（默认 100 kHz）记录电路与电机量；
+`*_control.csv` 只在 ADC 中断完成后记录 PWM、ADC、编码器和 16 个
+`scope_00..scope_15` 控制软件示波器通道。两个流使用独立 SPSC 环，但仍由同一个
+文件线程写盘。运行可执行文件时增加 `--viewer` 可自动加载两个文件并进入动态刷新。
+
+连续观察可运行 `mcs_pmsm_nt_cctl.exe --continuous --viewer`。CSP 会忽略 4 s
+有限回归时长，持续仿真直到控制台输入 `q`；Viewer 同时以 20 Hz 刷新并默认显示
+最新 0.1 s 时间窗。退出后仍会完整排空两个 CSV 队列并打印 PASS/FAIL 摘要。
+
 Windows 下由 SDPE 的 `CCTL_SIM_REALTIME_PRIORITY` 决定是否在仿真期间申请
 `REALTIME_PRIORITY_CLASS`，当前默认开启。命令行 `--realtime-priority` 可强制
 开启，`--normal-priority` 或 `--no-realtime-priority` 可关闭。申请结果会显示

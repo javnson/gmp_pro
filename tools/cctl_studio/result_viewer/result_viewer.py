@@ -50,6 +50,28 @@ class ColumnWorker(QtCore.QRunnable):
             self.signals.failed.emit(str(error))
 
 
+class MultiColumnWorker(QtCore.QRunnable):
+    """Load decorated columns from several independently sampled files."""
+
+    def __init__(self, requests: tuple[tuple[ResultFile, str, str], ...]):
+        super().__init__()
+        self.requests = requests
+        self.signals = WorkerSignals()
+
+    @QtCore.pyqtSlot()
+    def run(self) -> None:
+        try:
+            loaded: dict[str, np.ndarray] = {}
+            for result in dict.fromkeys(request[0] for request in self.requests):
+                selected = [request for request in self.requests if request[0] == result]
+                values = load_numeric_columns(result, [item[1] for item in selected])
+                for _source, raw_name, display_name in selected:
+                    loaded[display_name] = values[raw_name]
+            self.signals.finished.emit(loaded)
+        except Exception as error:
+            self.signals.failed.emit(str(error))
+
+
 class LiveInitializeWorker(QtCore.QRunnable):
     def __init__(self, result: ResultFile, columns: tuple[str, ...]):
         super().__init__()
@@ -77,6 +99,43 @@ class LiveTailWorker(QtCore.QRunnable):
         try:
             self.signals.finished.emit((self.reader, self.reader.read_available()))
         except Exception as error:  # GUI boundary.
+            self.signals.failed.emit(str(error))
+
+
+class MultiLiveInitializeWorker(QtCore.QRunnable):
+    def __init__(self, requests: tuple[tuple[ResultFile, str, str], ...]):
+        super().__init__()
+        self.requests = requests
+        self.signals = WorkerSignals()
+
+    @QtCore.pyqtSlot()
+    def run(self) -> None:
+        try:
+            payload = []
+            for result in dict.fromkeys(item[0] for item in self.requests):
+                selected = [item for item in self.requests if item[0] == result]
+                mapping = {raw: display for _result, raw, display in selected}
+                reader = IncrementalResultReader(result, mapping)
+                payload.append((reader, reader.read_available(), mapping))
+            self.signals.finished.emit(payload)
+        except Exception as error:
+            self.signals.failed.emit(str(error))
+
+
+class MultiLiveTailWorker(QtCore.QRunnable):
+    def __init__(self, readers: list[tuple[IncrementalResultReader, dict[str, str]]]):
+        super().__init__()
+        self.readers = readers
+        self.signals = WorkerSignals()
+
+    @QtCore.pyqtSlot()
+    def run(self) -> None:
+        try:
+            self.signals.finished.emit([
+                (reader, reader.read_available(), mapping)
+                for reader, mapping in self.readers
+            ])
+        except Exception as error:
             self.signals.failed.emit(str(error))
 
 
@@ -179,11 +238,15 @@ class ResultViewer(QtWidgets.QMainWindow):
         self.setWindowTitle("GMP CCTL Result Viewer")
         self.resize(1450, 900)
         self.result: ResultFile | None = None
+        self.results: list[ResultFile] = []
+        self.bindings: dict[str, tuple[ResultFile, str]] = {}
+        self.time_keys: dict[Path, str] = {}
         self.cache: dict[str, np.ndarray] = {}
         self.panels: list[PlotPanel] = []
         self.active_panel: PlotPanel | None = None
         self.pending: tuple[PlotPanel, tuple[str, ...], str] | None = None
         self.live_reader: IncrementalResultReader | None = None
+        self.live_readers: list[tuple[IncrementalResultReader, dict[str, str]]] = []
         self.live_initializing = False
         self.live_poll_pending = False
         self.live_skipped_rows = 0
@@ -246,6 +309,20 @@ class ResultViewer(QtWidgets.QMainWindow):
             "Incrementally read rows appended by a running simulation every 50 ms"
         )
         self.dynamic_refresh.toggled.connect(self.set_dynamic_refresh)
+        self.rolling_x = QtWidgets.QCheckBox("Rolling X window")
+        self.rolling_x.setToolTip(
+            "Keep a fixed time span ending at the newest complete sample"
+        )
+        self.rolling_x.toggled.connect(self.set_rolling_window)
+        self.rolling_window_seconds = QtWidgets.QDoubleSpinBox()
+        self.rolling_window_seconds.setDecimals(9)
+        self.rolling_window_seconds.setRange(0.000001, 1_000_000.0)
+        self.rolling_window_seconds.setValue(0.1)
+        self.rolling_window_seconds.setSuffix(" s")
+        self.rolling_window_seconds.setToolTip("Visible horizontal time span")
+        self.rolling_window_seconds.valueChanged.connect(
+            lambda _value: self.apply_rolling_window()
+        )
         self.status_label = QtWidgets.QLabel()
         self.status_label.setWordWrap(True)
         form.addWidget(open_button)
@@ -264,6 +341,8 @@ class ResultViewer(QtWidgets.QMainWindow):
         form.addWidget(self.link_x)
         form.addWidget(self.link_y)
         form.addWidget(self.dynamic_refresh)
+        form.addWidget(self.rolling_x)
+        form.addWidget(self.rolling_window_seconds)
         form.addWidget(QtWidgets.QLabel("Maximum display points / curve"))
         form.addWidget(self.maximum_points)
         form.addWidget(self.status_label)
@@ -307,15 +386,21 @@ class ResultViewer(QtWidgets.QMainWindow):
         )
 
     def open_dialog(self) -> None:
-        path, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Open simulation result", "", "Delimited data (*.csv *.tsv *.txt);;All files (*)"
+        paths, _ = QtWidgets.QFileDialog.getOpenFileNames(
+            self, "Open simulation results", "", "Delimited data (*.csv *.tsv *.txt);;All files (*)"
         )
-        if path:
-            self.open_file(Path(path))
+        if paths:
+            self.open_files([Path(path) for path in paths])
 
     def open_file(self, path: Path) -> None:
+        self.open_files([path])
+
+    def open_files(self, paths: list[Path]) -> None:
         try:
-            self.result = inspect_result_file(path)
+            self.results = [inspect_result_file(path) for path in paths]
+            if not self.results:
+                raise ValueError("no result files were selected")
+            self.result = self.results[0]
         except Exception as error:
             QtWidgets.QMessageBox.critical(self, "Cannot open result", str(error))
             return
@@ -323,22 +408,30 @@ class ResultViewer(QtWidgets.QMainWindow):
         self.live_generation += 1
         self.file_generation += 1
         self.live_reader = None
+        self.live_readers = []
         self.live_initializing = False
         self.live_poll_pending = False
         self.live_skipped_rows = 0
         self.pending = None
         self.cache.clear()
-        self.file_label.setText(str(self.result.path))
+        self.file_label.setText("\n".join(str(result.path) for result in self.results))
+        self.bindings.clear()
+        self.time_keys.clear()
+        multiple = len(self.results) > 1
+        for result in self.results:
+            prefix = f"{result.path.name} :: " if multiple else ""
+            for raw_name in result.columns:
+                self.bindings[prefix + raw_name] = (result, raw_name)
+            raw_time = next(
+                (name for name in result.columns if name.lower() in {"time", "time_s", "t"}),
+                result.columns[0],
+            )
+            self.time_keys[result.path] = prefix + raw_time
         self.x_column.clear()
-        self.x_column.addItems(self.result.columns)
-        preferred = next(
-            (index for index, name in enumerate(self.result.columns) if name.lower() in {"time", "time_s", "t"}),
-            0,
-        )
-        self.x_column.setCurrentIndex(preferred)
+        self.x_column.addItems(self.time_keys.values())
         self.columns.clear()
-        for name in self.result.columns:
-            if name != self.x_column.currentText():
+        for name in self.bindings:
+            if name not in self.time_keys.values():
                 self.columns.addItem(name)
         for panel in self.panels:
             panel.plot.clear()
@@ -346,7 +439,10 @@ class ResultViewer(QtWidgets.QMainWindow):
             panel.curves.clear()
             panel.x_name = None
         self._sync_active_curve_list()
-        self.status_label.setText(f"{len(self.result.columns)} columns; select curves to load")
+        self.status_label.setText(
+            f"{len(self.results)} file(s), {len(self.bindings)} columns; "
+            "curves use each file's own time column"
+        )
 
     def add_plot(self) -> None:
         panel = PlotPanel(self.next_plot_number)
@@ -431,20 +527,28 @@ class ResultViewer(QtWidgets.QMainWindow):
             self.status_label.setText("A column load is already in progress…")
             return
         x_name = self.x_column.currentText()
-        y_names = tuple(name for name in dict.fromkeys(y_names) if name != x_name)
+        y_names = tuple(name for name in dict.fromkeys(y_names) if name in self.bindings)
         if not y_names:
             self.status_label.setText("The X column cannot also be a Y curve")
             return
-        missing = tuple(name for name in (x_name, *y_names) if name not in self.cache)
+        required = []
+        for y_name in y_names:
+            result, _raw = self.bindings[y_name]
+            required.extend((self.time_keys[result.path], y_name))
+        missing = tuple(name for name in dict.fromkeys(required) if name not in self.cache)
         if missing:
             self.pending = (self.active_panel, y_names, x_name)
             if self.dynamic_refresh.isChecked():
-                names = tuple(dict.fromkeys((*self.cache, x_name, *y_names)))
+                names = tuple(dict.fromkeys((*self.cache, *required)))
                 self._start_live_initialization(names)
             else:
                 self.status_label.setText("Loading selected columns in the background…")
                 generation = self.file_generation
-                worker = ColumnWorker(self.result, missing)
+                requests = tuple(
+                    (self.bindings[name][0], self.bindings[name][1], name)
+                    for name in missing
+                )
+                worker = MultiColumnWorker(requests)
                 worker.signals.finished.connect(
                     lambda columns, token=generation: self._columns_loaded(token, columns)
                 )
@@ -473,14 +577,17 @@ class ResultViewer(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.critical(self, "Cannot load columns", message)
 
     def _draw(self, panel: PlotPanel, y_names: tuple[str, ...], x_name: str) -> None:
-        x = self.cache[x_name]
-        panel.x_name = x_name
+        panel.x_name = "time"
         limit = self.maximum_points.value()
-        displayed_rows = len(x)
+        displayed_rows: int | None = None
         for y_name in y_names:
+            result, _raw = self.bindings[y_name]
+            curve_x_name = self.time_keys[result.path]
+            x = self.cache[curve_x_name]
             y = self.cache[y_name]
             common_rows = min(len(x), len(y))
-            displayed_rows = min(displayed_rows, common_rows)
+            displayed_rows = (common_rows if displayed_rows is None
+                              else min(displayed_rows, common_rows))
             xd, yd = minmax_decimate(x[:common_rows], y[:common_rows], limit)
             if y_name in panel.curves:
                 panel.curves[y_name].setData(xd, yd)
@@ -489,10 +596,11 @@ class ResultViewer(QtWidgets.QMainWindow):
                 panel.curves[y_name] = panel.plot.plot(xd, yd, pen=pg.mkPen(color, width=1.2), name=y_name)
         if panel is self.active_panel:
             self._sync_active_curve_list()
-        panel.plot.setLabel("bottom", x_name)
+        panel.plot.setLabel("bottom", "time")
         panel.plot.autoRange()
+        self.apply_rolling_window((panel,))
         self.status_label.setText(
-            f"Loaded {displayed_rows:,} common rows; displaying at most "
+            f"Loaded {displayed_rows or 0:,} common rows; displaying at most "
             f"{limit:,} points per curve"
         )
 
@@ -509,11 +617,43 @@ class ResultViewer(QtWidgets.QMainWindow):
             self.active_panel.plot.autoRange()
 
     @QtCore.pyqtSlot(bool)
+    def set_rolling_window(self, enabled: bool) -> None:
+        if enabled:
+            self.apply_rolling_window()
+        else:
+            for panel in self.panels:
+                panel.plot.autoRange()
+
+    def apply_rolling_window(
+        self, panels: tuple[PlotPanel, ...] | None = None
+    ) -> None:
+        """Pin X to a trailing time interval, like a streaming oscilloscope."""
+        if not self.rolling_x.isChecked():
+            return
+        span = self.rolling_window_seconds.value()
+        for panel in panels or tuple(self.panels):
+            latest: float | None = None
+            for y_name in panel.curves:
+                binding = self.bindings.get(y_name)
+                if binding is None:
+                    continue
+                x = self.cache.get(self.time_keys[binding[0].path])
+                if x is None or not x.size:
+                    continue
+                finite = x[np.isfinite(x)]
+                if finite.size:
+                    candidate = float(finite[-1])
+                    latest = candidate if latest is None else max(latest, candidate)
+            if latest is not None:
+                panel.plot.setXRange(latest - span, latest, padding=0.0)
+
+    @QtCore.pyqtSlot(bool)
     def set_dynamic_refresh(self, enabled: bool) -> None:
         was_live_initializing = self.live_initializing
         self.live_timer.stop()
         self.live_generation += 1
         self.live_reader = None
+        self.live_readers = []
         self.live_poll_pending = False
         if enabled:
             self._initialize_live_reader()
@@ -533,10 +673,7 @@ class ResultViewer(QtWidgets.QMainWindow):
             return
         names = tuple(self.cache)
         if not names:
-            self.status_label.setText(
-                "Dynamic refresh is enabled; select curves to begin reading"
-            )
-            return
+            names = tuple(self.time_keys.values())
         self._start_live_initialization(names)
 
     def _start_live_initialization(self, names: tuple[str, ...]) -> None:
@@ -550,7 +687,11 @@ class ResultViewer(QtWidgets.QMainWindow):
         self.live_initializing = True
         self.live_skipped_rows = 0
         self.status_label.setText("Preparing the 20 Hz incremental reader…")
-        worker = LiveInitializeWorker(self.result, names)
+        requests = tuple(
+            (self.bindings[name][0], self.bindings[name][1], name)
+            for name in names if name in self.bindings
+        )
+        worker = MultiLiveInitializeWorker(requests)
         worker.signals.finished.connect(
             lambda payload, token=generation: self._live_initialized(token, payload)
         )
@@ -563,31 +704,31 @@ class ResultViewer(QtWidgets.QMainWindow):
         if generation != self.live_generation:
             return
         self.live_initializing = False
-        reader, chunk = payload
-        if (
-            not self.dynamic_refresh.isChecked()
-            or self.result is None
-            or reader.result.path != self.result.path
-        ):
+        if not self.dynamic_refresh.isChecked() or self.result is None:
             return
-        self.live_reader = reader
-        self.live_skipped_rows += int(chunk.skipped_trailing_row)
-        for name, values in chunk.columns.items():
-            self.cache[name] = values
+        self.live_readers = []
+        chunks = []
+        for reader, chunk, mapping in payload:
+            self.live_readers.append((reader, mapping))
+            chunks.append(chunk)
+            self.live_skipped_rows += int(chunk.skipped_trailing_row)
+            for raw_name, values in chunk.columns.items():
+                self.cache[mapping[raw_name]] = values
+        self.live_reader = self.live_readers[0][0] if self.live_readers else None
         pending, self.pending = self.pending, None
         if pending is not None:
             self._draw(*pending)
         self._refresh_all_plots()
         self.live_timer.start(LIVE_REFRESH_INTERVAL_MS)
-        self._set_live_status(chunk)
+        self._set_live_status(chunks)
 
     @QtCore.pyqtSlot()
     def poll_live_file(self) -> None:
-        if self.live_reader is None or self.live_poll_pending:
+        if not self.live_readers or self.live_poll_pending:
             return
         self.live_poll_pending = True
         generation = self.live_generation
-        worker = LiveTailWorker(self.live_reader)
+        worker = MultiLiveTailWorker(self.live_readers)
         worker.signals.finished.connect(
             lambda payload, token=generation: self._live_tail_loaded(token, payload)
         )
@@ -599,25 +740,29 @@ class ResultViewer(QtWidgets.QMainWindow):
     def _live_tail_loaded(self, generation: int, payload: object) -> None:
         if generation != self.live_generation:
             return
-        reader, chunk = payload
-        if reader is not self.live_reader:
-            return
         self.live_poll_pending = False
-        if chunk.reset:
-            self.live_skipped_rows = 0
-        self.live_skipped_rows += int(chunk.skipped_trailing_row)
-        for name, values in chunk.columns.items():
+        changed = False
+        chunks = []
+        for _reader, chunk, mapping in payload:
+            chunks.append(chunk)
             if chunk.reset:
-                self.cache[name] = values
-            elif values.size:
-                existing = self.cache.get(name)
-                self.cache[name] = (
-                    values if existing is None or not existing.size
-                    else np.concatenate((existing, values))
-                )
-        if any(values.size for values in chunk.columns.values()) or chunk.reset:
+                self.live_skipped_rows = 0
+            self.live_skipped_rows += int(chunk.skipped_trailing_row)
+            for raw_name, values in chunk.columns.items():
+                name = mapping[raw_name]
+                if chunk.reset:
+                    self.cache[name] = values
+                    changed = True
+                elif values.size:
+                    existing = self.cache.get(name)
+                    self.cache[name] = (
+                        values if existing is None or not existing.size
+                        else np.concatenate((existing, values))
+                    )
+                    changed = True
+        if changed:
             self._refresh_all_plots()
-        self._set_live_status(chunk)
+        self._set_live_status(chunks)
 
     def _live_failed(self, generation: int, message: str) -> None:
         if generation != self.live_generation:
@@ -626,29 +771,35 @@ class ResultViewer(QtWidgets.QMainWindow):
         self.live_initializing = False
         self.live_timer.stop()
         self.live_reader = None
+        self.live_readers = []
         self.pending = None
         self.status_label.setText(f"Dynamic refresh stopped: {message}")
 
     def _refresh_all_plots(self) -> None:
         limit = self.maximum_points.value()
         for panel in self.panels:
-            if panel.x_name is None or panel.x_name not in self.cache:
+            if panel.x_name is None:
                 continue
-            x = self.cache[panel.x_name]
             for y_name, curve in panel.curves.items():
                 if y_name not in self.cache:
                     continue
+                result, _raw = self.bindings[y_name]
+                x_name = self.time_keys[result.path]
+                if x_name not in self.cache:
+                    continue
+                x = self.cache[x_name]
                 y = self.cache[y_name]
                 common_rows = min(len(x), len(y))
                 xd, yd = minmax_decimate(
                     x[:common_rows], y[:common_rows], limit
                 )
                 curve.setData(xd, yd)
+        self.apply_rolling_window()
 
-    def _set_live_status(self, chunk: ResultChunk) -> None:
+    def _set_live_status(self, chunks: list[ResultChunk]) -> None:
         rows = max((len(values) for values in self.cache.values()), default=0)
         suffix = ""
-        if chunk.incomplete_tail:
+        if any(chunk.incomplete_tail for chunk in chunks):
             suffix = "; incomplete final line deferred"
         if self.live_skipped_rows:
             suffix += f"; malformed trailing rows ignored={self.live_skipped_rows}"
@@ -675,13 +826,28 @@ class ResultViewer(QtWidgets.QMainWindow):
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="GMP CCTL large-result viewer")
-    parser.add_argument("file", nargs="?")
+    parser.add_argument("files", nargs="*")
+    parser.add_argument(
+        "--live", action="store_true",
+        help="enable 20 Hz incremental refresh after loading the files",
+    )
+    parser.add_argument(
+        "--rolling-window", type=float, metavar="SECONDS",
+        help="pin the horizontal axis to a trailing time window",
+    )
     args = parser.parse_args(argv)
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv[:1])
     pg.setConfigOptions(antialias=False, background="w", foreground="k")
     viewer = ResultViewer()
-    if args.file:
-        viewer.open_file(Path(args.file))
+    if args.files:
+        viewer.open_files([Path(path) for path in args.files])
+    if args.live:
+        viewer.dynamic_refresh.setChecked(True)
+    if args.rolling_window is not None:
+        if args.rolling_window <= 0.0:
+            parser.error("--rolling-window must be positive")
+        viewer.rolling_window_seconds.setValue(args.rolling_window)
+        viewer.rolling_x.setChecked(True)
     viewer.show()
     return app.exec_()
 

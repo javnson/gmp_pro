@@ -138,6 +138,47 @@ class ResultViewerTests(unittest.TestCase):
         self.assertIsNotNone(viewer.plot_splitter.handle(1))
         viewer.close()
 
+    def test_multiple_sample_rates_use_each_files_time_column(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            circuit = Path(directory) / "circuit.csv"
+            control = Path(directory) / "control.csv"
+            circuit.write_bytes(b"time_s,ia\n0,1\n0.1,2\n0.2,3\n")
+            control.write_bytes(b"time_s,scope_00\n0,10\n0.2,20\n")
+            viewer = ResultViewer()
+            viewer.open_files([circuit, control])
+            names = [viewer.columns.item(index).text()
+                     for index in range(viewer.columns.count())]
+            for index, name in enumerate(names):
+                if name.endswith(" :: ia") or name.endswith(" :: scope_00"):
+                    viewer.columns.item(index).setSelected(True)
+            viewer.add_selected_curves()
+            self._wait_until(lambda: len(viewer.active_panel.curves) == 2)
+            ia_key = next(name for name in viewer.active_panel.curves
+                          if name.endswith(" :: ia"))
+            scope_key = next(name for name in viewer.active_panel.curves
+                             if name.endswith(" :: scope_00"))
+            ia_x, _ = viewer.active_panel.curves[ia_key].getData()
+            scope_x, _ = viewer.active_panel.curves[scope_key].getData()
+            self.assertEqual(list(ia_x), [0.0, 0.1, 0.2])
+            self.assertEqual(list(scope_x), [0.0, 0.2])
+            viewer.close()
+
+    def test_rolling_x_window_tracks_the_newest_sample(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scope.csv"
+            path.write_bytes(b"time_s,signal\n0,1\n0.5,2\n1.0,3\n")
+            viewer = ResultViewer()
+            viewer.open_file(path)
+            viewer.columns.item(0).setSelected(True)
+            viewer.add_selected_curves()
+            self._wait_until(lambda: "signal" in viewer.active_panel.curves)
+            viewer.rolling_window_seconds.setValue(0.25)
+            viewer.rolling_x.setChecked(True)
+            left, right = viewer.active_panel.plot.viewRange()[0]
+            self.assertAlmostEqual(left, 0.75, places=6)
+            self.assertAlmostEqual(right, 1.0, places=6)
+            viewer.close()
+
     def test_title_edit_double_click_route_and_curve_add_remove(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "result.csv"

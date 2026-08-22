@@ -85,8 +85,9 @@ if errorlevel 1 goto :failed
 echo.
 echo Direct CCTL PMSM test passed.
 echo Build tree: %BUILD_DIR%
-echo Eigen CSV: %BUILD_DIR%\mcs_pmsm_nt_cctl.csv
-if "%BUILD_FIXED%"=="1" echo Fixed CSV: %BUILD_DIR%\mcs_pmsm_nt_cctl_fixed.csv
+echo Eigen circuit CSV: %BUILD_DIR%\mcs_pmsm_nt_cctl_circuit.csv
+echo Eigen control CSV: %BUILD_DIR%\mcs_pmsm_nt_cctl_control.csv
+if "%BUILD_FIXED%"=="1" echo Fixed CSV files use the mcs_pmsm_nt_cctl_fixed_* prefix.
 if "%NO_PAUSE%"=="0" pause
 exit /b 0
 

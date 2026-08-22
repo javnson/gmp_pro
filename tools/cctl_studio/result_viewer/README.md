@@ -4,6 +4,11 @@ This Qt/pyqtgraph utility plots very large numeric CCTL CSV/TSV result files wit
 
 For repeated PMSM simulations, open the previous CSV, add the desired curves, enable dynamic refresh, and then rerun the simulator. When the simulator truncates and rewrites the same file, the viewer discards the old samples and follows the new run automatically.
 
+Enable **Rolling X window** and select a duration to keep every plot pinned to
+the newest trailing time interval, like an oscilloscope. It works with linked X
+axes and does not delete historical CSV data. The equivalent command-line form
+is `--rolling-window 0.1`.
+
 Install the completed GMP private environment and configure `GMP_PRO_LOCATION`, then
 launch `run_result_viewer.bat`, optionally passing a result filename. The launcher
 validates the environment and explicitly uses

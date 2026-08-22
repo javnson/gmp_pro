@@ -71,7 +71,8 @@ gmp_csp_startup
 
 `gmp_csp_startup()` parses the common options `--no-pause`,
 `--realtime-priority`, `--normal-priority`, `--no-realtime-priority`,
-`--profile`, `--build-info`, and `--output <path>`. A project reads the result
+`--profile`, `--build-info`, `--viewer`, `--continuous`, and
+`--output <path>`. A project reads the result
 through `command_line()` and registers build metadata plus its simulation from
 the normal C-linkage `init()` hook. `gmp_csp_post_process()` starts the plant and
 the two service workers. Each `gmp_csp_loop()` call advances exactly one plant
@@ -79,6 +80,12 @@ step. The core loop asks
 `gmp_csp_should_exit()` after each complete background iteration, and
 `gmp_csp_exit()` finalizes the plant, joins workers, reports results, restores
 priority, and performs the optional pause.
+
+`--continuous` ignores `total_steps` and advances until the console receives
+`q` or `Q`. The console worker polls without blocking the numerical hot path.
+Shutdown still follows `gmp_csp_exit()`: model finalization, complete CSV queue
+drain, worker joins, and summary reporting. Combined with `--viewer`, it opens
+the viewer in live mode with a default 0.1 s rolling time window.
 
 The CCTL CSP defines both `SPECIFY_CSP_MANAGES_USER_MAINLOOP` and
 `SPECIFY_CSP_MANAGES_CTL_MAINLOOP`. Plant steps can be much faster than MCU

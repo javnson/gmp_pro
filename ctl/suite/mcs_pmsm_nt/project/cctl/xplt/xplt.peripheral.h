@@ -38,19 +38,12 @@ extern adc_gt idc_src;
 extern adc_gt cctl_adc_result[CCTL_ADC_COUNT];
 extern uint32_t cctl_encoder_position;
 extern pwm_gt cctl_pwm_compare[3];
-extern uint64_t cctl_controller_tick;
 
 /** Initialize controller-facing ADC, eQEP, ePWM, and scaling storage. */
 void setup_peripheral(void);
 
-/** Advance the controller time base by one ADC interrupt. */
-void cctl_advance_controller_tick(void);
-
 /** Execute the controller work owned by one simulated ADC interrupt. */
 void cctl_adc_interrupt(void);
-
-/** @return Current hosted system tick in milliseconds. */
-time_gt gmp_base_get_system_tick(void);
 
 #ifdef __cplusplus
 }

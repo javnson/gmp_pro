@@ -17,6 +17,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -33,6 +34,9 @@
 #endif
 #ifndef CCTL_SIM_OPTIMIZED_BUILD
 #define CCTL_SIM_OPTIMIZED_BUILD 0
+#endif
+#ifndef CCTL_SIM_CIRCUIT_RECORD_FREQUENCY_HZ
+#define CCTL_SIM_CIRCUIT_RECORD_FREQUENCY_HZ 100000.0
 #endif
 
 namespace
@@ -72,13 +76,9 @@ static_assert(kTbclkCountsPerPlantStep > 0U &&
                       1.0e-9,
               "plant step must contain an integer number of ePWM TBCLK counts");
 
-struct simulation_record
+struct circuit_record
 {
     double time_s{};
-    std::uint32_t enabled{};
-    std::int32_t compare_a{};
-    std::int32_t compare_b{};
-    std::int32_t compare_c{};
     double phase_voltage_v[3]{};
     double phase_current_a[3]{};
     double d_axis_current_a{};
@@ -86,11 +86,22 @@ struct simulation_record
     double electromagnetic_torque_nm{};
     double load_torque_nm{};
     double mechanical_speed_rpm{};
-    std::uint32_t encoder_count{};
-    std::uint32_t adc_code[7]{};
 };
 
-static_assert(std::is_trivially_copyable<simulation_record>::value,
+struct control_record
+{
+    double time_s{};
+    std::uint32_t enabled{};
+    std::int32_t compare_a{};
+    std::int32_t compare_b{};
+    std::int32_t compare_c{};
+    std::uint32_t encoder_count{};
+    std::uint32_t adc_code[7]{};
+    double scope[16]{};
+};
+
+static_assert(std::is_trivially_copyable<circuit_record>::value &&
+                  std::is_trivially_copyable<control_record>::value,
               "the CSP output ring requires trivially copyable records");
 
 /** @return PMSM parameters converted from the selected SDPE motor preset. */
@@ -159,8 +170,10 @@ class pmsm_drive_topology final
 {
   public:
     /** Construct the coupled plant and optional sparse profiler. */
-    explicit pmsm_drive_topology(bool profile_enabled = false)
-        : motor_(motor_parameters()), profile_enabled_(profile_enabled)
+    explicit pmsm_drive_topology(bool profile_enabled = false,
+                                 bool continuous_mode = false)
+        : motor_(motor_parameters()), profile_enabled_(profile_enabled),
+          continuous_mode_(continuous_mode)
     {
         mcu_.set_adc_interrupt_handler(
             &pmsm_drive_topology::dispatch_adc_interrupt, this);
@@ -264,6 +277,11 @@ class pmsm_drive_topology final
             final_window_speed_sum_ += motor_output.mechanical_speed_rpm;
             ++final_window_count_;
         }
+        if (circuit_record_scheduler_.consume() != 0U)
+        {
+            const circuit_record record = make_circuit_record(context.time_s);
+            context.runtime.interface_transfer(0U, &record, sizeof(record));
+        }
     }
 
     /** Sample circuit outputs and synchronously dispatch any ADC interrupt. */
@@ -289,8 +307,8 @@ class pmsm_drive_topology final
                 throw std::runtime_error(
                     "ePWM SOC was not accepted by MCU input peripherals");
             ever_enabled_ = ever_enabled_ || mcu_.output_enabled();
-            const simulation_record record = make_record(context.time_s);
-            context.runtime.interface_transfer(&record, sizeof(record));
+            const control_record record = make_control_record(context.time_s);
+            context.runtime.interface_transfer(1U, &record, sizeof(record));
         }
         if (sample_profile_step_)
         {
@@ -310,22 +328,26 @@ class pmsm_drive_topology final
     /** Validate end-of-run scheduling, current, and closed-loop speed. */
     void finalize_circuit() override
     {
-        if (final_window_count_ == 0U)
+        if (!continuous_mode_ && final_window_count_ == 0U)
             throw std::runtime_error("final speed window is empty");
-        mean_final_speed_rpm_ =
-            final_window_speed_sum_ / static_cast<double>(final_window_count_);
+        if (final_window_count_ != 0U)
+            mean_final_speed_rpm_ =
+                final_window_speed_sum_ / static_cast<double>(final_window_count_);
 
         const std::size_t expected_controller_steps = static_cast<std::size_t>(
             kSimulationDurationS / kControlStepS + 0.5);
         const std::size_t expected_user_code_steps = static_cast<std::size_t>(
             kSimulationDurationS * CCTL_SIM_USER_CODE_FREQUENCY_HZ + 0.5);
-        if (!ever_enabled_ || controller_steps_ != expected_controller_steps ||
-            mcu_.adc_trigger_count() != expected_controller_steps ||
-            user_code_scheduler_.total_executions() != expected_user_code_steps)
+        if ((!continuous_mode_ && !ever_enabled_) ||
+            (!continuous_mode_ &&
+             (csp_cctl_controller_interrupt_count() != expected_controller_steps ||
+              mcu_.adc_trigger_count() != expected_controller_steps ||
+              user_code_scheduler_.total_executions() != expected_user_code_steps)))
             throw std::runtime_error("controller scheduling or CiA402 enable failed");
         if (maximum_current_a_ > 20.0)
             throw std::runtime_error("phase current exceeded the expected range");
-        if (mean_final_speed_rpm_ < 260.0 || mean_final_speed_rpm_ > 340.0)
+        if (!continuous_mode_ &&
+            (mean_final_speed_rpm_ < 260.0 || mean_final_speed_rpm_ > 340.0))
             throw std::runtime_error(
                 "closed-loop speed did not approach the 300 rpm command");
     }
@@ -353,7 +375,8 @@ class pmsm_drive_topology final
                << "  plant/control step: " << kPlantStepS << " s / "
                << kControlStepS << " s, ADC SOC CMPB="
                << CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT
-               << "\n  controller steps=" << controller_steps_
+               << "\n  controller steps="
+               << csp_cctl_controller_interrupt_count()
                << ", ADC triggers=" << mcu_.adc_trigger_count()
                << ", user-code steps="
                << user_code_scheduler_.total_executions()
@@ -396,7 +419,6 @@ class pmsm_drive_topology final
         const auto profile_begin = profile_enabled_ ? profile_clock::now()
                                                     : profile_clock::time_point{};
         cctl_adc_interrupt();
-        ++controller_steps_;
         if (profile_enabled_)
         {
             profile_controller_ns_ += elapsed_ns(profile_begin, profile_clock::now());
@@ -405,14 +427,10 @@ class pmsm_drive_topology final
     }
 
     /** Build one trivially-copyable observation for the CSP SPSC ring. */
-    simulation_record make_record(double time_s) const
+    circuit_record make_circuit_record(double time_s) const
     {
-        simulation_record record;
+        circuit_record record;
         record.time_s = time_s;
-        record.enabled = mcu_.output_enabled() ? 1U : 0U;
-        record.compare_a = static_cast<std::int32_t>(cctl_pwm_compare[0]);
-        record.compare_b = static_cast<std::int32_t>(cctl_pwm_compare[1]);
-        record.compare_c = static_cast<std::int32_t>(cctl_pwm_compare[2]);
         record.phase_voltage_v[0] = inverter_output_.VPMSM1_A;
         record.phase_voltage_v[1] = inverter_output_.VPMSM1_B;
         record.phase_voltage_v[2] = inverter_output_.VPMSM1_C;
@@ -425,10 +443,26 @@ class pmsm_drive_topology final
                                     ? CCTL_SIM_LOAD_TORQUE_NM
                                     : 0.0;
         record.mechanical_speed_rpm = motor_.output.mechanical_speed_rpm;
+        return record;
+    }
+
+    control_record make_control_record(double time_s) const
+    {
+        control_record record;
+        record.time_s = time_s;
+        record.enabled = mcu_.output_enabled() ? 1U : 0U;
+        record.compare_a = static_cast<std::int32_t>(cctl_pwm_compare[0]);
+        record.compare_b = static_cast<std::int32_t>(cctl_pwm_compare[1]);
+        record.compare_c = static_cast<std::int32_t>(cctl_pwm_compare[2]);
         record.encoder_count = cctl_encoder_position;
         for (std::size_t channel = 0U; channel < CCTL_ADC_COUNT; ++channel)
             record.adc_code[channel] =
                 static_cast<std::uint32_t>(cctl_adc_result[channel]);
+        for (std::size_t channel = 0U;
+             channel < CSP_CCTL_SCOPE_CHANNEL_COUNT; ++channel)
+            record.scope[channel] =
+                static_cast<double>(csp_cctl_scope_read(
+                    static_cast<std::uint32_t>(channel)));
         return record;
     }
 
@@ -437,6 +471,8 @@ class pmsm_drive_topology final
     mcs::cctl_xplt::mcu_simulation mcu_;
     gmp::csp::cctl::compute_budget_scheduler user_code_scheduler_{
         kPlantStepS, CCTL_SIM_USER_CODE_FREQUENCY_HZ};
+    gmp::csp::cctl::compute_budget_scheduler circuit_record_scheduler_{
+        kPlantStepS, CCTL_SIM_CIRCUIT_RECORD_FREQUENCY_HZ};
     mcs::cctl_xplt::epwm_outputs pwm_output_{};
     PmsmCircuit::Inputs inverter_input_{};
     PmsmCircuit::Outputs inverter_output_{};
@@ -444,7 +480,6 @@ class pmsm_drive_topology final
     double final_window_speed_sum_{};
     double mean_final_speed_rpm_{};
     std::size_t final_window_count_{};
-    std::size_t controller_steps_{};
     bool ever_enabled_{};
     using profile_clock = std::chrono::steady_clock;
     static constexpr std::size_t kProfileSamplePeriod = 4096U; // sparse hot-path sampling
@@ -456,6 +491,7 @@ class pmsm_drive_topology final
                 .count());
     }
     bool profile_enabled_{};
+    bool continuous_mode_{};
     bool sample_profile_step_{};
     profile_clock::time_point profile_begin_{};
     profile_clock::time_point profile_after_peripheral_{};
@@ -471,28 +507,49 @@ class pmsm_drive_topology final
 };
 
 /** Serialize one observation record on the asynchronous file worker. */
-void write_record(const void *data, std::ostream &stream)
+void write_circuit_record(const void *data, std::ostream &stream)
 {
-    const auto &record = *static_cast<const simulation_record *>(data);
-    stream << record.time_s << ',' << record.enabled << ',' << record.compare_a
-           << ',' << record.compare_b << ',' << record.compare_c;
+    const auto &record = *static_cast<const circuit_record *>(data);
+    stream << record.time_s;
     for (double value : record.phase_voltage_v)
         stream << ',' << value;
     for (double value : record.phase_current_a)
         stream << ',' << value;
     stream << ',' << record.d_axis_current_a << ',' << record.q_axis_current_a
            << ',' << record.electromagnetic_torque_nm << ','
-           << record.load_torque_nm << ',' << record.mechanical_speed_rpm << ','
+           << record.load_torque_nm << ',' << record.mechanical_speed_rpm << '\n';
+}
+
+void write_control_record(const void *data, std::ostream &stream)
+{
+    const auto &record = *static_cast<const control_record *>(data);
+    stream << record.time_s << ',' << record.enabled << ',' << record.compare_a
+           << ',' << record.compare_b << ',' << record.compare_c << ','
            << record.encoder_count;
     for (std::uint32_t code : record.adc_code)
         stream << ',' << code;
+    for (double value : record.scope)
+        stream << ',' << value;
     stream << '\n';
 }
 
-constexpr const char *kCsvHeader =
-    "time_s,enabled,cmp_a,cmp_b,cmp_c,va_v,vb_v,vc_v,ia_a,ib_a,ic_a,"
-    "id_a,iq_a,torque_nm,load_torque_nm,speed_rpm,encoder_count,"
-    "adc_vdc,adc_va,adc_vb,adc_vc,adc_ia,adc_ib,adc_ic";
+constexpr const char *kCircuitCsvHeader =
+    "time_s,va_v,vb_v,vc_v,ia_a,ib_a,ic_a,id_a,iq_a,torque_nm,"
+    "load_torque_nm,speed_rpm";
+constexpr const char *kControlCsvHeader =
+    "time_s,enabled,cmp_a,cmp_b,cmp_c,encoder_count,"
+    "adc_vdc,adc_va,adc_vb,adc_vc,adc_ia,adc_ib,adc_ic,"
+    "scope_00,scope_01,scope_02,scope_03,scope_04,scope_05,scope_06,scope_07,"
+    "scope_08,scope_09,scope_10,scope_11,scope_12,scope_13,scope_14,scope_15";
+
+std::filesystem::path output_path_with_suffix(const std::string &base,
+                                              const char *suffix)
+{
+    std::filesystem::path path(base);
+    const std::filesystem::path parent = path.parent_path();
+    const std::string stem = path.stem().string();
+    return parent / (stem + suffix + ".csv");
+}
 
 /** Keep project callbacks valid until gmp_csp_exit() finalizes the runtime. */
 std::unique_ptr<pmsm_drive_topology> configured_topology;
@@ -524,8 +581,8 @@ void init(void)
     if (options.print_build_info)
         return;
 
-    configured_topology =
-        std::make_unique<pmsm_drive_topology>(options.profile_enabled);
+    configured_topology = std::make_unique<pmsm_drive_topology>(
+        options.profile_enabled, options.continuous);
     configured_system = std::make_unique<gmp::csp::cctl::simulation_system>(
         *configured_topology, *configured_topology, *configured_topology);
 
@@ -533,12 +590,29 @@ void init(void)
     config.total_steps = static_cast<std::size_t>(
         kSimulationDurationS / kPlantStepS + 0.5);
     config.plant_step_s = kPlantStepS;
-    config.record_size = sizeof(simulation_record);
-    config.output_ring_bytes = CCTL_SIM_OUTPUT_RING_BYTES;
-    config.output_batch_bytes = CCTL_SIM_OUTPUT_BATCH_BYTES;
     config.progress_interval_ms = CCTL_SIM_PROGRESS_INTERVAL_MS;
     config.step_chunk_size = CCTL_SIM_STEP_CHUNK_STEPS;
-    config.output_header = kCsvHeader;
+    gmp::csp::cctl::simulation_output_config circuit_output;
+    circuit_output.name = "circuit";
+    circuit_output.record_size = sizeof(circuit_record);
+    circuit_output.ring_bytes = CCTL_SIM_OUTPUT_RING_BYTES * 3U / 4U;
+    circuit_output.batch_bytes = CCTL_SIM_OUTPUT_BATCH_BYTES;
+    circuit_output.path =
+        output_path_with_suffix(options.output_path, "_circuit").string();
+    circuit_output.header = kCircuitCsvHeader;
+    circuit_output.write_record = write_circuit_record;
+    config.outputs.push_back(std::move(circuit_output));
+
+    gmp::csp::cctl::simulation_output_config control_output;
+    control_output.name = "control";
+    control_output.record_size = sizeof(control_record);
+    control_output.ring_bytes = CCTL_SIM_OUTPUT_RING_BYTES / 4U;
+    control_output.batch_bytes = CCTL_SIM_OUTPUT_BATCH_BYTES;
+    control_output.path =
+        output_path_with_suffix(options.output_path, "_control").string();
+    control_output.header = kControlCsvHeader;
+    control_output.write_record = write_control_record;
+    config.outputs.push_back(std::move(control_output));
     config.console_title = "GMP CCTL Motor Simulation Kit";
     if (CCTL_SIM_OPTIMIZED_BUILD == 0)
         config.console_title +=
@@ -560,7 +634,6 @@ void init(void)
         configured_system->step(index, time_s, host);
     };
     callbacks.finalize = [] { configured_system->finalize(); };
-    callbacks.write_record = write_record;
     callbacks.print_summary = [](std::ostream &stream) {
         configured_topology->print_summary(stream);
     };

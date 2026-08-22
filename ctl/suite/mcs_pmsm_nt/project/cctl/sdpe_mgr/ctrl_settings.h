@@ -234,6 +234,11 @@ extern "C"
 #define CCTL_SIM_PMSM_INTEGRATION_ORDER (1)
 
 /**
+ * @brief Circuit Record Frequency
+ */
+#define CCTL_SIM_CIRCUIT_RECORD_FREQUENCY_HZ 100.0e3
+
+/**
  * @brief Output Ring Bytes
  */
 #define CCTL_SIM_OUTPUT_RING_BYTES (33554432)

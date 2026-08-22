@@ -12,8 +12,10 @@
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
@@ -29,8 +31,14 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#include <shellapi.h>
+#include <conio.h>
+#if defined(_MSC_VER)
+#pragma comment(lib, "Shell32.lib")
+#endif
 #else
 #include <sys/ioctl.h>
+#include <sys/select.h>
 #include <unistd.h>
 #endif
 
@@ -68,6 +76,29 @@ std::size_t console_column_count() noexcept
     if (::ioctl(STDOUT_FILENO, TIOCGWINSZ, &size) != 0)
         return 0U;
     return static_cast<std::size_t>(size.ws_col);
+#endif
+}
+
+bool quit_key_pressed() noexcept
+{
+#if defined(_WIN32)
+    while (_kbhit())
+    {
+        const int key = _getch();
+        if (key == 'q' || key == 'Q')
+            return true;
+    }
+    return false;
+#else
+    fd_set input;
+    FD_ZERO(&input);
+    FD_SET(STDIN_FILENO, &input);
+    timeval timeout{};
+    if (::select(STDIN_FILENO + 1, &input, nullptr, nullptr, &timeout) <= 0)
+        return false;
+    char key = 0;
+    return ::read(STDIN_FILENO, &key, 1) == 1 &&
+           (key == 'q' || key == 'Q');
 #endif
 }
 } // namespace
@@ -155,36 +186,70 @@ void simulation_system::finalize()
 class simulation_runtime::implementation
 {
   public:
+    struct output_state
+    {
+        simulation_output_config config;
+        ::cctl::dsa::spsc_record_ring ring;
+        std::atomic<std::size_t> queued{0U};
+        std::atomic<std::size_t> written{0U};
+        std::atomic<std::size_t> dropped{0U};
+        std::atomic<std::size_t> peak{0U};
+        std::atomic<std::size_t> staged{0U};
+        std::atomic<std::uint64_t> bytes{0U};
+    };
+
     void initialize(simulation_config requested_config,
                     simulation_callbacks requested_callbacks)
     {
         if (running_)
             throw std::logic_error("CCTL simulation is already running");
-        if (requested_config.total_steps == 0U ||
+        if ((!requested_config.continuous && requested_config.total_steps == 0U) ||
             !(requested_config.plant_step_s > 0.0) ||
             !std::isfinite(requested_config.plant_step_s) ||
-            requested_config.record_size == 0U ||
-            requested_config.output_path.empty() ||
-            (!requested_callbacks.step && !requested_callbacks.step_range) ||
-            !requested_callbacks.write_record)
+            (!requested_callbacks.step && !requested_callbacks.step_range))
             throw std::invalid_argument("invalid CCTL simulation configuration");
+
+        if (requested_config.outputs.empty())
+        {
+            if (requested_config.record_size == 0U ||
+                requested_config.output_path.empty() ||
+                !requested_callbacks.write_record)
+                throw std::invalid_argument("invalid legacy CCTL output configuration");
+            simulation_output_config legacy;
+            legacy.name = "simulation";
+            legacy.record_size = requested_config.record_size;
+            legacy.ring_bytes = requested_config.output_ring_bytes;
+            legacy.batch_bytes = requested_config.output_batch_bytes;
+            legacy.path = requested_config.output_path;
+            legacy.header = requested_config.output_header;
+            legacy.write_record = requested_callbacks.write_record;
+            requested_config.outputs.push_back(std::move(legacy));
+        }
+        for (const auto &output : requested_config.outputs)
+            if (output.record_size == 0U || output.path.empty() ||
+                !output.write_record)
+                throw std::invalid_argument("invalid CCTL output stream configuration");
 
         config_ = std::move(requested_config);
         callbacks_ = std::move(requested_callbacks);
-        ring_.initialize(config_.output_ring_bytes, config_.record_size);
+        outputs_.clear();
+        for (const auto &output_config : config_.outputs)
+        {
+            auto output = std::make_unique<output_state>();
+            output->config = output_config;
+            output->ring.initialize(output_config.ring_bytes,
+                                    output_config.record_size);
+            outputs_.push_back(std::move(output));
+        }
         summary_ = {};
         summary_.total_steps = config_.total_steps;
+        summary_.continuous = config_.continuous;
         completed_steps_.store(0U, std::memory_order_relaxed);
-        queued_records_.store(0U, std::memory_order_relaxed);
-        written_records_.store(0U, std::memory_order_relaxed);
-        dropped_records_.store(0U, std::memory_order_relaxed);
-        peak_queued_records_.store(0U, std::memory_order_relaxed);
-        staged_records_.store(0U, std::memory_order_relaxed);
-        output_bytes_.store(0U, std::memory_order_relaxed);
         output_worker_busy_ns_ = 0U;
         stop_requested_.store(false, std::memory_order_relaxed);
         simulation_done_.store(false, std::memory_order_relaxed);
         failed_.store(false, std::memory_order_relaxed);
+        user_stop_requested_.store(false, std::memory_order_relaxed);
         original_priority_class_ = 0U;
         last_progress_time_ = {};
         last_progress_steps_ = 0U;
@@ -209,7 +274,6 @@ class simulation_runtime::implementation
             throw std::logic_error("CCTL simulation is already running");
 
         running_ = true;
-        configure_process_priority();
         start_time_ = clock_type::now();
         try
         {
@@ -217,6 +281,9 @@ class simulation_runtime::implementation
                 callbacks_.initialize();
             callback_initialized_ = true;
             file_thread_ = std::thread([this] { file_worker(); });
+            if (config_.launch_viewer)
+                launch_result_viewer();
+            configure_process_priority();
             console_thread_ = std::thread([this] { console_worker(); });
         }
         catch (const std::exception &error)
@@ -233,7 +300,8 @@ class simulation_runtime::implementation
         if (!running_)
             throw std::logic_error("start() must be called before step()");
         const std::size_t index = completed_steps_.load(std::memory_order_relaxed);
-        if (index >= config_.total_steps || stop_requested_.load(std::memory_order_acquire))
+        if ((!config_.continuous && index >= config_.total_steps) ||
+            stop_requested_.load(std::memory_order_acquire))
             return false;
         if (callbacks_.step)
             callbacks_.step(index,
@@ -242,38 +310,53 @@ class simulation_runtime::implementation
         else
             callbacks_.step_range(index, index + 1U, owner);
         completed_steps_.store(index + 1U, std::memory_order_release);
-        return index + 1U < config_.total_steps;
+        return config_.continuous
+                   ? !stop_requested_.load(std::memory_order_acquire)
+                   : index + 1U < config_.total_steps;
     }
 
     bool step_range(simulation_runtime &owner)
     {
         const std::size_t begin =
             completed_steps_.load(std::memory_order_relaxed);
-        if (begin >= config_.total_steps ||
+        if ((!config_.continuous && begin >= config_.total_steps) ||
             stop_requested_.load(std::memory_order_acquire))
             return false;
-        const std::size_t end = std::min(
-            config_.total_steps,
-            begin + std::max<std::size_t>(config_.step_chunk_size, 1U));
+        const std::size_t chunk =
+            std::max<std::size_t>(config_.step_chunk_size, 1U);
+        const std::size_t end = config_.continuous
+                                    ? begin + chunk
+                                    : std::min(config_.total_steps, begin + chunk);
         callbacks_.step_range(begin, end, owner);
         completed_steps_.store(end, std::memory_order_release);
-        return end < config_.total_steps;
+        return config_.continuous
+                   ? !stop_requested_.load(std::memory_order_acquire)
+                   : end < config_.total_steps;
     }
 
     bool interface_transfer(const void *record, std::size_t record_size)
     {
-        if (!record || record_size != config_.record_size)
+        return interface_transfer(0U, record, record_size);
+    }
+
+    bool interface_transfer(std::size_t stream_index, const void *record,
+                            std::size_t record_size)
+    {
+        if (stream_index >= outputs_.size())
+            throw std::out_of_range("CCTL output stream index out of range");
+        output_state &output = *outputs_[stream_index];
+        if (!record || record_size != output.config.record_size)
             throw std::invalid_argument("CCTL interface_transfer record size mismatch");
-        if (!ring_.try_push(record))
+        if (!output.ring.try_push(record))
         {
-            dropped_records_.fetch_add(1U, std::memory_order_relaxed);
+            output.dropped.fetch_add(1U, std::memory_order_relaxed);
             return false;
         }
-        queued_records_.fetch_add(1U, std::memory_order_relaxed);
-        const std::size_t queued = std::max<std::size_t>(ring_.size(), 1U);
-        std::size_t peak = peak_queued_records_.load(std::memory_order_relaxed);
+        output.queued.fetch_add(1U, std::memory_order_relaxed);
+        const std::size_t queued = std::max<std::size_t>(output.ring.size(), 1U);
+        std::size_t peak = output.peak.load(std::memory_order_relaxed);
         while (queued > peak &&
-               !peak_queued_records_.compare_exchange_weak(
+               !output.peak.compare_exchange_weak(
                    peak, queued, std::memory_order_relaxed,
                    std::memory_order_relaxed))
         {
@@ -339,22 +422,44 @@ class simulation_runtime::implementation
 
         const double wall = std::chrono::duration<double>(clock_type::now() - start_time_).count();
         summary_.completed_steps = completed_steps_.load(std::memory_order_acquire);
-        summary_.queued_records = queued_records_.load(std::memory_order_acquire);
-        summary_.written_records = written_records_.load(std::memory_order_acquire);
-        summary_.dropped_records = dropped_records_.load(std::memory_order_acquire);
-        summary_.peak_queued_records =
-            peak_queued_records_.load(std::memory_order_acquire);
-        summary_.output_bytes = output_bytes_.load(std::memory_order_acquire);
+        summary_.outputs.clear();
+        summary_.queued_records = summary_.written_records =
+            summary_.dropped_records = summary_.peak_queued_records = 0U;
+        summary_.output_bytes = 0U;
+        for (const auto &output : outputs_)
+        {
+            simulation_output_summary item;
+            item.name = output->config.name;
+            item.path = output->config.path;
+            item.queued_records = output->queued.load(std::memory_order_acquire);
+            item.written_records = output->written.load(std::memory_order_acquire);
+            item.dropped_records = output->dropped.load(std::memory_order_acquire);
+            item.peak_queued_records = output->peak.load(std::memory_order_acquire);
+            item.output_bytes = output->bytes.load(std::memory_order_acquire);
+            summary_.queued_records += item.queued_records;
+            summary_.written_records += item.written_records;
+            summary_.dropped_records += item.dropped_records;
+            summary_.peak_queued_records += item.peak_queued_records;
+            summary_.output_bytes += item.output_bytes;
+            summary_.outputs.push_back(std::move(item));
+        }
         summary_.output_worker_busy_time_s =
             static_cast<double>(output_worker_busy_ns_) * 1.0e-9;
         summary_.simulated_time_s =
             static_cast<double>(summary_.completed_steps) * config_.plant_step_s;
         summary_.wall_time_s = wall;
         summary_.realtime_factor = wall > 0.0 ? summary_.simulated_time_s / wall : 0.0;
+        summary_.stopped_by_user =
+            user_stop_requested_.load(std::memory_order_acquire);
         summary_.success = !failed_.load(std::memory_order_acquire) &&
-                           summary_.completed_steps == summary_.total_steps;
+                           (config_.continuous
+                                ? summary_.stopped_by_user
+                                : summary_.completed_steps == summary_.total_steps);
         if (summary_.message.empty())
-            summary_.message = summary_.success ? "simulation completed" : "simulation stopped";
+            summary_.message = summary_.stopped_by_user
+                                   ? "continuous simulation stopped by user"
+                                   : (summary_.success ? "simulation completed"
+                                                       : "simulation stopped");
         running_ = false;
     }
 
@@ -362,59 +467,95 @@ class simulation_runtime::implementation
     {
         try
         {
-            std::ofstream output(config_.output_path, std::ios::binary | std::ios::trunc);
-            if (!output)
-                throw std::runtime_error("cannot create simulation output: " + config_.output_path);
-            if (!config_.output_header.empty())
-                output << config_.output_header << '\n';
-
-            const std::size_t target_records = std::max<std::size_t>(
-                1U, config_.output_batch_bytes / std::max<std::size_t>(config_.record_size, 1U));
-            std::vector<std::byte> records(target_records * config_.record_size);
-            std::size_t count = 0U;
-            while (!simulation_done_.load(std::memory_order_acquire) ||
-                   ring_.size() != 0U || count != 0U)
+            struct writer_state
             {
-                while (count < target_records &&
-                       ring_.try_pop(records.data() + count * config_.record_size))
-                    ++count;
-                staged_records_.store(count, std::memory_order_relaxed);
-                const bool drained =
-                    simulation_done_.load(std::memory_order_acquire) && ring_.size() == 0U;
-                if (count < target_records && !drained)
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                    continue;
-                }
+                std::ofstream stream;
+                std::vector<std::byte> records;
+                std::size_t target_records{};
+                std::size_t count{};
+            };
+            std::vector<std::unique_ptr<writer_state>> writers;
+            for (const auto &output : outputs_)
+            {
+                auto writer = std::make_unique<writer_state>();
+                writer->stream.open(output->config.path,
+                                    std::ios::binary | std::ios::trunc);
+                if (!writer->stream)
+                    throw std::runtime_error("cannot create simulation output: " +
+                                             output->config.path);
+                if (!output->config.header.empty())
+                    writer->stream << output->config.header << '\n';
+                writer->stream.flush();
+                writer->target_records = std::max<std::size_t>(
+                    1U, output->config.batch_bytes / output->config.record_size);
+                writer->records.resize(writer->target_records *
+                                       output->config.record_size);
+                writers.push_back(std::move(writer));
+            }
 
-                const clock_type::time_point busy_begin = clock_type::now();
-                std::ostringstream batch;
-                batch << std::setprecision(17);
-                for (std::size_t index = 0U; index < count; ++index)
-                    callbacks_.write_record(
-                        records.data() + index * config_.record_size, batch);
-                const std::string payload = batch.str();
-                output.write(payload.data(), static_cast<std::streamsize>(payload.size()));
-                if (!output)
-                    throw std::runtime_error("failed while writing simulation output");
-                written_records_.fetch_add(count, std::memory_order_relaxed);
-                output_bytes_.fetch_add(static_cast<std::uint64_t>(payload.size()),
-                                        std::memory_order_relaxed);
-                output_worker_busy_ns_ += static_cast<std::uint64_t>(
-                    std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        clock_type::now() - busy_begin)
-                        .count());
-                count = 0U;
-                staged_records_.store(0U, std::memory_order_relaxed);
+            for (;;)
+            {
+                bool pending = false;
+                bool wrote = false;
+                const bool done = simulation_done_.load(std::memory_order_acquire);
+                for (std::size_t stream_index = 0U;
+                     stream_index < outputs_.size(); ++stream_index)
+                {
+                    output_state &output = *outputs_[stream_index];
+                    writer_state &writer = *writers[stream_index];
+                    while (writer.count < writer.target_records &&
+                           output.ring.try_pop(
+                               writer.records.data() + writer.count *
+                                   output.config.record_size))
+                        ++writer.count;
+                    output.staged.store(writer.count, std::memory_order_relaxed);
+                    pending = pending || output.ring.size() != 0U ||
+                              writer.count != 0U;
+                    if (writer.count == 0U ||
+                        (writer.count < writer.target_records && !done))
+                        continue;
+
+                    const clock_type::time_point busy_begin = clock_type::now();
+                    std::ostringstream batch;
+                    batch << std::setprecision(17);
+                    for (std::size_t index = 0U; index < writer.count; ++index)
+                        output.config.write_record(
+                            writer.records.data() + index *
+                                output.config.record_size,
+                            batch);
+                    const std::string payload = batch.str();
+                    writer.stream.write(payload.data(),
+                                        static_cast<std::streamsize>(payload.size()));
+                    if (!writer.stream)
+                        throw std::runtime_error("failed while writing simulation output: " +
+                                                 output.config.path);
+                    output.written.fetch_add(writer.count,
+                                             std::memory_order_relaxed);
+                    output.bytes.fetch_add(payload.size(),
+                                           std::memory_order_relaxed);
+                    output_worker_busy_ns_ += static_cast<std::uint64_t>(
+                        std::chrono::duration_cast<std::chrono::nanoseconds>(
+                            clock_type::now() - busy_begin).count());
+                    writer.count = 0U;
+                    output.staged.store(0U, std::memory_order_relaxed);
+                    wrote = true;
+                }
+                if (done && !pending)
+                    break;
+                if (!wrote)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
             const clock_type::time_point flush_begin = clock_type::now();
-            output.flush();
+            for (auto &writer : writers)
+                writer->stream.flush();
             output_worker_busy_ns_ += static_cast<std::uint64_t>(
                 std::chrono::duration_cast<std::chrono::nanoseconds>(
                     clock_type::now() - flush_begin)
                     .count());
-            if (!output)
-                throw std::runtime_error("failed while flushing simulation output");
+            for (std::size_t index = 0U; index < writers.size(); ++index)
+                if (!writers[index]->stream)
+                    throw std::runtime_error("failed while flushing simulation output: " +
+                                             outputs_[index]->config.path);
         }
         catch (const std::exception &error)
         {
@@ -431,23 +572,42 @@ class simulation_runtime::implementation
         const std::chrono::milliseconds interval(
             std::max<std::uint32_t>(config_.progress_interval_ms, 1U));
         interactive_console_ = enable_in_place_console_refresh();
-        std::cout << config_.console_title << "\n\n"
-                  << std::fixed << std::setprecision(6)
-                  << "total_time="
-                  << static_cast<double>(config_.total_steps) * config_.plant_step_s
-                  << "s  step=" << std::scientific << config_.plant_step_s
-                  << "s  total_steps=" << std::fixed << config_.total_steps
+        std::cout << config_.console_title << "\n\n" << std::fixed
+                  << std::setprecision(6);
+        if (config_.continuous)
+            std::cout << "mode=continuous (press q to stop)  step="
+                      << std::scientific << config_.plant_step_s << "s";
+        else
+            std::cout << "total_time="
+                      << static_cast<double>(config_.total_steps) *
+                             config_.plant_step_s
+                      << "s  step=" << std::scientific << config_.plant_step_s
+                      << "s  total_steps=" << std::fixed << config_.total_steps;
+        std::cout
                   << (config_.execution_label.empty() ? "" : "  backend=")
                   << config_.execution_label << "\npriority="
                   << summary_.priority_message << "\n\n";
+        clock_type::time_point next_progress = clock_type::now();
         for (;;)
         {
+            if (config_.continuous && quit_key_pressed())
+            {
+                user_stop_requested_.store(true, std::memory_order_release);
+                stop_requested_.store(true, std::memory_order_release);
+            }
             const std::size_t completed = completed_steps_.load(std::memory_order_acquire);
             const bool done = simulation_done_.load(std::memory_order_acquire);
-            print_progress(completed, done);
+            const clock_type::time_point now = clock_type::now();
+            if (done || now >= next_progress)
+            {
+                print_progress(completed, done);
+                next_progress = now + interval;
+            }
             if (done)
                 break;
-            std::this_thread::sleep_for(interval);
+            std::this_thread::sleep_for(config_.continuous
+                                            ? std::chrono::milliseconds(25)
+                                            : interval);
         }
         if (interactive_console_)
             std::cout << '\n';
@@ -455,8 +615,10 @@ class simulation_runtime::implementation
 
     void print_progress(std::size_t completed, bool done)
     {
-        const double ratio = std::min(1.0, static_cast<double>(completed) /
-                                              static_cast<double>(config_.total_steps));
+        const double ratio = config_.continuous
+                                 ? 0.0
+                                 : std::min(1.0, static_cast<double>(completed) /
+                                                     static_cast<double>(config_.total_steps));
         const clock_type::time_point now = clock_type::now();
         const double elapsed =
             std::chrono::duration<double>(now - start_time_).count();
@@ -476,28 +638,41 @@ class simulation_runtime::implementation
         progress_rate_initialized_ = true;
 
         std::ostringstream progress_suffix;
-        progress_suffix << "] " << std::fixed << std::setprecision(1)
-                        << ratio * 100.0 << '%';
+        if (config_.continuous)
+            progress_suffix << "] press q to stop";
+        else
+            progress_suffix << "] " << std::fixed << std::setprecision(1)
+                            << ratio * 100.0 << '%';
         std::size_t width = std::max<std::size_t>(config_.console_bar_width, 20U);
         const std::size_t columns = interactive_console_ ? console_column_count() : 0U;
         const std::size_t fixed_characters = progress_suffix.str().size() + 2U;
         if (columns > fixed_characters + 20U)
             width = std::min<std::size_t>(columns - fixed_characters, 512U);
-        const std::size_t fill = static_cast<std::size_t>(ratio * width);
-        const double eta = completed > 0U
+        const std::size_t fill = config_.continuous
+                                     ? width
+                                     : static_cast<std::size_t>(ratio * width);
+        const double eta = !config_.continuous && completed > 0U
                                ? elapsed * static_cast<double>(config_.total_steps - completed) /
                                      static_cast<double>(completed)
                                : 0.0;
         std::ostringstream status;
-        status << "elapsed=" << std::fixed << std::setprecision(1) << elapsed
-               << "s ETA=" << (done ? 0.0 : eta)
-               << "s sim=" << std::setprecision(3)
+        std::size_t queued = 0U, capacity = 0U, staged = 0U, dropped = 0U;
+        for (const auto &output : outputs_)
+        {
+            queued += output->ring.size();
+            capacity += output->ring.capacity();
+            staged += output->staged.load(std::memory_order_relaxed);
+            dropped += output->dropped.load(std::memory_order_relaxed);
+        }
+        status << "elapsed=" << std::fixed << std::setprecision(1) << elapsed;
+        if (!config_.continuous)
+            status << "s ETA=" << (done ? 0.0 : eta);
+        status << "s sim=" << std::setprecision(3)
                << static_cast<double>(completed) * config_.plant_step_s
                << "s rate=" << std::setprecision(2) << step_rate / 1.0e6
                << "Mstep/s"
-               << " queue=" << ring_.size() << '/' << ring_.capacity()
-               << " staged=" << staged_records_.load(std::memory_order_relaxed)
-               << " drop=" << dropped_records_.load(std::memory_order_relaxed);
+               << " queue=" << queued << '/' << capacity
+               << " staged=" << staged << " drop=" << dropped;
         std::ostringstream progress;
         progress << '[';
         for (std::size_t index = 0U; index < width; ++index)
@@ -561,6 +736,48 @@ class simulation_runtime::implementation
 #endif
     }
 
+    void launch_result_viewer()
+    {
+#if defined(_WIN32)
+        const char *root = std::getenv("GMP_PRO_LOCATION");
+        if (!root || !*root)
+            throw std::runtime_error(
+                "--viewer requires the GMP_PRO_LOCATION environment variable");
+        const std::filesystem::path launcher =
+            std::filesystem::path(root) / "tools" / "cctl_studio" /
+            "result_viewer" / "run_result_viewer.bat";
+        if (!std::filesystem::exists(launcher))
+            throw std::runtime_error("result viewer launcher not found: " +
+                                     launcher.string());
+        for (unsigned retry = 0U; retry < 200U; ++retry)
+        {
+            bool ready = true;
+            for (const auto &output : outputs_)
+                ready = ready && std::filesystem::exists(output->config.path) &&
+                        std::filesystem::file_size(output->config.path) != 0U;
+            if (ready)
+                break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        std::wstring parameters = L"--live";
+        if (config_.continuous)
+            parameters += L" --rolling-window 0.1";
+        for (const auto &output : outputs_)
+        {
+            parameters += L" \"";
+            parameters += std::filesystem::absolute(output->config.path).wstring();
+            parameters += L"\"";
+        }
+        const HINSTANCE result = ShellExecuteW(
+            nullptr, L"open", launcher.c_str(), parameters.c_str(),
+            launcher.parent_path().c_str(), SW_SHOWNORMAL);
+        if (reinterpret_cast<std::intptr_t>(result) <= 32)
+            throw std::runtime_error("failed to launch GMP result viewer");
+#else
+        throw std::runtime_error("--viewer is supported only on Windows");
+#endif
+    }
+
     void restore_process_priority() noexcept
     {
 #if defined(_WIN32)
@@ -587,22 +804,17 @@ class simulation_runtime::implementation
 
     simulation_config config_;
     simulation_callbacks callbacks_;
-    ::cctl::dsa::spsc_record_ring ring_;
+    std::vector<std::unique_ptr<output_state>> outputs_;
     simulation_summary summary_;
     std::thread file_thread_;
     std::thread console_thread_;
     clock_type::time_point start_time_{};
     std::atomic<std::size_t> completed_steps_{0U};
-    std::atomic<std::size_t> queued_records_{0U};
-    std::atomic<std::size_t> written_records_{0U};
-    std::atomic<std::size_t> dropped_records_{0U};
-    std::atomic<std::size_t> peak_queued_records_{0U};
-    std::atomic<std::size_t> staged_records_{0U};
-    std::atomic<std::uint64_t> output_bytes_{0U};
     std::uint64_t output_worker_busy_ns_{};
     std::atomic<bool> stop_requested_{false};
     std::atomic<bool> simulation_done_{false};
     std::atomic<bool> failed_{false};
+    std::atomic<bool> user_stop_requested_{false};
     std::mutex error_mutex_;
     std::uint32_t original_priority_class_{};
     clock_type::time_point last_progress_time_{};
@@ -645,6 +857,13 @@ bool simulation_runtime::interface_transfer(const void *record,
                                             std::size_t record_size)
 {
     return impl_->interface_transfer(record, record_size);
+}
+
+bool simulation_runtime::interface_transfer(std::size_t stream_index,
+                                            const void *record,
+                                            std::size_t record_size)
+{
+    return impl_->interface_transfer(stream_index, record, record_size);
 }
 
 simulation_summary simulation_runtime::run()
@@ -691,7 +910,13 @@ void simulation_runtime::print_summary(std::ostream &stream) const
            << "  simulated/wall: " << value.simulated_time_s << " s / "
            << value.wall_time_s << " s, realtime factor=" << value.realtime_factor
            << "\n  priority: " << value.priority_message
-           << "\n  steps: " << value.completed_steps << '/' << value.total_steps
+           << "\n  steps: " << value.completed_steps;
+    if (value.continuous)
+        stream << " (continuous, stopped by user="
+               << (value.stopped_by_user ? "yes" : "no") << ')';
+    else
+        stream << '/' << value.total_steps;
+    stream
            << "\n  output: queued=" << value.queued_records
            << ", written=" << value.written_records
            << ", dropped=" << value.dropped_records
@@ -699,6 +924,11 @@ void simulation_runtime::print_summary(std::ostream &stream) const
            << ", bytes=" << value.output_bytes
            << ", writer_busy=" << value.output_worker_busy_time_s
            << " s (asynchronous)\n";
+    for (const auto &output : value.outputs)
+        stream << "    [" << output.name << "] written="
+               << output.written_records << ", dropped="
+               << output.dropped_records << ", bytes=" << output.output_bytes
+               << ", path=" << output.path << '\n';
 }
 
 void simulation_runtime::print_project_summary(std::ostream &stream) const
@@ -729,7 +959,11 @@ const simulation_summary &simulation_runtime::implementation::summary() const
 
 std::size_t simulation_runtime::implementation::buffered_records() const noexcept
 {
-    return ring_.size() + staged_records_.load(std::memory_order_relaxed);
+    std::size_t total = 0U;
+    for (const auto &output : outputs_)
+        total += output->ring.size() +
+                 output->staged.load(std::memory_order_relaxed);
+    return total;
 }
 
 std::size_t simulation_runtime::implementation::completed_steps() const noexcept
