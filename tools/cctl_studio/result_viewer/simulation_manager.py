@@ -28,7 +28,7 @@ class SimulationProcessManager(QtCore.QObject):
         self.process.finished.connect(self._process_finished)
         self._stdout_buffer = bytearray()
         self._auto_start = False
-        self.state = "idle"
+        self.state = "stopped"
 
     def is_active(self) -> bool:
         """Return whether the managed native process still exists."""

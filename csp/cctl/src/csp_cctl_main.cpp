@@ -88,9 +88,15 @@ std::string parse_command_line(
         else if (argument == "--build-info")
             options.print_build_info = true;
         else if (argument == "--viewer")
+        {
             options.launch_viewer = true;
+            options.delegate_to_viewer = true;
+        }
         else if (argument == "--headless")
+        {
             options.delegate_to_viewer = false;
+            options.launch_viewer = false;
+        }
         else if (argument == "--continuous")
             options.continuous = true;
         else if (argument == "--supervised")
@@ -122,6 +128,8 @@ std::string parse_command_line(
         else if (first_error.empty())
             first_error = "unknown or incomplete argument: " + argument;
     }
+    if (options.supervised)
+        options.delegate_to_viewer = false;
     return first_error;
 }
 
@@ -176,7 +184,7 @@ void delegate_process_to_viewer()
                << L"\" --duration " << std::setprecision(17) << target_time
                << L" --output \""
                << std::filesystem::absolute(parsed_options.output_path).wstring()
-               << L"\" --autostart";
+               << L"\"";
     const HINSTANCE result = ShellExecuteW(
         nullptr, L"open", launcher.c_str(), parameters.str().c_str(),
         launcher.parent_path().c_str(), SW_SHOWNORMAL);
@@ -363,6 +371,8 @@ void gmp_csp_exit(void)
                 {"wall_time_s", summary.wall_time_s},
                 {"dropped", summary.dropped_records}};
             std::cout << message.dump() << std::endl;
+            runtime.print_summary(std::cerr);
+            runtime.print_project_summary(std::cerr);
         }
         else
         {

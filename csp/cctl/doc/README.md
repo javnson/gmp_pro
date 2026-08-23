@@ -111,7 +111,10 @@ GMP diagnostics to standard output; projects do not duplicate the debug UART.
 `--continuous` ignores `total_steps` and advances until the console receives
 `q` or `Q`. The console worker polls without blocking the numerical hot path.
 Shutdown still follows `gmp_csp_exit()`: model finalization, complete CSV queue
-drain, worker joins, and summary reporting. Combined with `--viewer`, it opens
+drain, worker joins, and summary reporting. The interactive Viewer initially
+prepares the supervised process but remains stopped until the user presses
+Start. Preparation writes every CSV header, so all channels can be selected
+before the first numerical step. Combined with `--viewer`, it opens
 the viewer in live mode with a default 0.1 s rolling time window.
 
 The CCTL CSP defines both `SPECIFY_CSP_MANAGES_USER_MAINLOOP` and

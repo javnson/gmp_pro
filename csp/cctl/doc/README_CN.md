@@ -90,7 +90,10 @@ CSP 的工程必须使用 GMP vcpkg 工具链，执行
 `--continuous` 会忽略 `total_steps`，持续推进仿真，直到控制台输入 `q` 或 `Q`。
 按键由控制台服务线程每 25 ms 非阻塞检测，不进入数值热路径。退出仍走标准
 `gmp_csp_exit()`：调用模型 finalize、排空全部 CSV 队列、汇合服务线程并打印
-摘要。与 `--viewer` 同时使用时，Viewer 自动启用 20 Hz 刷新和默认 0.1 s
+摘要。交互式 Viewer 初始保持 Stop，只有用户在窗口中点击 Start 后才会启动受管
+仿真。Stop 状态下受管进程已经完成初始化并写出各 CSV 表头，Viewer 因而可以在
+第一个数值步之前列出并配置所有曲线。与 `--viewer` 同时使用时，Viewer 自动启用
+20 Hz 刷新和默认 0.1 s
 滚动时间窗。
 
 CCTL CSP 同时定义 `SPECIFY_CSP_MANAGES_USER_MAINLOOP` 和

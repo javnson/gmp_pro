@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable
@@ -59,6 +60,91 @@ def load_numeric_columns(
     return values
 
 
+def load_numeric_time_window(
+    result: ResultFile,
+    names: Iterable[str],
+    time_name: str,
+    *,
+    start_time: float | None = None,
+    duration_s: float = 1.0,
+    follow_latest: bool = True,
+    maximum_offset: int | None = None,
+) -> dict[str, np.ndarray]:
+    """Load selected columns without retaining the complete result in memory.
+
+    In ``follow_latest`` mode a time-bounded deque retains only the newest
+    ``duration_s`` interval while the file is scanned.  Fixed selection mode
+    retains only ``[start_time, start_time + duration_s]``.  The scan is
+    intentionally streaming: file size affects I/O time, not resident array
+    size.
+    """
+    selected_names = tuple(dict.fromkeys(names))
+    if time_name not in selected_names:
+        selected_names = (time_name, *selected_names)
+    if duration_s <= 0.0 or not np.isfinite(duration_s):
+        raise ValueError("time-window duration must be finite and positive")
+    try:
+        indices = tuple(result.columns.index(name) for name in selected_names)
+        time_index = selected_names.index(time_name)
+    except ValueError as error:
+        raise KeyError(f"unknown result column: {error}") from error
+
+    rows: deque[tuple[float, ...]] | list[tuple[float, ...]]
+    rows = deque() if follow_latest else []
+    lower = float(start_time or 0.0)
+    upper = lower + duration_s
+    pending_error: ValueError | None = None
+    with result.path.open("rb") as stream:
+        header = stream.readline()
+        if not header:
+            raise ValueError("result file is empty")
+        while maximum_offset is None or stream.tell() < maximum_offset:
+            line = stream.readline()
+            if not line:
+                break
+            if maximum_offset is not None and stream.tell() > maximum_offset:
+                break
+            if not line.endswith((b"\n", b"\r")):
+                break
+            if not line.strip():
+                continue
+            try:
+                fields = next(csv.reader(
+                    [line.decode("utf-8")], delimiter=result.delimiter
+                ))
+                if len(fields) != len(result.columns):
+                    raise ValueError("invalid field count")
+                values = tuple(float(fields[index]) for index in indices)
+            except (UnicodeDecodeError, ValueError) as error:
+                pending_error = ValueError(
+                    f"invalid numeric row in {result.path}: {error}"
+                )
+                continue
+            if pending_error is not None:
+                # Only an invalid final complete row is tolerated.
+                raise pending_error
+            timestamp = values[time_index]
+            if not np.isfinite(timestamp):
+                continue
+            if follow_latest:
+                rows.append(values)
+                threshold = timestamp - duration_s
+                while rows and rows[0][time_index] < threshold:
+                    rows.popleft()
+            elif lower <= timestamp <= upper:
+                rows.append(values)
+
+    materialized = list(rows)
+    if not materialized:
+        return {
+            name: np.empty(0, dtype=np.float64) for name in selected_names
+        }
+    matrix = np.asarray(materialized, dtype=np.float64)
+    return {
+        name: matrix[:, index] for index, name in enumerate(selected_names)
+    }
+
+
 class IncrementalResultReader:
     """Read only newline-terminated numeric rows appended since the last poll.
 
@@ -95,6 +181,29 @@ class IncrementalResultReader:
 
     def _empty_columns(self) -> dict[str, np.ndarray]:
         return {name: np.empty(0, dtype=np.float64) for name in self.names}
+
+    def initialize_time_window(
+        self, time_name: str, duration_s: float
+    ) -> ResultChunk:
+        """Initialize at EOF while retaining only the newest time interval."""
+        with self.result.path.open("rb") as stream:
+            stream.seek(0, 2)
+            end = stream.tell()
+            while end > len(self._header_bytes):
+                stream.seek(end - 1)
+                if stream.read(1) == b"\n":
+                    break
+                end -= 1
+        values = load_numeric_time_window(
+            self.result,
+            self.names,
+            time_name,
+            duration_s=duration_s,
+            follow_latest=True,
+            maximum_offset=end,
+        )
+        self._offset = end
+        return ResultChunk(values)
 
     def _load_block(self, block: bytes) -> np.ndarray:
         if not block.strip() or not self.names:

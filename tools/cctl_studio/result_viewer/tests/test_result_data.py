@@ -15,11 +15,39 @@ from result_data import (  # noqa: E402
     IncrementalResultReader,
     inspect_result_file,
     load_numeric_columns,
+    load_numeric_time_window,
     minmax_decimate,
 )
 
 
 class ResultDataTests(unittest.TestCase):
+    def test_time_window_loads_only_selected_interval(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "large.csv"
+            path.write_text(
+                "time_s,value\n" + "".join(
+                    f"{index / 10:.1f},{index}\n" for index in range(101)
+                ),
+                encoding="utf-8",
+            )
+            result = inspect_result_file(path)
+            latest = load_numeric_time_window(
+                result, ("time_s", "value"), "time_s", duration_s=1.0
+            )
+            fixed = load_numeric_time_window(
+                result,
+                ("time_s", "value"),
+                "time_s",
+                start_time=2.0,
+                duration_s=0.5,
+                follow_latest=False,
+            )
+        self.assertGreaterEqual(float(latest["time_s"][0]), 9.0)
+        self.assertEqual(float(latest["time_s"][-1]), 10.0)
+        np.testing.assert_array_equal(
+            fixed["time_s"], [2.0, 2.1, 2.2, 2.3, 2.4, 2.5]
+        )
+
     def test_inspect_and_load_selected_columns(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "result.csv"
