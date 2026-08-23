@@ -146,7 +146,7 @@ Windows 下由 SDPE 的 `CCTL_SIM_REALTIME_PRIORITY` 决定是否在仿真期间
 时长命令行运行时传入 `--headless`。工程 CMake 从与 Eigen 相同的 GMP vcpkg
 安装中链接 CSP 所需的 `nlohmann_json::nlohmann_json`。
 
-Viewer 的 `PIL Server` 页通过同一受管进程连接本工程的标准 Data Link 服务。
+Viewer 的 `Data Link` 页通过同一受管进程连接本工程的标准 Data Link 服务。
 工程 SDPE 定义 `ENABLE_GMP_DL_PIL_SERVER` 和 `GMP_PIL_DL_BASE_COMMAND=0x10`，
 `gmp_src_mgr` 选择 `dev|datalink|pil`；`xplt.peripheral.cpp` 把 Viewer 原始字节送入
 `user_main.c` 已有的 Data Link 状态机，并返回其标准线协议帧。INFO v3 当前报告

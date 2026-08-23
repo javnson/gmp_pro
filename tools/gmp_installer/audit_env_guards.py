@@ -22,7 +22,7 @@ def main() -> int:
     for directory in (
         root / "tools" / "SDPE_v2",
         root / "tools" / "facilities_generator" / "src_mgr",
-        root / "tools" / "gmp_pil_server" / "gmp_debugger",
+        root / "tools" / "gmp_datalink" / "datalink_studio",
     ):
         targets.update(directory.rglob("*.bat"))
 

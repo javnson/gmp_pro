@@ -43,7 +43,7 @@ TIM3 samples at 1 kHz and generates a 50 Hz sine/cosine pair by default. One
 pre-trigger history. The application supplies one workspace and appends the
 Scope facility. DSA Scope stores 400 samples per
 channel, covering 20 signal periods. The 800-float, 3200-byte structure-of-arrays
-buffer is registered only with Data Link Scope. Use the debugger's `Data Link
+buffer is registered only with Data Link Scope. Use Data Link Studio's `Data Link
 Scope` tab to discover it, select trigger mode/channel/level/position, arm it,
 and plot the snapshot. Continuous display automatically re-arms and refreshes
 snapshots for immediate or edge-triggered acquisition. Optional waveform

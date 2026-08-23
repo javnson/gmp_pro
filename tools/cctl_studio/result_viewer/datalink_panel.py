@@ -1,4 +1,4 @@
-"""Embedded GMP Data Link debugger pages for a managed CCTL simulator."""
+"""Embedded GMP Data Link Studio pages for a managed CCTL simulator."""
 
 from __future__ import annotations
 
@@ -11,15 +11,15 @@ from pathlib import Path
 from PyQt5 import QtCore, QtWidgets
 
 
-def _debugger_directory() -> Path:
+def _studio_directory() -> Path:
     configured_root = os.environ.get("GMP_PRO_LOCATION")
     root = Path(configured_root) if configured_root else Path(__file__).resolve().parents[3]
-    return root / "tools" / "gmp_pil_server" / "gmp_debugger"
+    return root / "tools" / "gmp_datalink" / "datalink_studio"
 
 
-DEBUGGER_DIRECTORY = _debugger_directory()
-if str(DEBUGGER_DIRECTORY) not in sys.path:
-    sys.path.insert(0, str(DEBUGGER_DIRECTORY))
+STUDIO_DIRECTORY = _studio_directory()
+if str(STUDIO_DIRECTORY) not in sys.path:
+    sys.path.insert(0, str(STUDIO_DIRECTORY))
 
 from core_datalink import HermesDatalinkQt  # noqa: E402
 from resource_discovery import ResourceDiscovery  # noqa: E402
@@ -32,7 +32,7 @@ from tabs.tab_tunable import TabTunableManager  # noqa: E402
 
 
 class DataLinkPanel(QtWidgets.QWidget):
-    """Reuse gmp_debugger pages over the supervised CCTL byte transport."""
+    """Reuse Data Link Studio pages over the supervised CCTL byte transport."""
 
     def __init__(self, simulation, parent=None) -> None:
         super().__init__(parent)

@@ -293,7 +293,7 @@ repository root and prevents repeated activation. The guard preserves the
 caller's working directory.
 
 The marker is currently required on the CTL Doxygen generator, SDPE v2 BAT
-entry points, GMP Debugger v2 launchers, and source-manager BAT templates.
+entry points, GMP Data Link Studio launchers, and source-manager BAT templates.
 Search for `GMP_ENV_GUARD` when auditing new or renamed scripts. The coverage
 audit can also be run directly:
 

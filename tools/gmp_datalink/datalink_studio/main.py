@@ -86,7 +86,7 @@ class MainWindow(QMainWindow):
         if target_unit_bytes not in (1, 2):
             target_unit_bytes = 1
         self.setWindowTitle(
-            f"GMP Data Link Debugger / PIL Server — u{target_unit_bytes * 8} Target Profile"
+            f"GMP Data Link Studio — u{target_unit_bytes * 8} Target Profile"
         )
         self.resize(1100, 650)
         

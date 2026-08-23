@@ -127,12 +127,12 @@ DL，并在控制中断中喂入采样。初值统一为通道 0、上升沿、�
 
 ## 配套工具
 
-- `tools/gmp_pil_server/gmp_debugger/run_u8.bat`：字节寻址 CPU 入口。
-- `tools/gmp_pil_server/gmp_debugger/run_u16.bat`：DSP/C28x 入口。
-- `tools/gmp_pil_server/gmp_debugger/apis`：用于自动化与 AI 辅助硬件调试的无界面
+- `tools/gmp_datalink/datalink_studio/run_u8.bat`：字节寻址 CPU 入口。
+- `tools/gmp_datalink/datalink_studio/run_u16.bat`：DSP/C28x 入口。
+- `tools/gmp_datalink/datalink_studio/apis`：用于自动化与 AI 辅助硬件调试的无界面
   Python API 及中英文手册。
-- `tools/gmp_pil_server/stm32_dl_dbger`：NUCLEO-C092RC u8 固件与硬件冒烟测试。
-- `tools/gmp_pil_server/f280049_dl_dbger`：LAUNCHXL-F280049C u16 固件与硬件冒烟测试。
+- `tools/gmp_datalink/stm32_dl_dbger`：NUCLEO-C092RC u8 固件与硬件冒烟测试。
+- `tools/gmp_datalink/f280049_dl_dbger`：LAUNCHXL-F280049C u16 固件与硬件冒烟测试。
 
 两套固件都注册 PIL、Tunable、Memory、Scope 四个设施；实物冒烟测试覆盖 INFO v3、
 PIL mask/STEP、Tunable 读写、受限 Memory 访问和基于 DSA 的 Scope 采集。

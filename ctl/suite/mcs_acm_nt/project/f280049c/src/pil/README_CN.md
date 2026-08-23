@@ -15,7 +15,7 @@ PIL 固件不能用于带功率运行。恢复物理控制前，必须在 SDPE �
 1. 在 `sdpe_mgr/sdpe_requirement.json` 中选择 BUILD_LEVEL 1～4，并开启 `ENABLE_GMP_DL_PIL_SIM`。
 2. 先生成公共 SDPE 输出，再生成 F280049C 目标输出，并同步 `gmp_src_mgr`。
 3. 编译并下载 F280049C 固件。
-4. 从 `tools/gmp_pil_server/gmp_debugger` 启动无界面桥接器：
+4. 从 `tools/gmp_datalink/datalink_studio` 启动无界面桥接器：
 
    ```powershell
    python -m apis.examples.pil_bridge --sdpe ../../../ctl/suite/mcs_acm_nt/project/f280049c/src/sdpe_mgr/sdpe_requirement.json --port COM5 --trace ../../../ctl/suite/mcs_acm_nt/project/f280049c/src/pil/results/manual/build_level_1/bridge_trace.csv

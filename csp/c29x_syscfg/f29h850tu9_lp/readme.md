@@ -14,7 +14,7 @@ operations:
    CCS to rediscover Products or restart CCS.
 3. Import `f29h850tu9_gmp_blinky.projectspec` and build `LAUNCHXL_RAM` first.
 4. Select the XDS110 application UART in
-   `tools/gmp_pil_server/gmp_debugger/run_u8.bat`, set 115200 baud, and use
+   `tools/gmp_datalink/datalink_studio/run_u8.bat`, set 115200 baud, and use
    the Raw tab to send an Echo request.
 
 The UART is a binary Data Link channel while this example is running. Do not

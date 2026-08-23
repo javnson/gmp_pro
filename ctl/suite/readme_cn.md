@@ -446,7 +446,7 @@ DL 任务的执行计数位于 `dl.service_run_count`，无需用户再维护并
 上位机调试器位于：
 
 ```text
-tools/gmp_pil_server/gmp_debugger/run_u8.bat
+tools/gmp_datalink/datalink_studio/run_u8.bat
 ```
 
 这是一个基于 PyQt 的调试程序。16 位寻址 DSP 使用同目录的

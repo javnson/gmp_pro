@@ -22,12 +22,12 @@ Python 接口，适用于测试脚本、自动化验证、实验室工具以及 
 建议从调试器目录运行脚本，使 `apis` 位于 Python 导入路径：
 
 ```powershell
-cd tools/gmp_pil_server/gmp_debugger
+cd tools/gmp_datalink/datalink_studio
 python -m pip install pyserial
 python -m apis.examples.ai_debug_session --port COM5 --baudrate 256000
 ```
 
-也可以把 `tools/gmp_pil_server/gmp_debugger` 加入 `PYTHONPATH`。无界面 API
+也可以把 `tools/gmp_datalink/datalink_studio` 加入 `PYTHONPATH`。无界面 API
 要求 Python 3.10 或更高版本以及 `pyserial`，不依赖 PyQt 和 NumPy。
 
 ## 快速开始
@@ -189,7 +189,7 @@ with GmpDatalinkClient("COM5", 256000) as dl:
 分配、通道掩码与索引、UART 波特率和 UDP 端点。因此，固件和上位机共用 SDPE 这一
 唯一连接配置源。
 
-在 `tools/gmp_pil_server/gmp_debugger` 下启动标准桥接器：
+在 `tools/gmp_datalink/datalink_studio` 下启动标准桥接器：
 
 ```powershell
 python -m apis.examples.pil_bridge `
@@ -245,7 +245,7 @@ response = dl.transact(command=0x70, payload=b"\x01\x02")
 
 ## 验证
 
-在 `tools/gmp_pil_server/gmp_debugger` 下执行：
+在 `tools/gmp_datalink/datalink_studio` 下执行：
 
 ```powershell
 python -m unittest discover -s apis/tests -v

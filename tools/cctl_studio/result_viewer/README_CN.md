@@ -82,9 +82,9 @@ CCTL 仿真程序时，程序会先打开该 Manager，再由 Manager 以受管�
 
 ## Data Link 与在线调试
 
-`Data Link` 页直接复用 GMP Data Link Debugger 的协议引擎，并仅保留 Raw、Echo、
+`Data Link` 页直接复用 GMP Data Link Studio 的协议引擎，并仅保留 Raw、Echo、
 Tunable、Memory、Chronos 和 Data Link Scope 六个功能页。它不打开物理串口：
-Debugger 生成的标准 Data Link 原始帧经受管 JSON 通道
+Data Link Studio 生成的标准 Data Link 原始帧经受管 JSON 通道
 Base64 编码后送入 CCTL CSP 的虚拟通信外设；目标程序的 `user_main.c` 仍通过
 `gmp_dev_dl_loop_cb()`、设施分派器和标准 CRC/转义实现处理请求，回复再沿同一路径
 返回。暂停状态也可执行设施发现和参数读写，不需要先启动数值仿真。

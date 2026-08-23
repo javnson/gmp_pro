@@ -1,4 +1,4 @@
-# GMP Data Link Debugger
+# GMP Data Link Studio
 
 **English** | [简体中文](README_CN.md)
 
@@ -41,7 +41,7 @@ retained messages.
 `HermesDatalinkQt.connect_transport()` lets a host tool supply a byte-write
 callback, while `feed_transport()` injects received bytes. Physical serial and
 managed-process users therefore share the same framing, priority queue, and
-feature pages. The CCTL Result Viewer's PIL Server page uses this transport.
+feature pages. The CCTL Result Viewer's Data Link page uses this transport.
 
 Memory Perspective always uses byte addresses on the wire. Convert a C28x
 native word address from a linker map to a byte address by multiplying it by

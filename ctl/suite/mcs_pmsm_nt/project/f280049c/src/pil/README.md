@@ -15,7 +15,7 @@ Do not use a PIL firmware image for physical power conversion. Disable the SDPE 
 1. Select BUILD_LEVEL 1 through 4 and enable `ENABLE_GMP_DL_PIL_SIM` in `sdpe_mgr/sdpe_requirement.json`.
 2. Generate the common SDPE output first, then generate this target output and synchronize `gmp_src_mgr`.
 3. Build and flash the F280049C image.
-4. Start the headless bridge from `tools/gmp_pil_server/gmp_debugger`:
+4. Start the headless bridge from `tools/gmp_datalink/datalink_studio`:
 
    ```powershell
    python -m apis.examples.pil_bridge --sdpe ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/src/sdpe_mgr/sdpe_requirement.json --port COM5 --trace ../../../ctl/suite/mcs_pmsm_nt/project/f280049c/src/pil/results/manual/build_level_1/bridge_trace.csv

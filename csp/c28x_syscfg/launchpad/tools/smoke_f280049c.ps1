@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $repoRoot = Resolve-Path (Join-Path $projectRoot "..\..\..")
-$smokeTest = Join-Path $repoRoot "tools\gmp_pil_server\f280049_dl_dbger\smoke_test.py"
+$smokeTest = Join-Path $repoRoot "tools\gmp_datalink\f280049_dl_dbger\smoke_test.py"
 
 python $smokeTest --baudrate $BaudRate --port $Port
 if ($LASTEXITCODE -ne 0) {

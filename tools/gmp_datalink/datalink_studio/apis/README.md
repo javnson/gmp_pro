@@ -5,7 +5,7 @@
 This package is the supported headless interface to the GMP Data Link Tunable,
 Memory Perspective, Scope, and Processor-in-the-Loop services. It is intended for test scripts,
 automated validation, laboratory tooling, and AI-assisted hardware debugging.
-It uses the same wire protocol and descriptor codecs as the graphical debugger,
+It uses the same wire protocol and descriptor codecs as the graphical Studio,
 so a target does not need separate firmware for GUI and API clients.
 
 The public entry point is `GmpDatalinkClient`. A client owns one serialized
@@ -20,16 +20,16 @@ request/response transport and exposes three service objects:
 
 ## Installation and import
 
-Run scripts from the debugger directory so that the `apis` package is on the
+Run scripts from the Studio directory so that the `apis` package is on the
 Python import path:
 
 ```powershell
-cd tools/gmp_pil_server/gmp_debugger
+cd tools/gmp_datalink/datalink_studio
 python -m pip install pyserial
 python -m apis.examples.ai_debug_session --port COM5 --baudrate 256000
 ```
 
-Alternatively, add `tools/gmp_pil_server/gmp_debugger` to `PYTHONPATH`. The
+Alternatively, add `tools/gmp_datalink/datalink_studio` to `PYTHONPATH`. The
 headless API requires Python 3.10 or newer and `pyserial`; it does not require
 PyQt or NumPy.
 
@@ -223,7 +223,7 @@ PIL enable switch, command allocation, channel masks, channel indices, UART
 rate, and UDP endpoints. This makes SDPE the connection source of truth for
 both firmware and host tooling.
 
-From `tools/gmp_pil_server/gmp_debugger`, start the standard bridge with:
+From `tools/gmp_datalink/datalink_studio`, start the standard bridge with:
 
 ```powershell
 python -m apis.examples.pil_bridge `
@@ -287,7 +287,7 @@ safe for connected power hardware.
 
 ## Verification
 
-From `tools/gmp_pil_server/gmp_debugger` run:
+From `tools/gmp_datalink/datalink_studio` run:
 
 ```powershell
 python -m unittest discover -s apis/tests -v

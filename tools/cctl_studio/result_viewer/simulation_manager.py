@@ -102,7 +102,7 @@ class SimulationProcessManager(QtCore.QObject):
         self.process.write(self.encode_command(command))
 
     def send_datalink(self, data: bytes) -> None:
-        """Thread-safe entry used by the debugger's managed byte transport."""
+        """Thread-safe entry used by Data Link Studio's managed byte transport."""
         if data:
             self.datalink_transmit_requested.emit(bytes(data))
 

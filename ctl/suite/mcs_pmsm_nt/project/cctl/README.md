@@ -219,7 +219,7 @@ finite command-line simulation. The project CMake links the CSP's required
 `nlohmann_json::nlohmann_json` target from the same GMP vcpkg installation as
 Eigen.
 
-The Viewer's **PIL Server** page connects to this project's standard Data Link
+The Viewer's **Data Link** page connects to this project's standard Data Link
 service through the same supervised process. SDPE defines
 `ENABLE_GMP_DL_PIL_SERVER` and `GMP_PIL_DL_BASE_COMMAND=0x10`, `gmp_src_mgr`
 selects `dev|datalink|pil`, and `xplt.peripheral.cpp` feeds Viewer bytes into the

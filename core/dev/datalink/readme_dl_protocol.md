@@ -244,21 +244,21 @@ a 1000 ms automatic timeout; normal reconfiguration is performed by the host.
 
 ## Host tools and validation target
 
-- `tools/gmp_pil_server/gmp_debugger/run_u8.bat` selects the byte-addressed
+- `tools/gmp_datalink/datalink_studio/run_u8.bat` selects the byte-addressed
   target profile.
-- `tools/gmp_pil_server/gmp_debugger/run_u16.bat` selects the DSP/C28x target
+- `tools/gmp_datalink/datalink_studio/run_u16.bat` selects the DSP/C28x target
   profile.
-- `tools/gmp_pil_server/gmp_debugger/apis` provides the documented headless
+- `tools/gmp_datalink/datalink_studio/apis` provides the documented headless
   Python API for automation and AI-assisted hardware debugging.
-- `tools/gmp_pil_server/stm32_dl_dbger` is the NUCLEO-C092RC u8 validation
+- `tools/gmp_datalink/stm32_dl_dbger` is the NUCLEO-C092RC u8 validation
   firmware and hardware smoke test.
-- `tools/gmp_pil_server/f280049_dl_dbger` is the LAUNCHXL-F280049C u16
+- `tools/gmp_datalink/f280049_dl_dbger` is the LAUNCHXL-F280049C u16
   validation firmware and hardware smoke test.
 
 Both validation firmwares register PIL, Tunable, Memory, and Scope facilities.
 Their hardware smoke tests verify exact INFO v3 discovery, PIL mask/STEP,
 Tunable read/write, bounded Memory access, and a DSA-backed Scope capture.
 
-The two launchers share one debugger and stable wire codec. Their distinction
+The two launchers share one Data Link Studio application and stable wire codec. Their distinction
 documents the target memory-address model rather than defining a different
 wire protocol.

@@ -1,4 +1,4 @@
-# GMP Data Link Debugger
+# GMP Data Link Studio
 
 [English](README.md) | **简体中文**
 
@@ -23,7 +23,7 @@ System Log 为每个页面分配固定配色，并在 Log Sources 下拉列表�
 
 `HermesDatalinkQt.connect_transport()` 允许宿主工具提供字节写回调，并用
 `feed_transport()` 注入接收字节；物理串口和受管进程因此共享同一套帧编解码、优先级
-队列和功能页面。CCTL Result Viewer 的 PIL Server 页使用的就是该入口。
+队列和功能页面。CCTL Result Viewer 的 Data Link 页使用的就是该入口。
 
 Memory Perspective 在线协议中始终使用字节地址。从 C28x map 文件取得原生字地址后，
 手动输入前需要乘以 2。

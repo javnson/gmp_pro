@@ -170,7 +170,7 @@ a system tick implementation.
 | [`cctl`](cctl) | C++ control and power-electronics objects. |
 | [`vcore`](vcore) | HDL/Verilog support and experimental platforms. |
 | [`slib`](slib) | MATLAB/Simulink library sources, installer, and release-specific output. |
-| [`tools`](tools) | SDPE, source management, SIL/PIL, debugger, and installer tools. |
+| [`tools`](tools) | SDPE, source management, SIL/PIL, Data Link Studio, and installer tools. |
 | [`manual`](manual) | User guides, coding conventions, and platform workflows. |
 | [`third_party`](third_party) | Third-party sources maintained directly in this repository. |
 
@@ -317,15 +317,15 @@ currently available Chinese validation reports.
   output with the host.
 - Datalink supports variable monitoring, online parameter changes, Memory
   Perspective, and PIL data exchange.
-- The [headless Data Link Python API](tools/gmp_pil_server/gmp_debugger/apis/README.md)
+- The [headless Data Link Python API](tools/gmp_datalink/datalink_studio/apis/README.md)
   lets test programs and AI agents discover the Tunable table and memory
   whitelist, perform typed parameter and bounded memory access, configure Scope
   triggers, acquire continuous waveforms, execute exact PIL controller steps,
   bridge the standard Simulink UDP vectors, and export evidence to CSV. A
-  [Chinese API manual](tools/gmp_pil_server/gmp_debugger/apis/README_CN.md) is
+  [Chinese API manual](tools/gmp_datalink/datalink_studio/apis/README_CN.md) is
   provided alongside the English reference.
-- Use `tools/gmp_pil_server/gmp_debugger/run_u8.bat` for byte-addressed CPUs and
-  `tools/gmp_pil_server/gmp_debugger/run_u16.bat` for 16-bit-addressed DSP
+- Use `tools/gmp_datalink/datalink_studio/run_u8.bat` for byte-addressed CPUs and
+  `tools/gmp_datalink/datalink_studio/run_u16.bat` for 16-bit-addressed DSP
   targets. Both launch the same maintained frontend and wire codec.
 - Suite `user_main.c` files normally organize communication and background
   tasks; the target `xplt` owns UART and other physical interfaces.

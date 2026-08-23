@@ -47,7 +47,7 @@ steps until the user presses Start. Use `--headless` for command-line-only use.
 
 ## Data Link and online debugging
 
-The **Data Link** page reuses the maintained GMP Data Link Debugger engine and
+The **Data Link** page reuses the maintained GMP Data Link Studio engine and
 provides its Raw, Echo, Tunable, Memory, Chronos, and Data Link Scope pages.
 It does not open a physical serial port. Standard framed Data Link bytes are
 Base64-encoded inside the supervised JSON channel, delivered through the CCTL

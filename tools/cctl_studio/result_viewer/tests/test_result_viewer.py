@@ -118,7 +118,7 @@ class ResultViewerTests(unittest.TestCase):
         })
         self.assertEqual(received, [b"{%=}"])
 
-    def test_debugger_managed_transport_preserves_standard_frames(self) -> None:
+    def test_studio_managed_transport_preserves_standard_frames(self) -> None:
         writes: list[bytes] = []
         frames: list[tuple[int, int, bytes]] = []
         hermes = HermesDatalinkQt()

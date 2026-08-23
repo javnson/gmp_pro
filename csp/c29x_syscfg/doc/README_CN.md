@@ -18,7 +18,7 @@
 
 `f29h850tu9_lp` 是最小参考工程：LED 每 500 ms 翻转，UARTA 以 115200 bit/s 运行 GMP 的 8 位
 Data Link。C29x 是字节寻址平台，上位机必须使用
-`tools/gmp_pil_server/gmp_debugger/run_u8.bat`。
+`tools/gmp_datalink/datalink_studio/run_u8.bat`。
 
 ## 2. ePWM
 
