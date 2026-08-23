@@ -44,7 +44,8 @@ endif()
 function(add_cctl_pmsm_simulator target_name backend_name)
     add_executable(${target_name}
         cctl_pmsm_drive.cpp
-        ../../src/ctl_main.c)
+        ../../src/ctl_main.c
+        ../../src/user_main.c)
 
     set(GMP_CMAKE_TARGET ${target_name})
     include("${GMP_CMAKE_CONFIG}")

@@ -9,6 +9,7 @@
 
 #include <cstdlib>
 #include <atomic>
+#include <cstdio>
 #include <exception>
 #include <iostream>
 #include <stdexcept>
@@ -32,6 +33,7 @@ char **process_argv = nullptr;
 int process_result = EXIT_FAILURE;
 bool simulation_configured = false;
 bool runtime_started = false;
+bool project_configured = false;
 bool exit_requested = false;
 bool exit_completed = false;
 bool build_information_configured = false;
@@ -42,6 +44,7 @@ gmp::csp::cctl::build_information registered_build;
 gmp::csp::cctl::simulation_runtime runtime;
 std::atomic<std::uint64_t> controller_interrupt_count{0U};
 float controller_scope[CSP_CCTL_SCOPE_CHANNEL_COUNT]{};
+int hosted_console_token = 0;
 
 /** Parse CSP-common process options before project initialization begins. */
 std::string parse_command_line(
@@ -95,7 +98,8 @@ void print_build_information()
 {
     if (!build_information_configured)
         throw std::logic_error(
-            "project did not register CCTL build information from init()");
+            "project did not register CCTL build information from "
+            "csp_cctl_project_configure()");
     std::cout << "backend=" << registered_build.backend << '/'
               << registered_build.storage << " build="
               << registered_build.configuration << " optimized="
@@ -142,9 +146,14 @@ extern "C"
 /** Parse process options before setup_peripheral(), ctl_init(), and init(). */
 void gmp_csp_startup(void)
 {
+    /* Enable GMP diagnostics before setup_peripheral() and the startup Logo. */
+    default_debug_dev = static_cast<GMP_BASE_PRINT_DEFAULT_HANDLE_TYPE>(
+        &hosted_console_token);
+
     process_result = EXIT_FAILURE;
     simulation_configured = false;
     runtime_started = false;
+    project_configured = false;
     exit_requested = false;
     exit_completed = false;
     build_information_configured = false;
@@ -159,16 +168,25 @@ void gmp_csp_startup(void)
         record_lifecycle_failure(parse_error);
 }
 
-/** Start CSP services after the project has registered its simulation. */
+/** Ask the project to register its simulation, then start CSP services. */
 void gmp_csp_post_process(void)
 {
-    if (exit_requested || parsed_options.print_build_info)
+    if (exit_requested)
         return;
     try
     {
+        if (project_configured)
+            throw std::logic_error(
+                "CCTL project configuration hook was invoked twice");
+        csp_cctl_project_configure();
+        project_configured = true;
+
+        if (parsed_options.print_build_info)
+            return;
         if (!simulation_configured)
             throw std::logic_error(
-                "project init() did not configure a CCTL simulation");
+                "csp_cctl_project_configure() did not configure a CCTL "
+                "simulation");
         runtime.start();
         runtime_started = true;
     }
@@ -267,6 +285,19 @@ void gmp_csp_stuck_routine(void)
 void gmp_csp_not_implement(void)
 {
     std::abort();
+}
+
+/** Route the portable GMP diagnostic stream to the hosted console. */
+ec_gt gmp_hal_uart_send(GMP_BASE_PRINT_DEFAULT_HANDLE_TYPE,
+                        gmp_print_buffer_t *buffer)
+{
+    if (buffer == nullptr || buffer->buf == nullptr || buffer->length == 0U)
+        return GMP_EC_OK;
+
+    const std::size_t written =
+        std::fwrite(buffer->buf, 1U, buffer->length, stdout);
+    std::fflush(stdout);
+    return written == buffer->length ? GMP_EC_OK : GMP_EC_GENERAL_ERROR;
 }
 
 /** Enable the CSP-owned simulated power-stage output flag. */

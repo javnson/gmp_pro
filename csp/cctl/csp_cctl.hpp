@@ -300,11 +300,11 @@ class simulation_runtime
     std::unique_ptr<implementation> impl_;
 };
 
-/** Register project build metadata from the standard project init() hook. */
+/** Register project build metadata from csp_cctl_project_configure(). */
 void configure_build_information(build_information information);
 
 /**
- * @brief Register one project simulation from the standard project init() hook.
+ * @brief Register one simulation from csp_cctl_project_configure().
  *
  * gmp_csp_post_process() starts the registered runtime. gmp_csp_loop() advances
  * it exactly one step per GMP background iteration, and gmp_csp_exit() owns

@@ -561,9 +561,11 @@ extern "C"
 {
 
 /**
- * @brief Apply project initialization after setup_peripheral() and ctl_init().
+ * @brief Register the PMSM simulation through the fixed CCTL CSP hook.
+ *
+ * The standard user init() and mainloop() remain implemented by user_main.c.
  */
-void init(void)
+void csp_cctl_project_configure(void)
 {
     flag_enable_adc_calibrator = 0;
     for (time_gt &delay : cia402_sm.minimum_transit_delay)
@@ -639,11 +641,6 @@ void init(void)
     };
     gmp::csp::cctl::configure_simulation(std::move(config),
                                          std::move(callbacks));
-}
-
-/** @brief Project background hook; the finite simulation runs in the CSP. */
-void mainloop(void)
-{
 }
 
 } // extern "C"

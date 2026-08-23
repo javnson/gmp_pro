@@ -2,6 +2,9 @@
   "sync_mode": "src_only",
   "selected_modules": [
     { "root": "csp", "module": "cctl" },
+    { "root": "core", "module": "pm|function_scheduler" },
+    { "root": "core", "module": "dev|datalink|variable_monitor" },
+    { "root": "core", "module": "dev|datalink|mem_monitor" },
     { "root": "ctl", "module": "framework|cia402" },
     { "root": "ctl", "module": "component|interface|_internal" },
     { "root": "ctl", "module": "component|interface|modulator|spwm" },

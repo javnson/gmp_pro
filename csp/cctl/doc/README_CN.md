@@ -52,17 +52,21 @@ C 程序包含 `gmp_core.h`，C++ 程序包含 `gmp_core.hpp`。GMP 会通过标
 ```text
 gmp_csp_startup
   -> setup_peripheral
+  -> gmp_base_show_label（Logo 未禁用且平台已绑定输出设备时）
   -> ctl_init
-  -> init
-  -> gmp_csp_post_process
+  -> init（用户 user_main）
+  -> gmp_csp_post_process -> csp_cctl_project_configure（工程仿真装配）
   -> gmp_csp_loop（重复：芯片 -> 外设输出 -> 电路 -> 外设采样/中断）
   -> gmp_csp_exit
 ```
 
 `gmp_csp_startup()` 统一解析 `--no-pause`、`--realtime-priority`、
 `--normal-priority`、`--no-realtime-priority`、`--profile`、`--build-info`、`--viewer`、`--continuous`
-和 `--output <路径>`。工程在标准 C 链接的 `init()` 中通过 `command_line()`
-读取结果，并注册构建信息和仿真配置。`gmp_csp_post_process()` 初始化被控对象并
+和 `--output <路径>`。标准 `init()` 和 `mainloop()` 始终属于用户的
+`user_main.c`，CCTL 工程不得覆盖。工程应实现固定 C 链接钩子
+`csp_cctl_project_configure()`，CSP 在用户 `init()` 完成后的
+`gmp_csp_post_process()` 中调用它；该钩子通过 `command_line()` 读取结果，
+并注册构建信息和仿真配置。随后 `gmp_csp_post_process()` 初始化被控对象并
 启动文件、控制台两个服务线程；每次 `gmp_csp_loop()` 只推进一个仿真步。每个
 完整仿真周期之后，
 核心框架通过 `gmp_csp_should_exit()` 判断是否结束。`gmp_csp_exit()` 负责校验、
@@ -85,6 +89,12 @@ CCTL CSP 同时定义 `SPECIFY_CSP_MANAGES_USER_MAINLOOP` 和
 CSP 自己实现 `gmp_csp_startup()`、`gmp_csp_post_process()`、`gmp_csp_loop()`、
 `gmp_csp_exit()`、`gmp_csp_stuck_routine()` 和 `gmp_csp_not_implement()`，工程
 不应覆盖这些函数。
+
+Logo 是否编译由 `SPECIFY_GMP_LOGO_MODE`（或兼容宏
+`SPECIFY_DISABLE_GMP_LOGO`）决定，但能否看到还取决于平台是否给
+`default_debug_dev` 绑定了非空调试设备，以及 `gmp_hal_uart_send()` 是否真正
+输出数据。CCTL CSP 在 `gmp_csp_startup()` 中统一绑定宿主控制台并将 GMP 打印
+缓冲写到标准输出，工程不需要重复实现调试 UART。
 
 ## 标准仿真载体
 

@@ -62,9 +62,10 @@ line arguments and calls `gmp_base_entry()`, which preserves the standard order:
 ```text
 gmp_csp_startup
   -> setup_peripheral
+  -> gmp_base_show_label (when enabled and a print device is attached)
   -> ctl_init
-  -> init
-  -> gmp_csp_post_process
+  -> init (user_main)
+  -> gmp_csp_post_process -> csp_cctl_project_configure (project assembly)
   -> gmp_csp_loop (repeat: chip -> peripheral out -> circuit -> sample/ISR)
   -> gmp_csp_exit
 ```
@@ -72,14 +73,23 @@ gmp_csp_startup
 `gmp_csp_startup()` parses the common options `--no-pause`,
 `--realtime-priority`, `--normal-priority`, `--no-realtime-priority`,
 `--profile`, `--build-info`, `--viewer`, `--continuous`, and
-`--output <path>`. A project reads the result
-through `command_line()` and registers build metadata plus its simulation from
-the normal C-linkage `init()` hook. `gmp_csp_post_process()` starts the plant and
+`--output <path>`. The standard `init()` and `mainloop()` hooks always belong to
+the application's `user_main.c`; a CCTL project must not override them. The
+project instead implements the fixed C-linkage
+`csp_cctl_project_configure()` hook. The CSP calls it from
+`gmp_csp_post_process()` after user initialization; the hook reads
+`command_line()` and registers build metadata plus the simulation. The CSP then starts the plant and
 the two service workers. Each `gmp_csp_loop()` call advances exactly one plant
 step. The core loop asks
 `gmp_csp_should_exit()` after each complete background iteration, and
 `gmp_csp_exit()` finalizes the plant, joins workers, reports results, restores
 priority, and performs the optional pause.
+
+Logo compilation is controlled by `SPECIFY_GMP_LOGO_MODE` (or the legacy
+`SPECIFY_DISABLE_GMP_LOGO` macro), but visible output also requires a non-null
+`default_debug_dev` and a `gmp_hal_uart_send()` implementation that writes the
+buffer. The CCTL CSP binds the host console in `gmp_csp_startup()` and routes
+GMP diagnostics to standard output; projects do not duplicate the debug UART.
 
 `--continuous` ignores `total_steps` and advances until the console receives
 `q` or `Q`. The console worker polls without blocking the numerical hot path.

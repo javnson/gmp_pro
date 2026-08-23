@@ -39,9 +39,12 @@ set(GMP_GENERATED_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/ctl_saturation.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/ctl_slope_limiter.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/error_code.c"
+    "${CMAKE_CURRENT_LIST_DIR}/gmp_src/function_scheduler.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_datalink.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_dl_facility.c"
+    "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_mem_presp.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_runtime.c"
+    "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_tunable.c"
     "${CMAKE_CURRENT_LIST_DIR}/../xplt/mcu_simulation.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/../xplt/xplt.peripheral.cpp"
 )

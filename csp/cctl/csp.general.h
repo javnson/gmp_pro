@@ -38,6 +38,17 @@ void csp_cctl_scope_write(uint32_t channel, float value);
 /** Read one controller-rate CSV oscilloscope channel. */
 float csp_cctl_scope_read(uint32_t channel);
 
+/**
+ * @brief Register the application-specific simulation with the CCTL CSP.
+ *
+ * A hosted CCTL project implements this fixed integration hook. The CSP calls
+ * it from gmp_csp_post_process(), after the standard user setup_peripheral(),
+ * ctl_init(), and init() hooks have completed. It must register build metadata
+ * and, unless only build information was requested, the simulation runtime.
+ * This hook is deliberately separate from the user-owned init() function.
+ */
+void csp_cctl_project_configure(void);
+
 /** Hosted no-op watchdog feed service. */
 void gmp_hal_wd_feed(void);
 

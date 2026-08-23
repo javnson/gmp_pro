@@ -78,8 +78,25 @@ void flush_dl_rx_buffer(void)
 {
 }
 
-/** @brief Discard a debug-print buffer in this headless simulation. */
-ec_gt gmp_hal_uart_send(GMP_BASE_PRINT_DEFAULT_HANDLE_TYPE, gmp_print_buffer_t*)
+/** @brief Hosted data-link transmit placeholder. */
+void flush_dl_tx_buffer(void)
+{
+}
+
+/** @brief Hosted GPIO direction placeholder. */
+ec_gt gmp_hal_gpio_set_dir(gpio_halt, gpio_dir_et)
+{
+    return GMP_EC_OK;
+}
+
+/** @brief Hosted GPIO output placeholder. */
+ec_gt gmp_hal_gpio_write(gpio_halt, fast_gt)
+{
+    return GMP_EC_OK;
+}
+
+/** @brief Hosted GPIO input placeholder. */
+fast_gt gmp_hal_gpio_read(gpio_halt)
 {
     return 0;
 }

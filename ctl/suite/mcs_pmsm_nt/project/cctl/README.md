@@ -9,11 +9,13 @@ Windows/Simulink network transport. Each control transaction follows
 
 The selected `csp|cctl` module owns the executable `main()` and calls
 `gmp_base_entry()`. The ordinary GMP order initializes `setup_peripheral()`,
-`ctl_init()`, and project `init()`. The project `init()` only registers build
-metadata, the persistent topology, and callbacks with the CSP. The CSP then
+`ctl_init()`, and the user-owned `init()` from `src/user_main.c`. The CSP then
+calls the project's fixed `csp_cctl_project_configure()` hook, which registers
+build metadata, the persistent topology, and callbacks. The CSP then
 starts services in `gmp_csp_post_process()`, advances one plant step per
 `gmp_csp_loop()`, and finalizes in `gmp_csp_exit()`. This project must not add
-another process entry or initialize the controller again from a plant callback.
+another process entry, override user `init()`/`mainloop()`, or initialize the
+controller again from a plant callback.
 
 Project `xplt/mcu_simulation.hpp/.cpp` aggregates the seven ADC inputs, three
 complementary ePWM modules, ADC SOC/interrupt dispatch, and eQEP model. The

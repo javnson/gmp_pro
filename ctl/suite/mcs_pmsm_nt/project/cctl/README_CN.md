@@ -10,10 +10,12 @@ ctl_output_callback -> ePWM 更新`。
 
 工程选择的 `csp|cctl` 模块拥有唯一的可执行程序 `main()`，并从
 `gmp_base_entry()` 进入。标准 GMP 顺序会先执行 `setup_peripheral()`、
-`ctl_init()` 和工程 `init()`。工程 `init()` 只向 CSP 注册构建信息、持久拓扑和
-回调；CSP 在 `gmp_csp_post_process()` 启动服务，在每次 `gmp_csp_loop()` 中推进
+`ctl_init()` 和 `src/user_main.c` 中用户实现的 `init()`。随后 CSP 从
+`gmp_csp_post_process()` 调用工程固定实现的 `csp_cctl_project_configure()`，由
+该钩子注册构建信息、持久拓扑和回调。CSP 再启动服务，在每次
+`gmp_csp_loop()` 中推进
 一个被控对象步，并在 `gmp_csp_exit()` 统一注销。工程不得再定义第二个进程入口，
-也不应在被控对象回调中重复初始化控制器。
+不得覆盖用户 `init()`/`mainloop()`，也不应在被控对象回调中重复初始化控制器。
 
 工程私有的 `xplt/mcu_simulation.hpp/.cpp` 聚合七路 ADC 输入、三路互补 ePWM、
 ADC SOC/中断分发和 eQEP。C 兼容的 `xplt.peripheral.*` 只保存控制器可见的
