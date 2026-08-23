@@ -68,7 +68,12 @@ the fixed-size structure and loader, while the archive owns the deduplicated
 Eigen matrix pools; CMake copies the archive beside the executable. Setting `MATRIX_BACKEND` explicitly to
 `fixed` or `all` also generates `hw/generated/fixed/pmsmcircuit.hpp`. Eigen is
 resolved from the GMP installer/vcpkg environment, never from the deprecated
-third-party copy.
+third-party copy. The project `vcpkg.json` declares both `eigen3` and
+`nlohmann-json`; Visual Studio folder mode selects the GMP vcpkg wrapper when
+either `windows-msvc-release` or
+`windows-msvc-debug` is selected. A private installation consumes the shared
+packages prepared by the installer; only classic system mode performs a
+project manifest restore.
 
 The plant advances at 100 ns. The master ePWM emits one ADC SOC per 50 us,
 center-aligned carrier on the configured CMPB up-count event (250 TBCLK here).
@@ -205,6 +210,14 @@ accuracy experiments.
 
 Manual execution pauses through `system("@pause")` by default. CTest passes
 `--no-pause`; `--output <path>` overrides the CSV destination.
+
+Launching `mcs_pmsm_nt_cctl.exe` with no arguments is the interactive path: the
+CCTL CSP validates `GMP_PRO_LOCATION`, opens the Simulation Viewer Manager with
+GMP's private Python, exits the launcher instance, and lets the Viewer restart
+the simulator under JSON supervision. Use `--headless` to run the original
+finite command-line simulation. The project CMake links the CSP's required
+`nlohmann_json::nlohmann_json` target from the same GMP vcpkg installation as
+Eigen.
 
 For continuous observation, run
 `mcs_pmsm_nt_cctl.exe --continuous --viewer`. The CSP ignores the finite 4 s

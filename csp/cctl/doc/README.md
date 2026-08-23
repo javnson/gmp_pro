@@ -72,8 +72,9 @@ gmp_csp_startup
 
 `gmp_csp_startup()` parses the common options `--no-pause`,
 `--realtime-priority`, `--normal-priority`, `--no-realtime-priority`,
-`--profile`, `--build-info`, `--viewer`, `--continuous`, and
-`--output <path>`. The standard `init()` and `mainloop()` hooks always belong to
+`--profile`, `--build-info`, `--viewer`, `--continuous`, `--duration <seconds>`,
+`--supervised`, `--wait-for-start`, `--headless`, and `--output <path>`. The
+standard `init()` and `mainloop()` hooks always belong to
 the application's `user_main.c`; a CCTL project must not override them. The
 project instead implements the fixed C-linkage
 `csp_cctl_project_configure()` hook. The CSP calls it from
@@ -84,6 +85,22 @@ step. The core loop asks
 `gmp_csp_should_exit()` after each complete background iteration, and
 `gmp_csp_exit()` finalizes the plant, joins workers, reports results, restores
 priority, and performs the optional pause.
+
+With no command-line arguments, the configured project is initialized far
+enough to resolve its default duration and outputs, then delegates to the Viewer
+Manager under `%GMP_PRO_LOCATION%`. The first process exits without stepping;
+the Viewer relaunches it with `--supervised --wait-for-start --no-pause`, so the
+second process cannot delegate recursively. `--headless` explicitly keeps the
+legacy direct execution path.
+
+Supervised stdout is reserved for newline-delimited JSON. GMP and user console
+text is redirected to stderr. Protocol version 1 emits `ready`, periodic
+`status`, command acknowledgements, and a final `summary`; it accepts `start`,
+`pause`, `resume`, `stop`, and `set_duration`. Pause takes effect only at a
+complete plant-step boundary. A zero duration means an unlimited run. All C++
+messages are built and parsed with `nlohmann::json`, so a project selecting this
+CSP must use GMP's vcpkg toolchain, call `find_package(nlohmann_json CONFIG
+REQUIRED)`, and link `nlohmann_json::nlohmann_json`.
 
 Logo compilation is controlled by `SPECIFY_GMP_LOGO_MODE` (or the legacy
 `SPECIFY_DISABLE_GMP_LOGO` macro), but visible output also requires a non-null

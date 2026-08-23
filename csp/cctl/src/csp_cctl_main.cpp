@@ -6,15 +6,31 @@
 #include <csp.general.h>
 #include <csp_cctl.hpp>
 #include <gmp_core.h>
+#include <nlohmann/json.hpp>
 
 #include <cstdlib>
 #include <atomic>
 #include <cstdio>
 #include <exception>
+#include <cmath>
+#include <filesystem>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
+
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <shellapi.h>
+#if defined(_MSC_VER)
+#pragma comment(lib, "Shell32.lib")
+#endif
+#endif
 
 #ifndef CCTL_SIM_REALTIME_PRIORITY
 #define CCTL_SIM_REALTIME_PRIORITY 0
@@ -52,6 +68,7 @@ std::string parse_command_line(
     gmp::csp::cctl::command_line_options &options)
 {
     options = {};
+    options.delegate_to_viewer = argc == 1;
     options.request_realtime_priority = CCTL_SIM_REALTIME_PRIORITY != 0;
     options.output_path = CCTL_SIM_OUTPUT_FILENAME;
     std::string first_error;
@@ -72,8 +89,34 @@ std::string parse_command_line(
             options.print_build_info = true;
         else if (argument == "--viewer")
             options.launch_viewer = true;
+        else if (argument == "--headless")
+            options.delegate_to_viewer = false;
         else if (argument == "--continuous")
             options.continuous = true;
+        else if (argument == "--supervised")
+            options.supervised = true;
+        else if (argument == "--wait-for-start")
+        {
+            options.supervised = true;
+            options.wait_for_start = true;
+        }
+        else if (argument == "--duration" && index + 1 < argc)
+        {
+            try
+            {
+                options.target_duration_s = std::stod(argv[++index]);
+                options.duration_overridden = true;
+                if (!std::isfinite(options.target_duration_s) ||
+                    options.target_duration_s < 0.0)
+                    throw std::invalid_argument("range");
+                options.continuous = options.target_duration_s == 0.0;
+            }
+            catch (...)
+            {
+                if (first_error.empty())
+                    first_error = "--duration requires a finite nonnegative value";
+            }
+        }
         else if (argument == "--output" && index + 1 < argc)
             options.output_path = argv[++index];
         else if (first_error.empty())
@@ -105,6 +148,45 @@ void print_build_information()
               << registered_build.configuration << " optimized="
               << (registered_build.optimized ? "yes" : "no") << '\n';
 }
+
+/** Start the cross-platform Viewer Manager as the interactive process owner. */
+void delegate_process_to_viewer()
+{
+#if defined(_WIN32)
+    const char *root = std::getenv("GMP_PRO_LOCATION");
+    if (!root || !*root)
+        throw std::runtime_error(
+            "interactive CCTL launch requires GMP_PRO_LOCATION");
+    const std::filesystem::path launcher =
+        std::filesystem::path(root) / "tools" / "cctl_studio" /
+        "result_viewer" / "run_result_viewer.bat";
+    if (!std::filesystem::exists(launcher))
+        throw std::runtime_error("Viewer Manager launcher not found: " +
+                                 launcher.string());
+    wchar_t executable_buffer[32768]{};
+    const DWORD length = GetModuleFileNameW(
+        nullptr, executable_buffer,
+        static_cast<DWORD>(sizeof(executable_buffer) / sizeof(wchar_t)));
+    if (length == 0U || length >= sizeof(executable_buffer) / sizeof(wchar_t))
+        throw std::runtime_error("cannot resolve the CCTL executable path");
+    const double target_time = static_cast<double>(runtime.target_steps()) *
+                               runtime.config().plant_step_s;
+    std::wostringstream parameters;
+    parameters << L"--simulator \"" << executable_buffer
+               << L"\" --duration " << std::setprecision(17) << target_time
+               << L" --output \""
+               << std::filesystem::absolute(parsed_options.output_path).wstring()
+               << L"\" --autostart";
+    const HINSTANCE result = ShellExecuteW(
+        nullptr, L"open", launcher.c_str(), parameters.str().c_str(),
+        launcher.parent_path().c_str(), SW_SHOWNORMAL);
+    if (reinterpret_cast<std::intptr_t>(result) <= 32)
+        throw std::runtime_error("failed to launch CCTL Viewer Manager");
+#else
+    throw std::runtime_error(
+        "interactive Viewer delegation is not yet installed on this host");
+#endif
+}
 } // namespace
 
 namespace gmp::csp::cctl
@@ -130,8 +212,21 @@ void configure_simulation(simulation_config config,
         throw std::logic_error("CCTL simulation was configured twice");
     if (config.outputs.empty())
         config.output_path = parsed_options.output_path;
-    config.launch_viewer = parsed_options.launch_viewer;
+    if (parsed_options.duration_overridden)
+    {
+        config.continuous = parsed_options.target_duration_s == 0.0;
+        config.total_steps = config.continuous
+                                 ? 0U
+                                 : static_cast<std::size_t>(
+                                       parsed_options.target_duration_s /
+                                           config.plant_step_s +
+                                       0.5);
+    }
+    config.launch_viewer = parsed_options.launch_viewer &&
+                           !parsed_options.supervised;
     config.continuous = parsed_options.continuous;
+    config.supervised = parsed_options.supervised;
+    config.wait_for_start = parsed_options.wait_for_start;
     config.request_realtime_priority =
         parsed_options.request_realtime_priority;
     runtime.initialize(std::move(config), std::move(callbacks));
@@ -187,6 +282,13 @@ void gmp_csp_post_process(void)
             throw std::logic_error(
                 "csp_cctl_project_configure() did not configure a CCTL "
                 "simulation");
+        if (parsed_options.delegate_to_viewer)
+        {
+            delegate_process_to_viewer();
+            process_result = EXIT_SUCCESS;
+            exit_requested = true;
+            return;
+        }
         runtime.start();
         runtime_started = true;
     }
@@ -206,7 +308,7 @@ void gmp_csp_loop(void)
 {
     try
     {
-        if (exit_requested && !lifecycle_failure.empty())
+        if (exit_requested)
             return;
         if (parsed_options.print_build_info)
         {
@@ -249,14 +351,30 @@ void gmp_csp_exit(void)
     {
         runtime.finalize();
         runtime_started = false;
-        runtime.print_summary(std::cout);
-        runtime.print_project_summary(std::cout);
-        if (runtime.config().outputs.empty())
-            std::cout << "  CSV: " << runtime.config().output_path << '\n';
+        if (parsed_options.supervised)
+        {
+            const auto &summary = runtime.summary();
+            const nlohmann::json message = {
+                {"type", "summary"}, {"success", summary.success},
+                {"message", summary.message},
+                {"completed_steps", summary.completed_steps},
+                {"target_steps", runtime.target_steps()},
+                {"simulated_time_s", summary.simulated_time_s},
+                {"wall_time_s", summary.wall_time_s},
+                {"dropped", summary.dropped_records}};
+            std::cout << message.dump() << std::endl;
+        }
         else
-            for (const auto &output : runtime.config().outputs)
-                std::cout << "  CSV[" << output.name << "]: " << output.path
-                          << '\n';
+        {
+            runtime.print_summary(std::cout);
+            runtime.print_project_summary(std::cout);
+            if (runtime.config().outputs.empty())
+                std::cout << "  CSV: " << runtime.config().output_path << '\n';
+            else
+                for (const auto &output : runtime.config().outputs)
+                    std::cout << "  CSV[" << output.name << "]: " << output.path
+                              << '\n';
+        }
         process_result = runtime.summary().success ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
@@ -266,10 +384,13 @@ void gmp_csp_exit(void)
         process_result = EXIT_FAILURE;
     }
 
-    if (simulation_configured)
+    if (simulation_configured && !parsed_options.supervised &&
+        !parsed_options.delegate_to_viewer)
         runtime.pause_if_requested(parsed_options.suppress_pause);
 #if defined(_WIN32)
-    else if (!parsed_options.print_build_info && CCTL_SIM_PAUSE_ON_EXIT != 0 &&
+    else if (!parsed_options.print_build_info &&
+             !parsed_options.delegate_to_viewer &&
+             CCTL_SIM_PAUSE_ON_EXIT != 0 &&
              !parsed_options.suppress_pause)
         std::system("@pause");
 #endif
@@ -294,9 +415,10 @@ ec_gt gmp_hal_uart_send(GMP_BASE_PRINT_DEFAULT_HANDLE_TYPE,
     if (buffer == nullptr || buffer->buf == nullptr || buffer->length == 0U)
         return GMP_EC_OK;
 
+    FILE *stream = parsed_options.supervised ? stderr : stdout;
     const std::size_t written =
-        std::fwrite(buffer->buf, 1U, buffer->length, stdout);
-    std::fflush(stdout);
+        std::fwrite(buffer->buf, 1U, buffer->length, stream);
+    std::fflush(stream);
     return written == buffer->length ? GMP_EC_OK : GMP_EC_GENERAL_ERROR;
 }
 

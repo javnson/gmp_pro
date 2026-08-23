@@ -25,6 +25,7 @@ from result_data import (
     load_numeric_columns,
     minmax_decimate,
 )
+from simulation_manager import SimulationProcessManager
 
 
 LIVE_REFRESH_INTERVAL_MS = 50
@@ -235,7 +236,7 @@ class ResultViewer(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("GMP CCTL Result Viewer")
+        self.setWindowTitle("GMP CCTL Simulation Viewer Manager")
         self.resize(1450, 900)
         self.result: ResultFile | None = None
         self.results: list[ResultFile] = []
@@ -255,8 +256,15 @@ class ResultViewer(QtWidgets.QMainWindow):
         self.interaction_mode = "pan"
         self.next_plot_number = 1
         self.pool = QtCore.QThreadPool.globalInstance()
+        self.simulation = SimulationProcessManager(self)
+        self.close_after_simulation = False
         self._build_ui()
         self._build_toolbar()
+        self.simulation.message_received.connect(self._simulation_message)
+        self.simulation.log_received.connect(self._simulation_log)
+        self.simulation.state_changed.connect(self._simulation_state_changed)
+        self.simulation.outputs_ready.connect(self._simulation_outputs_ready)
+        self.simulation.process_finished.connect(self._simulation_finished)
         self.live_timer = QtCore.QTimer(self)
         self.live_timer.setInterval(LIVE_REFRESH_INTERVAL_MS)
         self.live_timer.timeout.connect(self.poll_live_file)
@@ -354,6 +362,66 @@ class ResultViewer(QtWidgets.QMainWindow):
         root.addWidget(self.plot_splitter)
         root.setSizes([300, 1150])
         self.setCentralWidget(root)
+        self._build_simulation_dock()
+
+    def _build_simulation_dock(self) -> None:
+        dock = QtWidgets.QDockWidget("Simulation", self)
+        dock.setObjectName("cctlSimulationDock")
+        content = QtWidgets.QWidget()
+        layout = QtWidgets.QGridLayout(content)
+        self.simulator_path = QtWidgets.QLineEdit()
+        browse_simulator = QtWidgets.QPushButton("Browse…")
+        browse_simulator.clicked.connect(self.browse_simulator)
+        self.simulation_output_path = QtWidgets.QLineEdit(
+            str(Path.cwd() / "cctl_simulation.csv")
+        )
+        browse_output = QtWidgets.QPushButton("Output…")
+        browse_output.clicked.connect(self.browse_simulation_output)
+        self.simulation_duration = QtWidgets.QDoubleSpinBox()
+        self.simulation_duration.setDecimals(6)
+        self.simulation_duration.setRange(0.0, 1_000_000.0)
+        self.simulation_duration.setValue(4.0)
+        self.simulation_duration.setSuffix(" s")
+        self.simulation_duration.setSpecialValueText("Unlimited")
+        self.simulation_duration.editingFinished.connect(
+            self.update_simulation_duration
+        )
+        self.simulation_start = QtWidgets.QPushButton("Start")
+        self.simulation_start.clicked.connect(self.start_managed_simulation)
+        self.simulation_pause = QtWidgets.QPushButton("Pause")
+        self.simulation_pause.clicked.connect(self.simulation.pause)
+        self.simulation_resume = QtWidgets.QPushButton("Resume")
+        self.simulation_resume.clicked.connect(self.simulation.resume)
+        self.simulation_stop = QtWidgets.QPushButton("Stop")
+        self.simulation_stop.clicked.connect(self.simulation.stop)
+        self.simulation_progress = QtWidgets.QProgressBar()
+        self.simulation_progress.setRange(0, 1000)
+        self.simulation_progress.setValue(0)
+        self.simulation_progress.setFormat("Idle")
+        self.simulation_metrics = QtWidgets.QLabel("state=idle")
+        self.simulation_log = QtWidgets.QPlainTextEdit()
+        self.simulation_log.setReadOnly(True)
+        self.simulation_log.setMaximumBlockCount(5000)
+        self.simulation_log.setMinimumHeight(100)
+        layout.addWidget(QtWidgets.QLabel("Simulator"), 0, 0)
+        layout.addWidget(self.simulator_path, 0, 1, 1, 4)
+        layout.addWidget(browse_simulator, 0, 5)
+        layout.addWidget(QtWidgets.QLabel("Output base"), 1, 0)
+        layout.addWidget(self.simulation_output_path, 1, 1, 1, 4)
+        layout.addWidget(browse_output, 1, 5)
+        layout.addWidget(QtWidgets.QLabel("Target"), 2, 0)
+        layout.addWidget(self.simulation_duration, 2, 1)
+        layout.addWidget(self.simulation_start, 2, 2)
+        layout.addWidget(self.simulation_pause, 2, 3)
+        layout.addWidget(self.simulation_resume, 2, 4)
+        layout.addWidget(self.simulation_stop, 2, 5)
+        layout.addWidget(self.simulation_progress, 3, 0, 1, 6)
+        layout.addWidget(self.simulation_metrics, 4, 0, 1, 6)
+        layout.addWidget(self.simulation_log, 5, 0, 1, 6)
+        dock.setWidget(content)
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, dock)
+        self.simulation_dock = dock
+        self._simulation_state_changed("idle")
 
     def _build_toolbar(self) -> None:
         toolbar = self.addToolBar("Plot interaction")
@@ -384,6 +452,143 @@ class ResultViewer(QtWidgets.QMainWindow):
         fit_all.triggered.connect(
             lambda: [panel.plot.autoRange() for panel in self.panels]
         )
+
+    def browse_simulator(self) -> None:
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Select CCTL simulator", "", "Executables (*.exe);;All files (*)"
+        )
+        if path:
+            self.simulator_path.setText(path)
+            if not self.simulation_output_path.isModified():
+                self.simulation_output_path.setText(
+                    str(Path(path).resolve().parent / "cctl_simulation.csv")
+                )
+
+    def browse_simulation_output(self) -> None:
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Select output base", self.simulation_output_path.text(),
+            "CSV files (*.csv);;All files (*)",
+        )
+        if path:
+            self.simulation_output_path.setText(path)
+
+    def start_managed_simulation(self) -> None:
+        if self.simulation.is_active():
+            if self.simulation.state == "ready":
+                self.simulation.start_simulation()
+            elif self.simulation.state == "paused":
+                self.simulation.resume()
+            return
+        try:
+            self.simulation_log.clear()
+            self.simulation.launch(
+                Path(self.simulator_path.text()),
+                Path(self.simulation_output_path.text()),
+                self.simulation_duration.value(),
+                auto_start=True,
+            )
+        except Exception as error:
+            QtWidgets.QMessageBox.critical(
+                self, "Cannot start simulation", str(error)
+            )
+
+    def update_simulation_duration(self) -> None:
+        if self.simulation.is_active():
+            self.simulation.set_duration(self.simulation_duration.value())
+
+    @QtCore.pyqtSlot(dict)
+    def _simulation_message(self, message: dict) -> None:
+        if message.get("type") != "status":
+            if message.get("type") == "command" and not message.get("accepted", False):
+                self._simulation_log(message.get("message", "Command rejected"))
+            return
+        completed = int(message.get("completed_steps", 0))
+        target = int(message.get("target_steps", 0))
+        simulated = float(message.get("simulated_time_s", 0.0))
+        target_time = float(message.get("target_time_s", 0.0))
+        elapsed = float(message.get("elapsed_s", 0.0))
+        eta = float(message.get("eta_s", 0.0))
+        rate = float(message.get("rate_steps_s", 0.0)) / 1.0e6
+        queued = int(message.get("queued", 0))
+        capacity = int(message.get("capacity", 0))
+        dropped = int(message.get("dropped", 0))
+        if target:
+            self.simulation_progress.setRange(0, 1000)
+            self.simulation_progress.setValue(
+                min(1000, int(completed * 1000 / target))
+            )
+            self.simulation_progress.setFormat(
+                f"{simulated:.3f}/{target_time:.3f} s  %p%"
+            )
+        else:
+            self.simulation_progress.setRange(0, 0)
+            self.simulation_progress.setFormat(f"{simulated:.3f} s")
+        self.simulation_metrics.setText(
+            f"state={message.get('state', '?')}  elapsed={elapsed:.1f}s  "
+            f"ETA={eta:.1f}s  rate={rate:.2f}Mstep/s  "
+            f"queue={queued}/{capacity}  dropped={dropped}"
+        )
+
+    @QtCore.pyqtSlot(str)
+    def _simulation_log(self, text: str) -> None:
+        if text:
+            self.simulation_log.appendPlainText(text)
+
+    @QtCore.pyqtSlot(str)
+    def _simulation_state_changed(self, state: str) -> None:
+        active = self.simulation.is_active()
+        self.simulation_start.setEnabled(not active or state in {"ready", "paused"})
+        self.simulation_pause.setEnabled(active and state == "running")
+        self.simulation_resume.setEnabled(active and state == "paused")
+        self.simulation_stop.setEnabled(active and state not in {"stopping", "completed"})
+        if state in {"idle", "starting", "ready", "paused", "stopping"}:
+            self.simulation_progress.setFormat(state.capitalize())
+        self.simulation_metrics.setText(f"state={state}")
+
+    @QtCore.pyqtSlot(list)
+    def _simulation_outputs_ready(self, paths: list[str]) -> None:
+        self._attach_simulation_outputs(tuple(Path(path) for path in paths), 0)
+
+    def _attach_simulation_outputs(
+        self, paths: tuple[Path, ...], attempt: int
+    ) -> None:
+        if all(path.exists() and path.stat().st_size > 0 for path in paths):
+            self.open_files(list(paths))
+            self.dynamic_refresh.setChecked(True)
+            return
+        if attempt < 100 and self.simulation.is_active():
+            QtCore.QTimer.singleShot(
+                50,
+                lambda selected=paths, retry=attempt + 1:
+                    self._attach_simulation_outputs(selected, retry),
+            )
+        else:
+            self._simulation_log("Output files were not ready for live viewing")
+
+    @QtCore.pyqtSlot(int, int)
+    def _simulation_finished(self, exit_code: int, _exit_status: int) -> None:
+        self._simulation_log(f"Simulator exited with code {exit_code}")
+        if self.close_after_simulation:
+            self.close_after_simulation = False
+            self.close()
+
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        if self.simulation.is_active():
+            answer = QtWidgets.QMessageBox.question(
+                self,
+                "Simulation is running",
+                "Stop the simulation and close the Viewer Manager?",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No,
+            )
+            if answer != QtWidgets.QMessageBox.Yes:
+                event.ignore()
+                return
+            self.close_after_simulation = True
+            self.simulation.stop()
+            event.ignore()
+            return
+        event.accept()
 
     def open_dialog(self) -> None:
         paths, _ = QtWidgets.QFileDialog.getOpenFileNames(
@@ -835,10 +1040,37 @@ def main(argv: list[str] | None = None) -> int:
         "--rolling-window", type=float, metavar="SECONDS",
         help="pin the horizontal axis to a trailing time window",
     )
+    parser.add_argument(
+        "--simulator", type=Path, metavar="EXECUTABLE",
+        help="preselect a CCTL simulator for managed execution",
+    )
+    parser.add_argument(
+        "--duration", type=float, metavar="SECONDS", default=4.0,
+        help="initial managed simulation target; zero means unlimited",
+    )
+    parser.add_argument(
+        "--output", type=Path, metavar="CSV",
+        help="managed simulation output base path",
+    )
+    parser.add_argument(
+        "--autostart", action="store_true",
+        help="start the preselected simulator after the window is shown",
+    )
     args = parser.parse_args(argv)
+    if args.duration < 0.0:
+        parser.error("--duration must be nonnegative")
+    if args.autostart and args.simulator is None:
+        parser.error("--autostart requires --simulator")
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv[:1])
     pg.setConfigOptions(antialias=False, background="w", foreground="k")
     viewer = ResultViewer()
+    viewer.simulation_duration.setValue(args.duration)
+    if args.simulator is not None:
+        viewer.simulator_path.setText(str(args.simulator))
+        default_output = args.simulator.resolve().parent / "cctl_simulation.csv"
+        viewer.simulation_output_path.setText(str(args.output or default_output))
+    elif args.output is not None:
+        viewer.simulation_output_path.setText(str(args.output))
     if args.files:
         viewer.open_files([Path(path) for path in args.files])
     if args.live:
@@ -849,6 +1081,8 @@ def main(argv: list[str] | None = None) -> int:
         viewer.rolling_window_seconds.setValue(args.rolling_window)
         viewer.rolling_x.setChecked(True)
     viewer.show()
+    if args.autostart:
+        QtCore.QTimer.singleShot(0, viewer.start_managed_simulation)
     return app.exec_()
 
 

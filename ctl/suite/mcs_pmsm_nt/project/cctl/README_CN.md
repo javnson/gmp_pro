@@ -64,7 +64,11 @@ SDPE 形参；配置对象是只读值对象。构造函数只创建一次配置
   Eigen 矩阵池；CMake 会把归档复制到可执行文件目录。
   将环境变量 `MATRIX_BACKEND` 显式设为 `fixed` 或 `all` 时，仍可生成
   `hw/generated/fixed/pmsmcircuit.hpp`。Eigen 由 GMP 安装程序维护的 vcpkg
-  环境提供，不引用已弃用的 `third_party` 副本。
+  环境提供，不引用已弃用的 `third_party` 副本。工程 `vcpkg.json` 同时声明
+  `eigen3` 和 `nlohmann-json`；Visual Studio 文件夹模式选择
+  `windows-msvc-release` 或 `windows-msvc-debug` Preset 后，会经过 GMP 的
+  vcpkg 包装 toolchain。私有安装只读取安装阶段准备好的共享包，经典安装才由
+  系统 vcpkg 按 manifest 自动恢复。
 
 仿真使用 100 ns 电路/电机步长。主 ePWM 在每个 50 us（20 kHz）中心对齐载波
 的 CMPB 上数事件产生一次 ADC SOC；当前 SDPE 值为 250 TBCLK，testbench 会
@@ -135,6 +139,12 @@ Windows 下由 SDPE 的 `CCTL_SIM_REALTIME_PRIORITY` 决定是否在仿真期间
 测试使用 `--no-pause`。也可用 `--output <文件>` 覆盖 CSV 路径。传入
 `--profile` 会稀疏采样外设、主电路、电机和维护逻辑的热路径耗时，并统计每次
 控制 ISR 的平均耗时。
+
+无参数启动 `mcs_pmsm_nt_cctl.exe` 是新的交互入口：CCTL CSP 校验
+`GMP_PRO_LOCATION`，使用 GMP 私有 Python 打开 Simulation Viewer Manager，
+启动器实例随后退出，再由 Viewer 通过 JSON 受管协议重启仿真器。需要原有有限
+时长命令行运行时传入 `--headless`。工程 CMake 从与 Eigen 相同的 GMP vcpkg
+安装中链接 CSP 所需的 `nlohmann_json::nlohmann_json`。
 
 ## 矩阵后端选择
 

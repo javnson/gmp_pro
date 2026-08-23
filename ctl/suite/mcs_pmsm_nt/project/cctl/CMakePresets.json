@@ -18,6 +18,7 @@
       },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "$env{GMP_PRO_LOCATION}/tools/gmp_installer/gmp_vcpkg_toolchain.cmake",
         "CCTL_BUILD_FIXED_BACKEND": "OFF"
       },
       "condition": {
@@ -38,6 +39,7 @@
       },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "$env{GMP_PRO_LOCATION}/tools/gmp_installer/gmp_vcpkg_toolchain.cmake",
         "CCTL_BUILD_FIXED_BACKEND": "OFF"
       },
       "condition": {

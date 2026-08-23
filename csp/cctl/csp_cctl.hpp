@@ -143,6 +143,11 @@ struct command_line_options
     bool print_build_info{};
     bool launch_viewer{};
     bool continuous{};
+    bool supervised{};
+    bool wait_for_start{};
+    bool duration_overridden{};
+    bool delegate_to_viewer{};
+    double target_duration_s{};
     std::string output_path;
 };
 
@@ -204,6 +209,10 @@ struct simulation_config
     bool launch_viewer{};
     /** Ignore total_steps and run until the console receives q. */
     bool continuous{};
+    /** Publish machine-readable progress and accept commands over stdio. */
+    bool supervised{};
+    /** Remain ready until a supervised START command is received. */
+    bool wait_for_start{};
 };
 
 /** @brief Per-file output statistics for a multi-rate simulation. */
@@ -281,6 +290,8 @@ class simulation_runtime
 
     /** @return Number of numerical steps completed by the simulation thread. */
     std::size_t completed_steps() const noexcept;
+    /** @return Current finite target, or zero for an unlimited run. */
+    std::size_t target_steps() const noexcept;
     /** @return Records currently queued or staged for the file worker. */
     std::size_t buffered_records() const noexcept;
     /** @return Validated configuration of the current run. */

@@ -239,6 +239,15 @@ installation completion marker. It
 uses the saved proxy to obtain vcpkg's auxiliary CMake/7zip/7zr tools and then
 restores every discovered suite manifest.
 
+CMake and Visual Studio folder projects should set `CMAKE_TOOLCHAIN_FILE` to
+`%GMP_PRO_LOCATION%/tools/gmp_installer/gmp_vcpkg_toolchain.cmake`. The wrapper
+uses the private completion marker as the ownership boundary. In private mode
+it disables project manifest restoration and consumes only the aggregate
+package tree already prepared under `bin/vcpkg_installed`; in system mode it
+resolves `VCPKG_ROOT` or `vcpkg.exe` and retains normal manifest restoration.
+Consequently, launching Visual Studio from the desktop cannot silently mix a
+user-wide vcpkg installation into a completed GMP private environment.
+
 Scripts that need to activate the environment in an existing command prompt can
 use:
 
@@ -455,7 +464,8 @@ packages absent from the current manifest and can silently prune another
 project's dependency. GMP's shared `Directory.Build.props` files therefore
 redirect private-environment MSBuild restores to the generated aggregate
 manifest. CMake commands that use the same shared installed directory must set
-`VCPKG_MANIFEST_DIR=bin/cache/vcpkg-manifest` for the same reason.
+the GMP vcpkg wrapper as their toolchain; it disables manifest mode after the
+private aggregate dependency set has been installed.
 
 `ctl/suite/Directory.Build.props` and `Directory.Build.targets` provide the
 shared MSBuild rule. When a project directory contains `vcpkg.json`, they enable

@@ -61,8 +61,10 @@ gmp_csp_startup
 ```
 
 `gmp_csp_startup()` 统一解析 `--no-pause`、`--realtime-priority`、
-`--normal-priority`、`--no-realtime-priority`、`--profile`、`--build-info`、`--viewer`、`--continuous`
-和 `--output <路径>`。标准 `init()` 和 `mainloop()` 始终属于用户的
+`--normal-priority`、`--no-realtime-priority`、`--profile`、`--build-info`、
+`--viewer`、`--continuous`、`--duration <秒>`、`--supervised`、
+`--wait-for-start`、`--headless` 和 `--output <路径>`。标准 `init()` 和
+`mainloop()` 始终属于用户的
 `user_main.c`，CCTL 工程不得覆盖。工程应实现固定 C 链接钩子
 `csp_cctl_project_configure()`，CSP 在用户 `init()` 完成后的
 `gmp_csp_post_process()` 中调用它；该钩子通过 `command_line()` 读取结果，
@@ -71,6 +73,19 @@ gmp_csp_startup
 完整仿真周期之后，
 核心框架通过 `gmp_csp_should_exit()` 判断是否结束。`gmp_csp_exit()` 负责校验、
 汇合线程、打印摘要、恢复优先级和按配置暂停。
+
+完全不带命令行参数时，工程只初始化到能够确定默认时长和输出文件的位置，随后
+把进程控制权交给 `%GMP_PRO_LOCATION%` 下的 Viewer Manager。第一个进程不执行
+数值步进便退出；Viewer 使用 `--supervised --wait-for-start --no-pause` 重启同一
+可执行文件，因此不会递归启动 Viewer。`--headless` 可显式保留传统直接执行。
+
+受管模式下 stdout 专用于逐行 JSON，GMP Logo 和用户日志改发 stderr。协议版本
+1 输出 `ready`、周期 `status`、命令确认和最终 `summary`，接受 `start`、
+`pause`、`resume`、`stop` 和 `set_duration`。暂停只在完整电路步边界生效，时长
+为 0 表示无限运行。C++ 端统一用 `nlohmann::json` 构建和解析消息，因此选择该
+CSP 的工程必须使用 GMP vcpkg 工具链，执行
+`find_package(nlohmann_json CONFIG REQUIRED)` 并链接
+`nlohmann_json::nlohmann_json`。
 
 `--continuous` 会忽略 `total_steps`，持续推进仿真，直到控制台输入 `q` 或 `Q`。
 按键由控制台服务线程每 25 ms 非阻塞检测，不进入数值热路径。退出仍走标准

@@ -15,3 +15,10 @@
 通用 `simulation_system` 将工程标准化为芯片、外设和电路三个载体。芯片载体可用
 `compute_budget_scheduler` 按独立频率分配用户/后台代码算力；ADC 控制计算则仅由
 外设载体的转换完成中断触发，不与用户代码频率绑定。
+
+可执行文件在不带参数直接启动时，会把交互控制权交给 GMP CCTL Simulation
+Viewer Manager：CSP 先校验 `GMP_PRO_LOCATION` 并启动仓库中的 Viewer 脚本，
+随后退出；Viewer 再以受管模式重启同一个仿真器。需要原有直接运行行为时使用
+`--headless`。受管命令与状态采用逐行 JSON，C++ 端统一使用 `nlohmann_json`
+构造和解析；选择该 CSP 的 CMake 目标应从 GMP vcpkg 环境链接
+`nlohmann_json::nlohmann_json`。

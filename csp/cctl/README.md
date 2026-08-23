@@ -28,3 +28,11 @@ The common `simulation_system` standardizes projects into chip, peripheral, and
 circuit domains. A chip model can use `compute_budget_scheduler` to grant
 user/background work at an independent frequency, while ADC control calculation
 is triggered only by the peripheral model's conversion-complete interrupt.
+
+An executable started with no arguments delegates interactive ownership to the
+GMP CCTL Simulation Viewer Manager. The CSP validates `GMP_PRO_LOCATION`, opens
+the repository launcher, and exits; the Viewer then relaunches the executable in
+supervised mode. Use `--headless` for the traditional direct run. Supervised
+commands and status are newline-delimited JSON built and parsed with
+`nlohmann_json`; CMake consumers of this CSP must link
+`nlohmann_json::nlohmann_json` from GMP's vcpkg environment.

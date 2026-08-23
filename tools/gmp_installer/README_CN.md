@@ -116,6 +116,13 @@ Windows 私有环境会先把所有工程的 vcpkg 依赖合并为一个总 mani
 执行一次恢复。不得逐个 manifest 依次恢复到同一个目录，否则 vcpkg 会删除当前
 manifest 未声明、但其他工程仍然需要的软件包。
 
+CMake/Visual Studio 文件夹工程应把 `CMAKE_TOOLCHAIN_FILE` 指向
+`%GMP_PRO_LOCATION%\tools\gmp_installer\gmp_vcpkg_toolchain.cmake`。该包装层会
+依据 `bin\gmp_virtual_env_installed.flag` 选择模式：私有环境关闭工程 manifest
+恢复并只读取安装器已经准备好的 `bin\vcpkg_installed` 共享包；经典环境则定位
+系统 `VCPKG_ROOT`/`vcpkg.exe`，保留 manifest 自动下载行为。这样从桌面直接
+启动 Visual Studio 也不会让私有工程误用用户自己的 vcpkg。
+
 经典环境在后续安装 Visual Studio C++ 后，重新运行 `install_gmp.bat` 即可。
 
 ## 6. 自动化调用

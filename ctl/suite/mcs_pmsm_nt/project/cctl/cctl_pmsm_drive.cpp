@@ -584,7 +584,7 @@ void csp_cctl_project_configure(void)
         return;
 
     configured_topology = std::make_unique<pmsm_drive_topology>(
-        options.profile_enabled, options.continuous);
+        options.profile_enabled, options.continuous || options.supervised);
     configured_system = std::make_unique<gmp::csp::cctl::simulation_system>(
         *configured_topology, *configured_topology, *configured_topology);
 

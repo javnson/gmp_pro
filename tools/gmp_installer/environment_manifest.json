@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "environment_version": "1.4.0",
+  "environment_version": "1.4.1",
   "python": {
     "version": "3.12.10",
     "requirements": "requirements-gmp.txt",
@@ -64,6 +64,7 @@
     "triplet": "x64-windows",
     "projects": [
       "ctl/unit_test",
+      "ctl/suite/mcs_pmsm_nt/project/cctl",
       "slib/simulink_lib_src",
       "tools/cctl_studio/mna_solver"
     ]

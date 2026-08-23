@@ -56,7 +56,7 @@ if not exist "%VCPKG_INSTALLED_DIR%\x64-windows\include\eigen3\Eigen\Dense" (
     goto :failed_with_result
 )
 echo [6/8] Configuring with GMP's private vcpkg Eigen...
-cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%CMAKE_TOOLCHAIN_FILE%" -DVCPKG_INSTALLED_DIR="%VCPKG_INSTALLED_DIR%" -DVCPKG_MANIFEST_MODE=OFF -DCCTL_BUILD_FIXED_BACKEND=%CMAKE_FIXED_OPTION%
+cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%GMP_PRO_LOCATION%\tools\gmp_installer\gmp_vcpkg_toolchain.cmake" -DCCTL_BUILD_FIXED_BACKEND=%CMAKE_FIXED_OPTION%
 if errorlevel 1 goto :failed
 goto :build
 
@@ -70,7 +70,7 @@ if errorlevel 1 (
 for /f "delims=" %%I in ('where vcpkg.exe') do if not defined SYSTEM_VCPKG_EXE set "SYSTEM_VCPKG_EXE=%%I"
 for %%I in ("%SYSTEM_VCPKG_EXE%") do set "SYSTEM_VCPKG_ROOT=%%~dpI"
 echo [6/8] Configuring with system vcpkg Eigen...
-cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%SYSTEM_VCPKG_ROOT%scripts\buildsystems\vcpkg.cmake" -DCCTL_BUILD_FIXED_BACKEND=%CMAKE_FIXED_OPTION%
+cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%GMP_PRO_LOCATION%\tools\gmp_installer\gmp_vcpkg_toolchain.cmake" -DCCTL_BUILD_FIXED_BACKEND=%CMAKE_FIXED_OPTION%
 if errorlevel 1 goto :failed
 
 :build

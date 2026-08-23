@@ -25,6 +25,7 @@ endif()
 
 find_package(Threads REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 option(CCTL_BUILD_FIXED_BACKEND
        "Build the optional fixed-matrix main-circuit backend" OFF)
@@ -50,7 +51,8 @@ function(add_cctl_pmsm_simulator target_name backend_name)
     set(GMP_CMAKE_TARGET ${target_name})
     include("${GMP_CMAKE_CONFIG}")
 
-    target_link_libraries(${target_name} PRIVATE Threads::Threads)
+    target_link_libraries(${target_name} PRIVATE
+        Threads::Threads nlohmann_json::nlohmann_json)
     target_compile_features(${target_name} PRIVATE cxx_std_17)
     target_compile_definitions(${target_name} PRIVATE
         CCTL_SIM_MATRIX_BACKEND_NAME="${backend_name}"

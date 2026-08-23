@@ -16,6 +16,7 @@ sys.path.insert(0, str(VIEWER_DIR))
 
 from PyQt5 import QtCore, QtTest, QtWidgets  # noqa: E402
 from result_viewer import LIVE_REFRESH_INTERVAL_MS, ResultViewer  # noqa: E402
+from simulation_manager import SimulationProcessManager  # noqa: E402
 
 
 class ResultViewerTests(unittest.TestCase):
@@ -58,6 +59,30 @@ class ResultViewerTests(unittest.TestCase):
             0,
             completed.stdout + completed.stderr,
         )
+
+    def test_supervisor_commands_are_compact_json(self) -> None:
+        payload = SimulationProcessManager.encode_command(
+            {"command": "set_duration", "seconds": 2.5}
+        )
+        self.assertEqual(
+            payload,
+            b'{"command":"set_duration","seconds":2.5}\n',
+        )
+
+    def test_supervisor_ready_message_publishes_outputs(self) -> None:
+        manager = SimulationProcessManager()
+        states: list[str] = []
+        outputs: list[list[str]] = []
+        manager.state_changed.connect(states.append)
+        manager.outputs_ready.connect(outputs.append)
+        manager._dispatch_message({
+            "type": "ready",
+            "protocol": 1,
+            "state": "ready",
+            "outputs": [{"name": "circuit", "path": "drive_circuit.csv"}],
+        })
+        self.assertEqual(states, ["ready"])
+        self.assertEqual(outputs, [["drive_circuit.csv"]])
 
     def test_dynamic_mode_refreshes_at_20_hz_and_defers_partial_row(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -5,10 +5,13 @@
 
 #include <csp_cctl.hpp>
 #include <cctl/dsa/spsc_record_ring.hpp>
+#include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cctype>
+#include <condition_variable>
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
@@ -47,6 +50,7 @@ namespace gmp::csp::cctl
 namespace
 {
 using clock_type = std::chrono::steady_clock;
+using json = nlohmann::json;
 
 bool enable_in_place_console_refresh() noexcept
 {
@@ -100,6 +104,50 @@ bool quit_key_pressed() noexcept
     return ::read(STDIN_FILENO, &key, 1) == 1 &&
            (key == 'q' || key == 'Q');
 #endif
+}
+
+bool read_supervisor_input(std::string &pending,
+                           std::vector<std::string> &commands) noexcept
+{
+    char buffer[1024];
+    std::size_t count = 0U;
+#if defined(_WIN32)
+    const HANDLE input = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD available = 0U;
+    if (input == nullptr || input == INVALID_HANDLE_VALUE ||
+        !PeekNamedPipe(input, nullptr, 0U, nullptr, &available, nullptr) ||
+        available == 0U)
+        return false;
+    DWORD received = 0U;
+    if (!ReadFile(input, buffer,
+                  static_cast<DWORD>(std::min<std::size_t>(sizeof(buffer), available)),
+                  &received, nullptr))
+        return false;
+    count = received;
+#else
+    fd_set read_set;
+    FD_ZERO(&read_set);
+    FD_SET(STDIN_FILENO, &read_set);
+    timeval timeout{};
+    if (::select(STDIN_FILENO + 1, &read_set, nullptr, nullptr, &timeout) <= 0)
+        return false;
+    const ssize_t received = ::read(STDIN_FILENO, buffer, sizeof(buffer));
+    if (received <= 0)
+        return false;
+    count = static_cast<std::size_t>(received);
+#endif
+    pending.append(buffer, count);
+    std::size_t newline = 0U;
+    while ((newline = pending.find('\n')) != std::string::npos)
+    {
+        std::string command = pending.substr(0U, newline);
+        pending.erase(0U, newline + 1U);
+        if (!command.empty() && command.back() == '\r')
+            command.pop_back();
+        if (!command.empty())
+            commands.push_back(std::move(command));
+    }
+    return !commands.empty();
 }
 } // namespace
 
@@ -245,11 +293,15 @@ class simulation_runtime::implementation
         summary_.total_steps = config_.total_steps;
         summary_.continuous = config_.continuous;
         completed_steps_.store(0U, std::memory_order_relaxed);
+        target_steps_.store(config_.continuous ? 0U : config_.total_steps,
+                            std::memory_order_relaxed);
         output_worker_busy_ns_ = 0U;
         stop_requested_.store(false, std::memory_order_relaxed);
         simulation_done_.store(false, std::memory_order_relaxed);
         failed_.store(false, std::memory_order_relaxed);
         user_stop_requested_.store(false, std::memory_order_relaxed);
+        paused_.store(config_.supervised && config_.wait_for_start,
+                      std::memory_order_relaxed);
         original_priority_class_ = 0U;
         last_progress_time_ = {};
         last_progress_steps_ = 0U;
@@ -264,6 +316,7 @@ class simulation_runtime::implementation
     const simulation_config &config() const;
     const simulation_summary &summary() const;
     std::size_t completed_steps() const noexcept;
+    std::size_t target_steps() const noexcept;
     std::size_t buffered_records() const noexcept;
 
     void start()
@@ -299,8 +352,10 @@ class simulation_runtime::implementation
     {
         if (!running_)
             throw std::logic_error("start() must be called before step()");
+        wait_until_runnable();
         const std::size_t index = completed_steps_.load(std::memory_order_relaxed);
-        if ((!config_.continuous && index >= config_.total_steps) ||
+        const std::size_t target = target_steps_.load(std::memory_order_acquire);
+        if ((target != 0U && index >= target) ||
             stop_requested_.load(std::memory_order_acquire))
             return false;
         if (callbacks_.step)
@@ -310,28 +365,39 @@ class simulation_runtime::implementation
         else
             callbacks_.step_range(index, index + 1U, owner);
         completed_steps_.store(index + 1U, std::memory_order_release);
-        return config_.continuous
-                   ? !stop_requested_.load(std::memory_order_acquire)
-                   : index + 1U < config_.total_steps;
+        return !stop_requested_.load(std::memory_order_acquire) &&
+               (target == 0U || index + 1U < target);
     }
 
     bool step_range(simulation_runtime &owner)
     {
+        wait_until_runnable();
         const std::size_t begin =
             completed_steps_.load(std::memory_order_relaxed);
-        if ((!config_.continuous && begin >= config_.total_steps) ||
+        const std::size_t target = target_steps_.load(std::memory_order_acquire);
+        if ((target != 0U && begin >= target) ||
             stop_requested_.load(std::memory_order_acquire))
             return false;
         const std::size_t chunk =
             std::max<std::size_t>(config_.step_chunk_size, 1U);
-        const std::size_t end = config_.continuous
+        const std::size_t end = target == 0U
                                     ? begin + chunk
-                                    : std::min(config_.total_steps, begin + chunk);
+                                    : std::min(target, begin + chunk);
         callbacks_.step_range(begin, end, owner);
         completed_steps_.store(end, std::memory_order_release);
-        return config_.continuous
-                   ? !stop_requested_.load(std::memory_order_acquire)
-                   : end < config_.total_steps;
+        return !stop_requested_.load(std::memory_order_acquire) &&
+               (target == 0U || end < target);
+    }
+
+    void wait_until_runnable()
+    {
+        if (!paused_.load(std::memory_order_acquire))
+            return;
+        std::unique_lock<std::mutex> lock(control_mutex_);
+        control_condition_.wait(lock, [this] {
+            return !paused_.load(std::memory_order_acquire) ||
+                   stop_requested_.load(std::memory_order_acquire);
+        });
     }
 
     bool interface_transfer(const void *record, std::size_t record_size)
@@ -422,6 +488,7 @@ class simulation_runtime::implementation
 
         const double wall = std::chrono::duration<double>(clock_type::now() - start_time_).count();
         summary_.completed_steps = completed_steps_.load(std::memory_order_acquire);
+        summary_.total_steps = target_steps_.load(std::memory_order_acquire);
         summary_.outputs.clear();
         summary_.queued_records = summary_.written_records =
             summary_.dropped_records = summary_.peak_queued_records = 0U;
@@ -451,13 +518,14 @@ class simulation_runtime::implementation
         summary_.realtime_factor = wall > 0.0 ? summary_.simulated_time_s / wall : 0.0;
         summary_.stopped_by_user =
             user_stop_requested_.load(std::memory_order_acquire);
+        summary_.continuous = summary_.total_steps == 0U;
         summary_.success = !failed_.load(std::memory_order_acquire) &&
-                           (config_.continuous
-                                ? summary_.stopped_by_user
-                                : summary_.completed_steps == summary_.total_steps);
+                           (summary_.stopped_by_user ||
+                            (summary_.total_steps != 0U &&
+                             summary_.completed_steps >= summary_.total_steps));
         if (summary_.message.empty())
             summary_.message = summary_.stopped_by_user
-                                   ? "continuous simulation stopped by user"
+                                   ? "simulation stopped by user"
                                    : (summary_.success ? "simulation completed"
                                                        : "simulation stopped");
         running_ = false;
@@ -569,6 +637,11 @@ class simulation_runtime::implementation
 
     void console_worker() noexcept
     {
+        if (config_.supervised)
+        {
+            supervisor_worker();
+            return;
+        }
         const std::chrono::milliseconds interval(
             std::max<std::uint32_t>(config_.progress_interval_ms, 1U));
         interactive_console_ = enable_in_place_console_refresh();
@@ -611,6 +684,200 @@ class simulation_runtime::implementation
         }
         if (interactive_console_)
             std::cout << '\n';
+    }
+
+    const char *supervised_state() const noexcept
+    {
+        if (simulation_done_.load(std::memory_order_acquire))
+            return failed_.load(std::memory_order_acquire) ? "failed" : "stopping";
+        if (stop_requested_.load(std::memory_order_acquire))
+            return "stopping";
+        return paused_.load(std::memory_order_acquire) ?
+                   (completed_steps_.load(std::memory_order_acquire) == 0U
+                        ? "ready"
+                        : "paused")
+                                                     : "running";
+    }
+
+    void emit_supervisor_ready()
+    {
+        const std::size_t target = target_steps_.load(std::memory_order_acquire);
+        json outputs = json::array();
+        for (const auto &output : outputs_)
+            outputs.push_back({
+                {"name", output->config.name},
+                {"path", std::filesystem::absolute(output->config.path).string()}});
+        const json message = {
+            {"type", "ready"},
+            {"protocol", 1},
+            {"state", supervised_state()},
+            {"step_s", config_.plant_step_s},
+            {"target_steps", target},
+            {"target_time_s", static_cast<double>(target) * config_.plant_step_s},
+            {"outputs", std::move(outputs)}};
+        std::cout << message.dump() << std::endl;
+    }
+
+    void emit_supervisor_status(bool done)
+    {
+        const std::size_t completed = completed_steps_.load(std::memory_order_acquire);
+        const std::size_t target = target_steps_.load(std::memory_order_acquire);
+        const clock_type::time_point now = clock_type::now();
+        const double elapsed =
+            std::chrono::duration<double>(now - start_time_).count();
+        double step_rate = 0.0;
+        if (progress_rate_initialized_)
+        {
+            const double interval_s =
+                std::chrono::duration<double>(now - last_progress_time_).count();
+            if (interval_s > 0.0 && completed >= last_progress_steps_)
+                step_rate = static_cast<double>(completed - last_progress_steps_) /
+                            interval_s;
+        }
+        last_progress_time_ = now;
+        last_progress_steps_ = completed;
+        progress_rate_initialized_ = true;
+
+        std::size_t queued = 0U, capacity = 0U, staged = 0U, dropped = 0U;
+        for (const auto &output : outputs_)
+        {
+            queued += output->ring.size();
+            capacity += output->ring.capacity();
+            staged += output->staged.load(std::memory_order_relaxed);
+            dropped += output->dropped.load(std::memory_order_relaxed);
+        }
+        const double eta = target != 0U && completed != 0U && completed < target
+                               ? elapsed * static_cast<double>(target - completed) /
+                                     static_cast<double>(completed)
+                               : 0.0;
+        const json message = {
+            {"type", "status"}, {"state", supervised_state()},
+            {"done", done}, {"completed_steps", completed},
+            {"target_steps", target},
+            {"simulated_time_s", static_cast<double>(completed) * config_.plant_step_s},
+            {"target_time_s", static_cast<double>(target) * config_.plant_step_s},
+            {"elapsed_s", elapsed}, {"eta_s", eta},
+            {"rate_steps_s", step_rate}, {"queued", queued},
+            {"capacity", capacity}, {"staged", staged},
+            {"dropped", dropped}};
+        std::cout << message.dump() << std::endl;
+    }
+
+    void emit_command_result(const std::string &command, bool accepted,
+                             const std::string &message = {})
+    {
+        json result = {{"type", "command"}, {"command", command},
+                       {"accepted", accepted}};
+        if (!message.empty())
+            result["message"] = message;
+        std::cout << result.dump() << std::endl;
+    }
+
+    void process_supervisor_command(const std::string &line)
+    {
+        json request;
+        try
+        {
+            request = json::parse(line);
+        }
+        catch (const json::exception &error)
+        {
+            emit_command_result("", false,
+                                std::string("invalid JSON command: ") + error.what());
+            return;
+        }
+        if (!request.is_object() || !request.contains("command") ||
+            !request["command"].is_string())
+        {
+            emit_command_result("", false, "command must be a JSON string");
+            return;
+        }
+        std::string command = request["command"].get<std::string>();
+        std::transform(command.begin(), command.end(), command.begin(),
+                       [](unsigned char value) {
+                           return static_cast<char>(std::toupper(value));
+                       });
+        if (command == "START" || command == "RESUME")
+        {
+            paused_.store(false, std::memory_order_release);
+            control_condition_.notify_all();
+            emit_command_result(command, true);
+        }
+        else if (command == "PAUSE")
+        {
+            paused_.store(true, std::memory_order_release);
+            emit_command_result(command, true);
+        }
+        else if (command == "STOP")
+        {
+            user_stop_requested_.store(true, std::memory_order_release);
+            stop_requested_.store(true, std::memory_order_release);
+            paused_.store(false, std::memory_order_release);
+            control_condition_.notify_all();
+            emit_command_result(command, true);
+        }
+        else if (command == "SET_DURATION")
+        {
+            if (!request.contains("seconds") || !request["seconds"].is_number())
+            {
+                emit_command_result(command, false,
+                                    "seconds must be a JSON number");
+                return;
+            }
+            const double seconds = request["seconds"].get<double>();
+            if (!std::isfinite(seconds) || seconds < 0.0)
+            {
+                emit_command_result(command, false,
+                                    "duration must be finite and nonnegative");
+                return;
+            }
+            const std::size_t target = seconds == 0.0
+                                           ? 0U
+                                           : static_cast<std::size_t>(
+                                                 seconds / config_.plant_step_s + 0.5);
+            target_steps_.store(target, std::memory_order_release);
+            if (target != 0U &&
+                completed_steps_.load(std::memory_order_acquire) >= target)
+            {
+                paused_.store(false, std::memory_order_release);
+                control_condition_.notify_all();
+            }
+            emit_command_result(command, true);
+        }
+        else
+            emit_command_result(command, false, "unknown command");
+    }
+
+    void supervisor_worker() noexcept
+    {
+        try
+        {
+            std::string pending;
+            emit_supervisor_ready();
+            clock_type::time_point next_status = clock_type::now();
+            for (;;)
+            {
+                std::vector<std::string> commands;
+                read_supervisor_input(pending, commands);
+                for (const std::string &command : commands)
+                    process_supervisor_command(command);
+
+                const bool done = simulation_done_.load(std::memory_order_acquire);
+                const clock_type::time_point now = clock_type::now();
+                if (done || now >= next_status)
+                {
+                    emit_supervisor_status(done);
+                    next_status = now + std::chrono::milliseconds(100);
+                }
+                if (done)
+                    break;
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+        }
+        catch (...)
+        {
+            fail("unknown exception in the CCTL supervisor worker");
+        }
     }
 
     void print_progress(std::size_t completed, bool done)
@@ -800,6 +1067,8 @@ class simulation_runtime::implementation
         }
         failed_.store(true, std::memory_order_release);
         stop_requested_.store(true, std::memory_order_release);
+        paused_.store(false, std::memory_order_release);
+        control_condition_.notify_all();
     }
 
     simulation_config config_;
@@ -810,11 +1079,15 @@ class simulation_runtime::implementation
     std::thread console_thread_;
     clock_type::time_point start_time_{};
     std::atomic<std::size_t> completed_steps_{0U};
+    std::atomic<std::size_t> target_steps_{0U};
     std::uint64_t output_worker_busy_ns_{};
     std::atomic<bool> stop_requested_{false};
     std::atomic<bool> simulation_done_{false};
     std::atomic<bool> failed_{false};
     std::atomic<bool> user_stop_requested_{false};
+    std::atomic<bool> paused_{false};
+    std::mutex control_mutex_;
+    std::condition_variable control_condition_;
     std::mutex error_mutex_;
     std::uint32_t original_priority_class_{};
     clock_type::time_point last_progress_time_{};
@@ -884,6 +1157,11 @@ void simulation_runtime::fail(const std::string &message) noexcept
 std::size_t simulation_runtime::completed_steps() const noexcept
 {
     return impl_->completed_steps();
+}
+
+std::size_t simulation_runtime::target_steps() const noexcept
+{
+    return impl_->target_steps();
 }
 
 std::size_t simulation_runtime::buffered_records() const noexcept
@@ -969,6 +1247,11 @@ std::size_t simulation_runtime::implementation::buffered_records() const noexcep
 std::size_t simulation_runtime::implementation::completed_steps() const noexcept
 {
     return completed_steps_.load(std::memory_order_acquire);
+}
+
+std::size_t simulation_runtime::implementation::target_steps() const noexcept
+{
+    return target_steps_.load(std::memory_order_acquire);
 }
 
 } // namespace gmp::csp::cctl

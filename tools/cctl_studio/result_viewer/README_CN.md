@@ -1,4 +1,4 @@
-# GMP CCTL Result Viewer
+# GMP CCTL Simulation Viewer Manager
 
 此工具用于查看 CCTL 仿真生成的超大 CSV/TSV 数据文件，避免先把几千万行数据载入 Excel 再绘图。
 
@@ -43,3 +43,10 @@ GMP 私有 Python 的 Viewer，加载全部输出 CSV 并勾选动态刷新。�
 仿真。文件被截断重写后，Viewer 会清除旧采样并从新表头继续刷新。
 
 当前面向纯数值 CSV、TSV 或分号分隔文本；`.xlsx` 并不适合作为数千万采样点的仿真交换格式。
+
+底部 **Simulation** 面板可以直接管理原生 CCTL 仿真进程。选择可执行文件、输出
+基路径和目标时长后，可启动、暂停、继续、停止，也可在运行中修改目标时长。
+Viewer 使用 `QProcess` 管理子进程，控制与状态通过 JSON 交换，不再用 stdout
+手工拼接终端指令；用户日志单独显示。仿真器公布的多个输出文件会自动载入并以
+20 Hz 刷新。直接双击或无参数启动 CCTL 仿真程序时，程序会先打开该 Manager，
+然后由 Manager 自动以受管模式重新启动仿真器；纯命令行运行可传 `--headless`。
