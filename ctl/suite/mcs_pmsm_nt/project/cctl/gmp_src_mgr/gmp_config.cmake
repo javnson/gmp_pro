@@ -43,6 +43,7 @@ set(GMP_GENERATED_SOURCES
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_datalink.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_dl_facility.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_mem_presp.c"
+    "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_pil_core.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_runtime.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/gmp_tunable.c"
     "${CMAKE_CURRENT_LIST_DIR}/../xplt/mcu_simulation.cpp"

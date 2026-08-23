@@ -13,7 +13,7 @@ set "GMP_PYTHON_EXE=%GMP_PRO_LOCATION%\bin\python\python.exe"
 if /I not "%GMP_ENV_MODE%"=="virtual" goto :PRIVATE_PYTHON_MISSING
 if not exist "%GMP_PYTHON_EXE%" goto :PRIVATE_PYTHON_MISSING
 
-"%GMP_PYTHON_EXE%" -m py_compile "%~dp0result_data.py" "%~dp0simulation_manager.py" "%~dp0result_viewer.py"
+"%GMP_PYTHON_EXE%" -m py_compile "%~dp0result_data.py" "%~dp0simulation_manager.py" "%~dp0pil_server_panel.py" "%~dp0result_viewer.py"
 if errorlevel 1 exit /b %ERRORLEVEL%
 "%GMP_PYTHON_EXE%" -m unittest discover -s "%~dp0tests" -v
 exit /b %ERRORLEVEL%

@@ -36,3 +36,10 @@ supervised mode. Use `--headless` for the traditional direct run. Supervised
 commands and status are newline-delimited JSON built and parsed with
 `nlohmann_json`; CMake consumers of this CSP must link
 `nlohmann_json::nlohmann_json` from GMP's vcpkg environment.
+
+The supervised protocol can also carry Base64-encoded raw Data Link bytes.
+`csp_cctl_datalink_read/write()` form the project peripheral boundary: the
+project feeds received bytes into GMP Data Link and returns the core's already
+framed CRC/escape output. The optional `simulation_callbacks::service` runs on
+the simulation main thread while Stop/Pause is active, so online access and PIL
+steps cannot race the plant thread.

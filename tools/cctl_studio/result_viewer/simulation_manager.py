@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 from pathlib import Path
 
@@ -16,6 +18,8 @@ class SimulationProcessManager(QtCore.QObject):
     state_changed = QtCore.pyqtSignal(str)
     outputs_ready = QtCore.pyqtSignal(list)
     process_finished = QtCore.pyqtSignal(int, int)
+    datalink_received = QtCore.pyqtSignal(bytes)
+    datalink_transmit_requested = QtCore.pyqtSignal(bytes)
 
     def __init__(self, parent: QtCore.QObject | None = None):
         super().__init__(parent)
@@ -26,6 +30,9 @@ class SimulationProcessManager(QtCore.QObject):
         self.process.started.connect(lambda: self._set_state("initializing"))
         self.process.errorOccurred.connect(self._process_error)
         self.process.finished.connect(self._process_finished)
+        self.datalink_transmit_requested.connect(
+            self._send_datalink, QtCore.Qt.QueuedConnection
+        )
         self._stdout_buffer = bytearray()
         self._auto_start = False
         self.state = "stopped"
@@ -94,6 +101,20 @@ class SimulationProcessManager(QtCore.QObject):
             return
         self.process.write(self.encode_command(command))
 
+    def send_datalink(self, data: bytes) -> None:
+        """Thread-safe entry used by the debugger's managed byte transport."""
+        if data:
+            self.datalink_transmit_requested.emit(bytes(data))
+
+    @QtCore.pyqtSlot(bytes)
+    def _send_datalink(self, data: bytes) -> None:
+        if not self.is_active() or not data:
+            return
+        self.send_command({
+            "command": "DATALINK",
+            "data": base64.b64encode(data).decode("ascii"),
+        })
+
     @staticmethod
     def encode_command(command: dict) -> bytes:
         """Encode one protocol command as compact newline-delimited JSON."""
@@ -139,6 +160,16 @@ class SimulationProcessManager(QtCore.QObject):
                 self.start_simulation()
         elif message_type == "summary":
             self._set_state("completed" if message.get("success") else "failed")
+        elif message_type == "datalink":
+            try:
+                if message.get("encoding") != "base64":
+                    raise ValueError("unsupported Data Link encoding")
+                data = base64.b64decode(message.get("data", ""), validate=True)
+                if not data:
+                    raise ValueError("empty Data Link payload")
+                self.datalink_received.emit(data)
+            except (ValueError, TypeError, binascii.Error) as error:
+                self.log_received.emit(f"Invalid managed Data Link message: {error}")
         self.message_received.emit(message)
 
     @QtCore.pyqtSlot()

@@ -94,6 +94,17 @@ class PilApiTests(unittest.TestCase):
         self.assertEqual(self.config.serial_baudrate, 256000)
         self.assertAlmostEqual(self.config.sample_time_s, 50e-6)
 
+    def test_sdpe_configuration_accepts_hosted_pil_server(self) -> None:
+        target = json.loads(self.target_path.read_text(encoding="utf-8"))
+        target["feature_macros"] = [
+            {"macro": "ENABLE_GMP_DL_PIL_SERVER", "enabled": True}
+        ]
+        self.target_path.write_text(json.dumps(target), encoding="utf-8")
+
+        config = PilConfiguration.from_sdpe(self.target_path, self.common_path)
+
+        self.assertTrue(config.enabled)
+
     def test_input_pack_uses_masks_and_encoder_mapping(self) -> None:
         datagram = MATLAB_INPUT_STRUCT.pack(
             0.001,

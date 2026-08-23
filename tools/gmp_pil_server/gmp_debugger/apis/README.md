@@ -240,9 +240,10 @@ request would advance the controller twice. The CSV trace records simulation
 time, selected encoder input, all ADC/PWM/monitor channels, output-enable state,
 and target round-trip time.
 
-`ENABLE_GMP_DL_PIL_SIM` must be an independent target-local SDPE feature. When
-it is disabled, the normal ADC ISR and physical PWM path compile and operate as
-before. A target that enables it must isolate physical outputs and allow only a
+`ENABLE_GMP_DL_PIL_SIM` or the hosted-only `ENABLE_GMP_DL_PIL_SERVER` must be an
+independent target-local SDPE feature. When both are disabled, the normal ADC
+ISR and physical PWM path compile and operate as before. A hardware target that
+enables `ENABLE_GMP_DL_PIL_SIM` must isolate physical outputs and allow only a
 validated PIL STEP request to dispatch the controller. Never use a PIL firmware
 image to drive connected power hardware.
 

@@ -95,8 +95,10 @@ legacy direct execution path.
 
 Supervised stdout is reserved for newline-delimited JSON. GMP and user console
 text is redirected to stderr. Protocol version 1 emits `ready`, periodic
-`status`, command acknowledgements, and a final `summary`; it accepts `start`,
-`pause`, `resume`, `stop`, and `set_duration`. Pause takes effect only at a
+`status`, command acknowledgements, `datalink` byte messages, and a final
+`summary`; it accepts `start`, `pause`, `resume`, `stop`, `set_duration`, and
+`datalink`. The Data Link `data` field is Base64 and decodes to unmodified GMP
+wire bytes. Each direction is bounded to 64 KiB. Pause takes effect only at a
 complete plant-step boundary. A zero duration means an unlimited run. All C++
 messages are built and parsed with `nlohmann::json`, so a project selecting this
 CSP must use GMP's vcpkg toolchain, call `find_package(nlohmann_json CONFIG
@@ -164,6 +166,8 @@ Callbacks have these roles:
   controller and platform storage;
 - `step`: advance one numerical state from `gmp_csp_loop()`; `step_range` is
   retained for the blocking convenience API;
+- `service`: run peripheral service work on the simulation main thread while
+  numerical stepping is stopped or paused;
 - `finalize`: validate the completed plant run;
 - `write_record`: format one copied POD record on the file worker;
 - `print_summary`: print project-specific results from `gmp_csp_exit()`.
@@ -177,6 +181,13 @@ progress are the only worker threads. `finalize()` joins them and is idempotent.
 the SPSC ring. The record must remain trivially copyable and its size must equal
 `simulation_config::record_size`. A full ring drops the new record and returns
 `false`; it never stalls the solver.
+
+`datalink_read()` and `datalink_write()` expose the supervised byte stream;
+C peripheral mappings normally call `csp_cctl_datalink_read()` and
+`csp_cctl_datalink_write()`. The CSP deliberately does not parse Data Link
+frames. Projects feed received bytes to `gmp_dev_dl_push_str()` and return the
+standard `gmp_dev_dl_get_tx_hw_hdr/pld()` output, preserving one framing, CRC,
+escape, and facility-dispatch implementation across UART and CCTL targets.
 
 `completed_steps()`, `buffered_records()`, `config()`, and `summary()` expose
 read-only runtime state. `print_summary(stream)` prints common performance and

@@ -38,6 +38,12 @@ void csp_cctl_scope_write(uint32_t channel, float value);
 /** Read one controller-rate CSV oscilloscope channel. */
 float csp_cctl_scope_read(uint32_t channel);
 
+/** Drain bytes received from the Result Viewer managed Data Link transport. */
+size_gt csp_cctl_datalink_read(byte_gt* data, size_gt capacity);
+
+/** Publish target-originated bytes to the Result Viewer managed transport. */
+fast_gt csp_cctl_datalink_write(const byte_gt* data, size_gt size);
+
 /**
  * @brief Register the application-specific simulation with the CCTL CSP.
  *

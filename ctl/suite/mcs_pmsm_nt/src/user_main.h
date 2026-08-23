@@ -44,6 +44,7 @@ void ctl_init(void);
 void ctl_mainloop(void);
 
 gmp_task_status_t tsk_startup(gmp_task_t* tsk);
+gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk);
 
 #ifdef __cplusplus
 }

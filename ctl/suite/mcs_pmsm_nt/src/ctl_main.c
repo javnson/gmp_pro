@@ -25,6 +25,10 @@
 
 #include <core/pm/function_scheduler/function_scheduler.h>
 
+#if defined ENABLE_GMP_DL_PIL_SIM || defined ENABLE_GMP_DL_PIL_SERVER
+#define GMP_MCS_ENABLE_PIL_FACILITY
+#endif
+
 //=================================================================================================
 // global controller variables
 
@@ -272,7 +276,7 @@ void ctl_mainloop(void)
     return;
 }
 
-#if defined ENABLE_GMP_DL_PIL_SIM
+#if defined GMP_MCS_ENABLE_PIL_FACILITY
 /** @brief Apply one standard PMSM SIL/PIL input frame to controller ports. */
 static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
 {
@@ -300,12 +304,12 @@ static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
     tx->monitor[1] = mtr_ctrl.iuvw.dat[phase_B];
 }
 
-#endif // defined ENABLE_GMP_DL_PIL_SIM
+#endif // defined GMP_MCS_ENABLE_PIL_FACILITY
 
 /** @brief Execute one controller step requested by the Data Link PIL service. */
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
-#if defined ENABLE_GMP_DL_PIL_SIM
+#if defined GMP_MCS_ENABLE_PIL_FACILITY
     ctl_apply_pil_input(rx);
 
     ctl_dispatch();
@@ -314,7 +318,7 @@ void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 #else
     GMP_UNUSED_VAR(rx);
     GMP_UNUSED_VAR(tx);
-#endif // defined ENABLE_GMP_DL_PIL_SIM
+#endif // defined GMP_MCS_ENABLE_PIL_FACILITY
 }
 
 #if defined ENABLE_GMP_DL_PIL_SIM

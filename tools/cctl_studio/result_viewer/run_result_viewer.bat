@@ -18,7 +18,7 @@ set "GMP_PYTHON_EXE=%GMP_PRO_LOCATION%\bin\python\python.exe"
 if /I not "%GMP_ENV_MODE%"=="virtual" goto :PRIVATE_PYTHON_MISSING
 if not exist "%GMP_PYTHON_EXE%" goto :PRIVATE_PYTHON_MISSING
 
-"%GMP_PYTHON_EXE%" -c "import numpy, pyqtgraph; from PyQt5 import QtCore, QtGui, QtWidgets"
+"%GMP_PYTHON_EXE%" -c "import numpy, pyqtgraph, serial; from PyQt5 import QtCore, QtGui, QtWidgets"
 if errorlevel 1 (
     echo [ERROR] GMP Result Viewer dependencies are incomplete.
     echo         Re-run install_gmp_virtual_env.bat or deploy_gmp_env.bat.

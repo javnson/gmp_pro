@@ -219,6 +219,16 @@ finite command-line simulation. The project CMake links the CSP's required
 `nlohmann_json::nlohmann_json` target from the same GMP vcpkg installation as
 Eigen.
 
+The Viewer's **PIL Server** page connects to this project's standard Data Link
+service through the same supervised process. SDPE defines
+`ENABLE_GMP_DL_PIL_SERVER` and `GMP_PIL_DL_BASE_COMMAND=0x10`, `gmp_src_mgr`
+selects `dev|datalink|pil`, and `xplt.peripheral.cpp` feeds Viewer bytes into the
+existing `user_main.c` Data Link state machine before returning its standard
+wire frames. INFO v3 currently reports Echo, PIL, Tunable, and Memory. The
+server switch is separate from hardware `ENABLE_GMP_DL_PIL_SIM`, so normal
+finite/continuous CCTL closed-loop control remains ADC-ISR driven while
+discovery, online access, and PIL steps still work in Stop/Pause.
+
 For continuous observation, run
 `mcs_pmsm_nt_cctl.exe --continuous --viewer`. The CSP ignores the finite 4 s
 regression horizon until the console receives `q`; the viewer refreshes at

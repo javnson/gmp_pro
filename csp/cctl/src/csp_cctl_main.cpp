@@ -477,6 +477,26 @@ float csp_cctl_scope_read(uint32_t channel)
                : 0.0F;
 }
 
+size_gt csp_cctl_datalink_read(byte_gt *data, size_gt capacity)
+{
+    if (!runtime_started)
+        return 0U;
+    return static_cast<size_gt>(runtime.datalink_read(
+        reinterpret_cast<std::uint8_t *>(data),
+        static_cast<std::size_t>(capacity)));
+}
+
+fast_gt csp_cctl_datalink_write(const byte_gt *data, size_gt size)
+{
+    if (!runtime_started)
+        return 0;
+    return runtime.datalink_write(
+               reinterpret_cast<const std::uint8_t *>(data),
+               static_cast<std::size_t>(size))
+               ? 1
+               : 0;
+}
+
 /** CSP-owned hosted time service, expressed in simulated milliseconds. */
 time_gt gmp_base_get_system_tick(void)
 {

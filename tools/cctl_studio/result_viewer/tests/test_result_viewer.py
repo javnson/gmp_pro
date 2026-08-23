@@ -16,6 +16,7 @@ sys.path.insert(0, str(VIEWER_DIR))
 
 from PyQt5 import QtCore, QtTest, QtWidgets  # noqa: E402
 from result_viewer import LIVE_REFRESH_INTERVAL_MS, ResultViewer  # noqa: E402
+from pil_server_panel import HermesDatalinkQt  # noqa: E402
 from simulation_manager import SimulationProcessManager  # noqa: E402
 
 
@@ -105,6 +106,36 @@ class ResultViewerTests(unittest.TestCase):
         })
         self.assertEqual(states, ["ready"])
         self.assertEqual(outputs, [["drive_circuit.csv"]])
+
+    def test_supervisor_datalink_message_decodes_raw_bytes(self) -> None:
+        manager = SimulationProcessManager()
+        received: list[bytes] = []
+        manager.datalink_received.connect(received.append)
+        manager._dispatch_message({
+            "type": "datalink",
+            "encoding": "base64",
+            "data": "eyU9fQ==",
+        })
+        self.assertEqual(received, [b"{%=}"])
+
+    def test_debugger_managed_transport_preserves_standard_frames(self) -> None:
+        writes: list[bytes] = []
+        frames: list[tuple[int, int, bytes]] = []
+        hermes = HermesDatalinkQt()
+        hermes.sig_frame_received.connect(
+            lambda target, command, payload: frames.append(
+                (target, command, payload)
+            )
+        )
+        self.assertTrue(hermes.connect_transport(writes.append, "test transport"))
+        try:
+            hermes.send_frame(7, 0x10, b"pil")
+            self._wait_until(lambda: bool(writes))
+            self.assertTrue(hermes.feed_transport(writes[0]))
+            self._wait_until(lambda: bool(frames))
+            self.assertEqual(frames, [(7, 0x10, b"pil")])
+        finally:
+            hermes.close()
 
     def test_dynamic_mode_refreshes_at_20_hz_and_defers_partial_row(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -196,6 +227,7 @@ class ResultViewerTests(unittest.TestCase):
         self.assertAlmostEqual(viewer.rolling_window_seconds.value(), 0.1)
         self.assertAlmostEqual(viewer.memory_window_seconds.value(), 1.0)
         self.assertEqual(viewer.view_tabs.tabText(0), "Configuration")
+        self.assertEqual(viewer.view_tabs.tabText(1), "PIL Server")
         self.assertTrue(viewer.data_curve_panel.isVisibleTo(viewer))
         self.assertEqual((viewer.pages[0].rows, viewer.pages[0].columns), (1, 1))
         first_panel = viewer.pages[0].panels[0]

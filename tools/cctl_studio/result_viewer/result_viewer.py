@@ -27,6 +27,7 @@ from result_data import (
     minmax_decimate,
 )
 from simulation_manager import SimulationProcessManager
+from pil_server_panel import PilServerPanel
 
 
 LIVE_REFRESH_INTERVAL_MS = 50
@@ -575,6 +576,8 @@ class ResultViewer(QtWidgets.QMainWindow):
         settings_layout.addWidget(configuration, 1)
         self.settings_page = settings
         self.view_tabs.addTab(settings, "Configuration")
+        self.pil_server_panel = PilServerPanel(self.simulation, self)
+        self.view_tabs.addTab(self.pil_server_panel, "PIL Server")
         self.workspace_splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         self.workspace_splitter.setChildrenCollapsible(False)
         self.workspace_splitter.addWidget(source_group)
@@ -889,6 +892,7 @@ class ResultViewer(QtWidgets.QMainWindow):
             self.simulation.stop()
             event.ignore()
             return
+        self.pil_server_panel.shutdown()
         event.accept()
 
     def open_dialog(self) -> None:

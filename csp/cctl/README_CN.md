@@ -22,3 +22,9 @@ Viewer Manager：CSP 先校验 `GMP_PRO_LOCATION` 并启动仓库中的 Viewer �
 `--headless`。受管命令与状态采用逐行 JSON，C++ 端统一使用 `nlohmann_json`
 构造和解析；选择该 CSP 的 CMake 目标应从 GMP vcpkg 环境链接
 `nlohmann_json::nlohmann_json`。
+
+受管协议还可承载 Base64 编码的原始 Data Link 字节。CSP 为工程外设层提供
+`csp_cctl_datalink_read/write()`；工程在 `flush_dl_rx_buffer()` 中把接收字节推入
+GMP Data Link 核心，并在 `flush_dl_tx_buffer()` 中返回核心已经完成 CRC 和转义的
+帧。可选 `simulation_callbacks::service` 在 Stop/Pause 状态由仿真主线程执行，因此
+在线读写和 PIL 单步不会与被控对象线程并发访问控制器状态。

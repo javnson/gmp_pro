@@ -80,8 +80,10 @@ gmp_csp_startup
 可执行文件，因此不会递归启动 Viewer。`--headless` 可显式保留传统直接执行。
 
 受管模式下 stdout 专用于逐行 JSON，GMP Logo 和用户日志改发 stderr。协议版本
-1 输出 `ready`、周期 `status`、命令确认和最终 `summary`，接受 `start`、
-`pause`、`resume`、`stop` 和 `set_duration`。暂停只在完整电路步边界生效，时长
+1 输出 `ready`、周期 `status`、命令确认、`datalink` 字节消息和最终 `summary`，
+接受 `start`、`pause`、`resume`、`stop`、`set_duration` 和 `datalink`。Data Link
+消息的 `data` 字段使用 Base64，解码后是未经改写的标准 GMP 线协议字节；收发队列
+各限制为 64 KiB，避免失去 Viewer 时无限增长。暂停只在完整电路步边界生效，时长
 为 0 表示无限运行。C++ 端统一用 `nlohmann::json` 构建和解析消息，因此选择该
 CSP 的工程必须使用 GMP vcpkg 工具链，执行
 `find_package(nlohmann_json CONFIG REQUIRED)` 并链接
@@ -144,6 +146,7 @@ SDPE，输出路径和优先级可由 CSP 命令行覆盖。
 - `initialize`：GMP 已完成控制器和平台初始化后，再初始化被控对象；
 - `step`：由每次 `gmp_csp_loop()` 推进一个数值状态；`step_range` 仅保留给阻塞
   便利接口；
+- `service`：数值步进处于 Stop/Pause 时，在仿真主线程服务通信等外设工作；
 - `finalize`：执行结束状态校验；
 - `write_record`：在文件线程中格式化一个已经复制的 POD 记录；
 - `print_summary`：由 `gmp_csp_exit()` 打印工程专属结果。
@@ -158,6 +161,12 @@ SDPE，输出路径和优先级可由 CSP 命令行覆盖。
 不会阻塞求解器。所有输出仍由同一个文件线程轮询和批量写入；各流独立统计
 queued/written/dropped/bytes。`--viewer` 会通过 `GMP_PRO_LOCATION` 找到 Viewer，
 传入全部输出路径并启用 20 Hz 动态刷新。
+
+`datalink_read()`/`datalink_write()` 是受管字节流的 C++ 接口，C 外设映射通常使用
+`csp_cctl_datalink_read()`/`csp_cctl_datalink_write()`。CSP 不解析 Data Link 帧；
+工程必须把接收字节送入 `gmp_dev_dl_push_str()`，并返回
+`gmp_dev_dl_get_tx_hw_hdr/pld()` 给出的标准帧。这样 UART 目标、CCTL 和 Viewer 共用
+同一个 Data Link 状态机、CRC、转义和设施分派器。
 
 控制中断计数和仿真毫秒时基属于 CSP。ADC ISR 调用
 `csp_cctl_notify_controller_interrupt()` 后再分派 `gmp_base_ctl_step()`；工程外设层

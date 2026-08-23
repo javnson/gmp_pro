@@ -21,6 +21,10 @@ Memory Perspective 和 Tunable 页面可以导入目标上报的具名资源。D
 
 System Log 为每个页面分配固定配色，并在 Log Sources 下拉列表中提供可勾选过滤项。
 
+`HermesDatalinkQt.connect_transport()` 允许宿主工具提供字节写回调，并用
+`feed_transport()` 注入接收字节；物理串口和受管进程因此共享同一套帧编解码、优先级
+队列和功能页面。CCTL Result Viewer 的 PIL Server 页使用的就是该入口。
+
 Memory Perspective 在线协议中始终使用字节地址。从 C28x map 文件取得原生字地址后，
 手动输入前需要乘以 2。
 

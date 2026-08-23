@@ -29,7 +29,17 @@ extern "C"
 #define MCS_PMSM_NT_CCTL_SDPE_PROJECT_ID "mcs_pmsm_nt_cctl"
 #define MCS_PMSM_NT_CCTL_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_CCTL_SDPE_PROJECT_VERSION "1.0.0"
-#define MCS_PMSM_NT_CCTL_SDPE_PROJECT_UPDATED_AT "2026-08-21"
+#define MCS_PMSM_NT_CCTL_SDPE_PROJECT_UPDATED_AT "2026-08-23"
+
+//=================================================================================================
+/**
+ * @brief PIL Runtime.
+ */
+
+/**
+ * @brief Expose standard Data Link PIL and online-debug facilities through the supervised CCTL Viewer transport without selecting PIL-only controller mode.
+ */
+#define ENABLE_GMP_DL_PIL_SERVER
 
 //=================================================================================================
 /**
@@ -272,6 +282,136 @@ extern "C"
  * @brief Output Filename
  */
 #define CCTL_SIM_OUTPUT_FILENAME "mcs_pmsm_nt_cctl.csv"
+
+/**
+ * @brief PIL Data Link Base Command
+ */
+#define GMP_PIL_DL_BASE_COMMAND (16)
+
+/**
+ * @brief Data Link UART Baud Rate
+ */
+#define GMP_DL_UART_BAUDRATE (921600)
+
+/**
+ * @brief PIL UDP Host
+ */
+#define GMP_PIL_UDP_HOST "127.0.0.1"
+
+/**
+ * @brief PIL Bridge UDP Listen Port
+ */
+#define GMP_PIL_BRIDGE_UDP_LISTEN_PORT (12501)
+
+/**
+ * @brief PIL MATLAB UDP Listen Port
+ */
+#define GMP_PIL_MATLAB_UDP_LISTEN_PORT (12500)
+
+/**
+ * @brief PIL MATLAB Command TX Port
+ */
+#define GMP_PIL_MATLAB_COMMAND_TX_PORT (12502)
+
+/**
+ * @brief PIL MATLAB Command RX Port
+ */
+#define GMP_PIL_MATLAB_COMMAND_RX_PORT (12503)
+
+/**
+ * @brief PIL MCU Timeout
+ */
+#define GMP_PIL_MCU_TIMEOUT_MS (200)
+
+/**
+ * @brief PIL MATLAB Timeout
+ */
+#define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
+
+/**
+ * @brief PIL ADC DC Bus Index
+ */
+#define GMP_PIL_RX_ADC_UDC_INDEX (0)
+
+/**
+ * @brief PIL ADC Phase U Voltage Index
+ */
+#define GMP_PIL_RX_ADC_UU_INDEX (1)
+
+/**
+ * @brief PIL ADC Phase V Voltage Index
+ */
+#define GMP_PIL_RX_ADC_UV_INDEX (2)
+
+/**
+ * @brief PIL ADC Phase W Voltage Index
+ */
+#define GMP_PIL_RX_ADC_UW_INDEX (3)
+
+/**
+ * @brief PIL ADC Phase U Current Index
+ */
+#define GMP_PIL_RX_ADC_IU_INDEX (4)
+
+/**
+ * @brief PIL ADC Phase V Current Index
+ */
+#define GMP_PIL_RX_ADC_IV_INDEX (5)
+
+/**
+ * @brief PIL ADC Phase W Current Index
+ */
+#define GMP_PIL_RX_ADC_IW_INDEX (6)
+
+/**
+ * @brief PIL UDP Encoder Index
+ */
+#define GMP_PIL_UDP_ENCODER_INDEX (0)
+
+/**
+ * @brief PIL PWM Phase U Index
+ */
+#define GMP_PIL_TX_PWM_U_INDEX (0)
+
+/**
+ * @brief PIL PWM Phase V Index
+ */
+#define GMP_PIL_TX_PWM_V_INDEX (1)
+
+/**
+ * @brief PIL PWM Phase W Index
+ */
+#define GMP_PIL_TX_PWM_W_INDEX (2)
+
+/**
+ * @brief PIL Monitor Phase U Current Index
+ */
+#define GMP_PIL_TX_MONITOR_IU_INDEX (0)
+
+/**
+ * @brief PIL Monitor Phase V Current Index
+ */
+#define GMP_PIL_TX_MONITOR_IV_INDEX (1)
+
+/**
+ * @brief PIL Monitor D Current Index
+ */
+#define GMP_PIL_TX_MONITOR_ID_INDEX (2)
+
+/**
+ * @brief PIL Monitor Q Current Index
+ */
+#define GMP_PIL_TX_MONITOR_IQ_INDEX (3)
+
+/**
+ * @brief PIL Monitor Electrical Position Index
+ */
+#define GMP_PIL_TX_MONITOR_POSITION_INDEX (4)
+
+/**
+ * @brief PIL Monitor Speed Index
+ */
+#define GMP_PIL_TX_MONITOR_SPEED_INDEX (5)
 
 /**
  * @brief Motor Type

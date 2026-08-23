@@ -203,8 +203,9 @@ Simulink 侧使用标准的 264-byte 输入向量和 200-byte 输出向量。每
 目标已经执行但响应丢失，重试会让同一输入推进控制器两次。CSV 会记录仿真时间、所选
 编码器输入、全部 ADC/PWM/Monitor 通道、输出使能状态和目标往返时间。
 
-`ENABLE_GMP_DL_PIL_SIM` 必须是目标工程本地、独立的 SDPE 功能开关。关闭时，普通
-ADC 中断和物理 PWM 路径应按原逻辑编译与运行；开启时，目标必须隔离全部物理输出，
+`ENABLE_GMP_DL_PIL_SIM` 或仅用于宿主仿真的 `ENABLE_GMP_DL_PIL_SERVER` 必须是目标
+工程本地、独立的 SDPE 功能开关。两者均关闭时，普通 ADC 中断和物理 PWM 路径应按
+原逻辑编译与运行；硬件目标开启 `ENABLE_GMP_DL_PIL_SIM` 时，必须隔离全部物理输出，
 并且只允许经过完整校验的 PIL STEP 请求调度控制器。PIL 固件不得用于带功率运行。
 
 ## 异常与底层扩展

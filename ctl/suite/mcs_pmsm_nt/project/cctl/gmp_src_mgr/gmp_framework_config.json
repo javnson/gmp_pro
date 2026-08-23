@@ -5,6 +5,7 @@
     { "root": "core", "module": "pm|function_scheduler" },
     { "root": "core", "module": "dev|datalink|variable_monitor" },
     { "root": "core", "module": "dev|datalink|mem_monitor" },
+    { "root": "core", "module": "dev|datalink|pil" },
     { "root": "ctl", "module": "framework|cia402" },
     { "root": "ctl", "module": "component|interface|_internal" },
     { "root": "ctl", "module": "component|interface|modulator|spwm" },

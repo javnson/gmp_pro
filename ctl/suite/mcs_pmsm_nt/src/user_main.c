@@ -9,8 +9,9 @@
 #include <stdlib.h>
 
 #include <core/dev/datalink/mem_presp.h>
-#if defined ENABLE_GMP_DL_PIL_SIM
+#if defined ENABLE_GMP_DL_PIL_SIM || defined ENABLE_GMP_DL_PIL_SERVER
 #include <core/dev/datalink/pil_core.h>
+#define GMP_MCS_ENABLE_PIL_FACILITY
 #endif
 #include <core/dev/datalink/tunable.h>
 #if !defined SPECIFY_PC_ENVIRONMENT
@@ -37,7 +38,7 @@ CTL_DSA_DL_SCOPE_DEFINE_USER("Control Scope")
 #endif
 
 /** @brief Processor-in-the-Loop service enabled by the target SDPE switch. */
-#if defined ENABLE_GMP_DL_PIL_SIM
+#if defined GMP_MCS_ENABLE_PIL_FACILITY
 gmp_pil_sim_t pil;
 #endif
 
@@ -91,8 +92,8 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
 
     flush_dl_rx_buffer();
 
-    // In PC simulation environment the DL protocol module is disabled.
-#ifndef SPECIFY_PC_ENVIRONMENT
+    // Hosted CCTL explicitly supplies a managed Data Link peripheral.
+#if !defined SPECIFY_PC_ENVIRONMENT || defined ENABLE_GMP_DL_PIL_SERVER
 
     gmp_dl_event_t e = gmp_dev_dl_loop_cb(&dl);
 
@@ -115,7 +116,7 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
         break;
     }
 
-#endif // SPECIFY_PC_ENVIRONMENT
+#endif
 
     return GMP_TASK_DONE;
 }
@@ -185,7 +186,7 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
 
     for (i = 0; i < sizeof(tasks) / sizeof(gmp_task_t); ++i)
     {
-#if defined ENABLE_GMP_DL_PIL_SIM
+#if defined GMP_MCS_ENABLE_PIL_FACILITY
         /** Disable the scheduled DL task because PIL services it in every background loop. */
         if (tasks[i].handler == tsk_dl_debug_device)
             tasks[i].is_enabled = 0;
@@ -202,7 +203,7 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
         &dl, &legacy_echo_facility) ? 0U : 1U;
 
     /** Bind PIL only when the independent target SDPE switch is enabled. */
-#if defined ENABLE_GMP_DL_PIL_SIM
+#if defined GMP_MCS_ENABLE_PIL_FACILITY
     gmp_pil_sim_init(&pil, &dl, GMP_PIL_DL_BASE_COMMAND);
     gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
     dl_facility_init_errors += gmp_dev_dl_append_facility(
@@ -246,7 +247,7 @@ gmp_task_status_t tsk_startup(gmp_task_t* tsk)
 GMP_NO_OPT_PREFIX
 void mainloop(void) GMP_NO_OPT_SUFFIX
 {
-#if defined ENABLE_GMP_DL_PIL_SIM
+#if defined GMP_MCS_ENABLE_PIL_FACILITY
     /** Service the synchronous PIL transport without scheduler-period latency. */
     (void)tsk_dl_debug_device(NULL);
 #endif

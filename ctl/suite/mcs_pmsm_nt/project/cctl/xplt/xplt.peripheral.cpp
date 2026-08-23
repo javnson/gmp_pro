@@ -22,6 +22,7 @@ adc_gt idc_src;
 adc_gt cctl_adc_result[CCTL_ADC_COUNT];
 uint32_t cctl_encoder_position;
 pwm_gt cctl_pwm_compare[3];
+extern gmp_datalink_t dl;
 
 /** @copydoc setup_peripheral */
 void setup_peripheral(void)
@@ -73,14 +74,29 @@ void send_monitor_data(void)
 {
 }
 
-/** @brief Hosted data-link receive placeholder. */
+/** @brief Drain the Viewer-managed virtual UART into the standard Data Link. */
 void flush_dl_rx_buffer(void)
 {
+    byte_gt buffer[64];
+    size_gt count;
+    do
+    {
+        count = csp_cctl_datalink_read(buffer, (size_gt)sizeof(buffer));
+        if (count != 0U)
+            gmp_dev_dl_push_str(&dl, buffer, count);
+    } while (count == (size_gt)sizeof(buffer));
 }
 
-/** @brief Hosted data-link transmit placeholder. */
+/** @brief Publish a fully framed standard Data Link response to the Viewer. */
 void flush_dl_tx_buffer(void)
 {
+    const byte_gt* header = gmp_dev_dl_get_tx_hw_hdr_ptr(&dl);
+    const size_gt header_size = gmp_dev_dl_get_tx_hw_hdr_size(&dl);
+    const byte_gt* payload = gmp_dev_dl_get_tx_hw_pld_ptr(&dl);
+    const size_gt payload_size = gmp_dev_dl_get_tx_hw_pld_size(&dl);
+    (void)csp_cctl_datalink_write(header, header_size);
+    if (payload_size != 0U)
+        (void)csp_cctl_datalink_write(payload, payload_size);
 }
 
 /** @brief Hosted GPIO direction placeholder. */

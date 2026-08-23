@@ -169,6 +169,8 @@ struct simulation_callbacks
     std::function<void()> initialize;
     std::function<void(std::size_t, double, simulation_runtime &)> step;
     std::function<void(std::size_t, std::size_t, simulation_runtime &)> step_range;
+    /** Service hosted peripheral traffic while numerical stepping is paused. */
+    std::function<void()> service;
     std::function<void()> finalize;
     std::function<void(const void *, std::ostream &)> write_record;
     std::function<void(std::ostream &)> print_summary;
@@ -280,6 +282,10 @@ class simulation_runtime
     /** Nonblocking-copy a record to one independently configured output. */
     bool interface_transfer(std::size_t stream_index, const void *record,
                             std::size_t record_size);
+    /** Drain bytes delivered by the supervised Viewer Data Link transport. */
+    std::size_t datalink_read(std::uint8_t *data, std::size_t capacity);
+    /** Queue target-originated Data Link bytes for the supervised Viewer. */
+    bool datalink_write(const std::uint8_t *data, std::size_t size);
     /** Convenience blocking run using the caller plus two service workers. */
     simulation_summary run();
     /** Join workers and materialize the final summary if still running. */

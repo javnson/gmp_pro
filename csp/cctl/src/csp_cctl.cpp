@@ -8,12 +8,14 @@
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cctype>
 #include <condition_variable>
 #include <cmath>
 #include <cstdlib>
+#include <deque>
 #include <fstream>
 #include <filesystem>
 #include <iomanip>
@@ -51,6 +53,68 @@ namespace
 {
 using clock_type = std::chrono::steady_clock;
 using json = nlohmann::json;
+
+constexpr std::size_t kDatalinkQueueCapacity = 64U * 1024U;
+
+std::string encode_base64(const std::uint8_t *data, std::size_t size)
+{
+    static constexpr char alphabet[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string output;
+    output.reserve(((size + 2U) / 3U) * 4U);
+    for (std::size_t index = 0U; index < size; index += 3U)
+    {
+        const std::uint32_t value =
+            (static_cast<std::uint32_t>(data[index]) << 16U) |
+            (index + 1U < size ? static_cast<std::uint32_t>(data[index + 1U]) << 8U : 0U) |
+            (index + 2U < size ? static_cast<std::uint32_t>(data[index + 2U]) : 0U);
+        output.push_back(alphabet[(value >> 18U) & 0x3FU]);
+        output.push_back(alphabet[(value >> 12U) & 0x3FU]);
+        output.push_back(index + 1U < size ? alphabet[(value >> 6U) & 0x3FU] : '=');
+        output.push_back(index + 2U < size ? alphabet[value & 0x3FU] : '=');
+    }
+    return output;
+}
+
+bool decode_base64(const std::string &text, std::vector<std::uint8_t> &output)
+{
+    static constexpr unsigned char invalid = 0xFFU;
+    std::array<unsigned char, 256U> table{};
+    table.fill(invalid);
+    const std::string alphabet =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    for (std::size_t index = 0U; index < alphabet.size(); ++index)
+        table[static_cast<unsigned char>(alphabet[index])] =
+            static_cast<unsigned char>(index);
+    output.clear();
+    if ((text.size() % 4U) != 0U)
+        return false;
+    output.reserve((text.size() / 4U) * 3U);
+    for (std::size_t index = 0U; index < text.size(); index += 4U)
+    {
+        const bool final_group = index + 4U == text.size();
+        const unsigned char a = table[static_cast<unsigned char>(text[index])];
+        const unsigned char b = table[static_cast<unsigned char>(text[index + 1U])];
+        const bool pad_c = text[index + 2U] == '=';
+        const bool pad_d = text[index + 3U] == '=';
+        const unsigned char c = pad_c ? 0U : table[static_cast<unsigned char>(text[index + 2U])];
+        const unsigned char d = pad_d ? 0U : table[static_cast<unsigned char>(text[index + 3U])];
+        if (a == invalid || b == invalid || c == invalid || d == invalid ||
+            pad_c && !pad_d || (!final_group && (pad_c || pad_d)))
+            return false;
+        const std::uint32_t value =
+            (static_cast<std::uint32_t>(a) << 18U) |
+            (static_cast<std::uint32_t>(b) << 12U) |
+            (static_cast<std::uint32_t>(c) << 6U) |
+            static_cast<std::uint32_t>(d);
+        output.push_back(static_cast<std::uint8_t>(value >> 16U));
+        if (!pad_c)
+            output.push_back(static_cast<std::uint8_t>(value >> 8U));
+        if (!pad_d)
+            output.push_back(static_cast<std::uint8_t>(value));
+    }
+    return true;
+}
 
 bool enable_in_place_console_refresh() noexcept
 {
@@ -310,6 +374,12 @@ class simulation_runtime::implementation
         progress_rate_initialized_ = false;
         callback_initialized_ = false;
         callback_finalized_ = false;
+        {
+            std::lock_guard<std::mutex> lock(datalink_mutex_);
+            datalink_rx_.clear();
+            datalink_tx_.clear();
+            datalink_tx_bytes_ = 0U;
+        }
         initialized_ = true;
     }
 
@@ -391,13 +461,46 @@ class simulation_runtime::implementation
 
     void wait_until_runnable()
     {
-        if (!paused_.load(std::memory_order_acquire))
-            return;
-        std::unique_lock<std::mutex> lock(control_mutex_);
-        control_condition_.wait(lock, [this] {
-            return !paused_.load(std::memory_order_acquire) ||
-                   stop_requested_.load(std::memory_order_acquire);
-        });
+        while (paused_.load(std::memory_order_acquire) &&
+               !stop_requested_.load(std::memory_order_acquire))
+        {
+            std::unique_lock<std::mutex> lock(control_mutex_);
+            control_condition_.wait_for(lock, std::chrono::milliseconds(10), [this] {
+                return !paused_.load(std::memory_order_acquire) ||
+                       stop_requested_.load(std::memory_order_acquire) ||
+                       datalink_rx_pending();
+            });
+            const bool service_datalink = datalink_rx_pending();
+            lock.unlock();
+            if (service_datalink && callbacks_.service)
+                callbacks_.service();
+        }
+    }
+
+    std::size_t datalink_read(std::uint8_t *data, std::size_t capacity)
+    {
+        if (data == nullptr || capacity == 0U)
+            return 0U;
+        std::lock_guard<std::mutex> lock(datalink_mutex_);
+        const std::size_t count = std::min(capacity, datalink_rx_.size());
+        for (std::size_t index = 0U; index < count; ++index)
+        {
+            data[index] = datalink_rx_.front();
+            datalink_rx_.pop_front();
+        }
+        return count;
+    }
+
+    bool datalink_write(const std::uint8_t *data, std::size_t size)
+    {
+        if (data == nullptr || size == 0U)
+            return false;
+        std::lock_guard<std::mutex> lock(datalink_mutex_);
+        if (size > kDatalinkQueueCapacity - datalink_tx_bytes_)
+            return false;
+        datalink_tx_.emplace_back(data, data + size);
+        datalink_tx_bytes_ += size;
+        return true;
     }
 
     bool interface_transfer(const void *record, std::size_t record_size)
@@ -844,8 +947,65 @@ class simulation_runtime::implementation
             }
             emit_command_result(command, true);
         }
+        else if (command == "DATALINK")
+        {
+            if (!callbacks_.service)
+            {
+                emit_command_result(command, false,
+                                    "project did not register a Data Link service callback");
+                return;
+            }
+            if (!request.contains("data") || !request["data"].is_string())
+            {
+                emit_command_result(command, false,
+                                    "data must be a Base64 JSON string");
+                return;
+            }
+            std::vector<std::uint8_t> bytes;
+            if (!decode_base64(request["data"].get<std::string>(), bytes) ||
+                bytes.empty())
+            {
+                emit_command_result(command, false,
+                                    "data is not a nonempty Base64 byte string");
+                return;
+            }
+            {
+                std::lock_guard<std::mutex> lock(datalink_mutex_);
+                if (bytes.size() > kDatalinkQueueCapacity - datalink_rx_.size())
+                {
+                    emit_command_result(command, false,
+                                        "Data Link receive queue is full");
+                    return;
+                }
+                datalink_rx_.insert(datalink_rx_.end(), bytes.begin(), bytes.end());
+            }
+            control_condition_.notify_all();
+        }
         else
             emit_command_result(command, false, "unknown command");
+    }
+
+    bool datalink_rx_pending() const
+    {
+        std::lock_guard<std::mutex> lock(datalink_mutex_);
+        return !datalink_rx_.empty();
+    }
+
+    void emit_datalink_output()
+    {
+        std::deque<std::vector<std::uint8_t>> pending;
+        {
+            std::lock_guard<std::mutex> lock(datalink_mutex_);
+            pending.swap(datalink_tx_);
+            datalink_tx_bytes_ = 0U;
+        }
+        for (const auto &bytes : pending)
+        {
+            const json message = {
+                {"type", "datalink"}, {"encoding", "base64"},
+                {"data", encode_base64(bytes.data(), bytes.size())}};
+            std::cout << message.dump() << std::endl;
+        }
     }
 
     void supervisor_worker() noexcept
@@ -861,6 +1021,7 @@ class simulation_runtime::implementation
                 read_supervisor_input(pending, commands);
                 for (const std::string &command : commands)
                     process_supervisor_command(command);
+                emit_datalink_output();
 
                 const bool done = simulation_done_.load(std::memory_order_acquire);
                 const clock_type::time_point now = clock_type::now();
@@ -1089,6 +1250,10 @@ class simulation_runtime::implementation
     std::mutex control_mutex_;
     std::condition_variable control_condition_;
     std::mutex error_mutex_;
+    mutable std::mutex datalink_mutex_;
+    std::deque<std::uint8_t> datalink_rx_;
+    std::deque<std::vector<std::uint8_t>> datalink_tx_;
+    std::size_t datalink_tx_bytes_{};
     std::uint32_t original_priority_class_{};
     clock_type::time_point last_progress_time_{};
     std::size_t last_progress_steps_{};
@@ -1137,6 +1302,18 @@ bool simulation_runtime::interface_transfer(std::size_t stream_index,
                                             std::size_t record_size)
 {
     return impl_->interface_transfer(stream_index, record, record_size);
+}
+
+std::size_t simulation_runtime::datalink_read(std::uint8_t *data,
+                                              std::size_t capacity)
+{
+    return impl_->datalink_read(data, capacity);
+}
+
+bool simulation_runtime::datalink_write(const std::uint8_t *data,
+                                        std::size_t size)
+{
+    return impl_->datalink_write(data, size);
 }
 
 simulation_summary simulation_runtime::run()

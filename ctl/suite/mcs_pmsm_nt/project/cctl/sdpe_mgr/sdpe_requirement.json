@@ -5,7 +5,7 @@
   "description": "Direct host bindings for the controller, TI-style peripherals, generated MNA inverter, PMSM plant, and the CCTL host CSP.",
   "suite": "mcs_pmsm_nt",
   "version": "1.0.0",
-  "updated_at": "2026-08-21",
+  "updated_at": "2026-08-23",
   "output_header": "ctrl_settings.h",
   "common_requirements": ["../../../sdpe_general/sdpe_requirement.json"],
   "hardware": [
@@ -35,7 +35,23 @@
         "Plant Step", "Control Frequency", "User Code Frequency", "Simulation Duration", "Simulation DC Bus",
         "Load Torque Start", "Load Torque", "Startup Short Steps", "Output Ring Bytes",
         "PMSM Integration Order", "Output Batch Bytes", "Progress Interval", "Simulation Chunk Steps",
-        "Realtime Priority", "Pause On Exit", "Output Filename"
+        "Realtime Priority", "Pause On Exit", "Output Filename", "PIL Data Link Base Command"
+      ]
+    },
+    {
+      "name": "Hosted PIL Bridge",
+      "requirements": [
+        "Data Link UART Baud Rate", "PIL UDP Host", "PIL Bridge UDP Listen Port",
+        "PIL MATLAB UDP Listen Port", "PIL MATLAB Command TX Port", "PIL MATLAB Command RX Port",
+        "PIL MCU Timeout", "PIL MATLAB Timeout", "PIL ADC DC Bus Index",
+        "PIL ADC Phase U Voltage Index", "PIL ADC Phase V Voltage Index",
+        "PIL ADC Phase W Voltage Index", "PIL ADC Phase U Current Index",
+        "PIL ADC Phase V Current Index", "PIL ADC Phase W Current Index",
+        "PIL UDP Encoder Index", "PIL PWM Phase U Index", "PIL PWM Phase V Index",
+        "PIL PWM Phase W Index", "PIL Monitor Phase U Current Index",
+        "PIL Monitor Phase V Current Index", "PIL Monitor D Current Index",
+        "PIL Monitor Q Current Index", "PIL Monitor Electrical Position Index",
+        "PIL Monitor Speed Index"
       ]
     },
     {
@@ -97,6 +113,32 @@
     { "role": "Realtime Priority", "macro": "CCTL_SIM_REALTIME_PRIORITY", "binding": { "number": "1" } },
     { "role": "Pause On Exit", "macro": "CCTL_SIM_PAUSE_ON_EXIT", "binding": { "number": "1" } },
     { "role": "Output Filename", "macro": "CCTL_SIM_OUTPUT_FILENAME", "binding": { "string": "mcs_pmsm_nt_cctl.csv" } },
+    { "role": "PIL Data Link Base Command", "macro": "GMP_PIL_DL_BASE_COMMAND", "binding": { "number": "16" } },
+    { "role": "Data Link UART Baud Rate", "macro": "GMP_DL_UART_BAUDRATE", "binding": { "number": "921600" } },
+    { "role": "PIL UDP Host", "macro": "GMP_PIL_UDP_HOST", "binding": { "string": "127.0.0.1" } },
+    { "role": "PIL Bridge UDP Listen Port", "macro": "GMP_PIL_BRIDGE_UDP_LISTEN_PORT", "binding": { "number": "12501" } },
+    { "role": "PIL MATLAB UDP Listen Port", "macro": "GMP_PIL_MATLAB_UDP_LISTEN_PORT", "binding": { "number": "12500" } },
+    { "role": "PIL MATLAB Command TX Port", "macro": "GMP_PIL_MATLAB_COMMAND_TX_PORT", "binding": { "number": "12502" } },
+    { "role": "PIL MATLAB Command RX Port", "macro": "GMP_PIL_MATLAB_COMMAND_RX_PORT", "binding": { "number": "12503" } },
+    { "role": "PIL MCU Timeout", "macro": "GMP_PIL_MCU_TIMEOUT_MS", "binding": { "number": "200" } },
+    { "role": "PIL MATLAB Timeout", "macro": "GMP_PIL_MATLAB_TIMEOUT_MS", "binding": { "number": "5000" } },
+    { "role": "PIL ADC DC Bus Index", "macro": "GMP_PIL_RX_ADC_UDC_INDEX", "binding": { "number": "0" } },
+    { "role": "PIL ADC Phase U Voltage Index", "macro": "GMP_PIL_RX_ADC_UU_INDEX", "binding": { "number": "1" } },
+    { "role": "PIL ADC Phase V Voltage Index", "macro": "GMP_PIL_RX_ADC_UV_INDEX", "binding": { "number": "2" } },
+    { "role": "PIL ADC Phase W Voltage Index", "macro": "GMP_PIL_RX_ADC_UW_INDEX", "binding": { "number": "3" } },
+    { "role": "PIL ADC Phase U Current Index", "macro": "GMP_PIL_RX_ADC_IU_INDEX", "binding": { "number": "4" } },
+    { "role": "PIL ADC Phase V Current Index", "macro": "GMP_PIL_RX_ADC_IV_INDEX", "binding": { "number": "5" } },
+    { "role": "PIL ADC Phase W Current Index", "macro": "GMP_PIL_RX_ADC_IW_INDEX", "binding": { "number": "6" } },
+    { "role": "PIL UDP Encoder Index", "macro": "GMP_PIL_UDP_ENCODER_INDEX", "binding": { "number": "0" } },
+    { "role": "PIL PWM Phase U Index", "macro": "GMP_PIL_TX_PWM_U_INDEX", "binding": { "number": "0" } },
+    { "role": "PIL PWM Phase V Index", "macro": "GMP_PIL_TX_PWM_V_INDEX", "binding": { "number": "1" } },
+    { "role": "PIL PWM Phase W Index", "macro": "GMP_PIL_TX_PWM_W_INDEX", "binding": { "number": "2" } },
+    { "role": "PIL Monitor Phase U Current Index", "macro": "GMP_PIL_TX_MONITOR_IU_INDEX", "binding": { "number": "0" } },
+    { "role": "PIL Monitor Phase V Current Index", "macro": "GMP_PIL_TX_MONITOR_IV_INDEX", "binding": { "number": "1" } },
+    { "role": "PIL Monitor D Current Index", "macro": "GMP_PIL_TX_MONITOR_ID_INDEX", "binding": { "number": "2" } },
+    { "role": "PIL Monitor Q Current Index", "macro": "GMP_PIL_TX_MONITOR_IQ_INDEX", "binding": { "number": "3" } },
+    { "role": "PIL Monitor Electrical Position Index", "macro": "GMP_PIL_TX_MONITOR_POSITION_INDEX", "binding": { "number": "4" } },
+    { "role": "PIL Monitor Speed Index", "macro": "GMP_PIL_TX_MONITOR_SPEED_INDEX", "binding": { "number": "5" } },
 
     { "role": "Motor Type", "macro": "MOTOR_TYPE", "binding": { "export": "sm060r20b30mnad.motor_type" } },
     { "role": "Motor Stator Resistance", "macro": "MOTOR_PARAM_RS", "binding": { "export": "sm060r20b30mnad.rs" } },
@@ -118,7 +160,13 @@
     { "role": "Motor Maximum DC Voltage", "macro": "MOTOR_PARAM_MAX_DC_VOLTAGE", "binding": { "export": "sm060r20b30mnad.max_dc_voltage" } },
     { "role": "Motor Maximum Phase Current", "macro": "MOTOR_PARAM_MAX_PH_CURRENT", "binding": { "export": "sm060r20b30mnad.max_ph_current" } }
   ],
-  "feature_macros": [],
+  "feature_macros": [
+    {
+      "group": "PIL Runtime", "macro": "ENABLE_GMP_DL_PIL_SERVER",
+      "enabled": true, "weak": false, "value": "",
+      "description": "Expose standard Data Link PIL and online-debug facilities through the supervised CCTL Viewer transport without selecting PIL-only controller mode."
+    }
+  ],
   "option_macros": [
     {
       "group": "ADC", "macro": "MC_CURRENT_SAMPLE_PHASE_MODE", "enabled": true,

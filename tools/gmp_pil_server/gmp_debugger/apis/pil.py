@@ -27,7 +27,7 @@ def _macro_values(document: dict[str, object]) -> dict[str, object]:
     values: dict[str, object] = {}
     for item in document.get("requirements", []):
         binding = item.get("binding", {})
-        for kind in ("number", "float", "string"):
+        for kind in ("number", "float", "parameter", "literal", "string"):
             if kind in binding:
                 raw = binding[kind]
                 if kind == "string":
@@ -120,7 +120,10 @@ class PilConfiguration:
             for document in (*commons, target)
             for item in document.get("feature_macros", [])
         }
-        enabled = features.get("ENABLE_GMP_DL_PIL_SIM", False)
+        enabled = any(
+            features.get(macro, False)
+            for macro in ("ENABLE_GMP_DL_PIL_SIM", "ENABLE_GMP_DL_PIL_SERVER")
+        )
         levels = {
             item["macro"]: item.get("value", "")
             for document in (*commons, target)
@@ -161,7 +164,10 @@ class PilConfiguration:
     def validate(self) -> None:
         """Reject an unsafe or internally inconsistent PIL mapping."""
         if not self.enabled:
-            raise ValueError("ENABLE_GMP_DL_PIL_SIM is disabled in the target SDPE requirement.")
+            raise ValueError(
+                "Neither ENABLE_GMP_DL_PIL_SIM nor ENABLE_GMP_DL_PIL_SERVER "
+                "is enabled in the target SDPE requirement."
+            )
         if self.build_level < 1:
             raise ValueError("BUILD_LEVEL must be positive.")
         if self.controller_frequency_hz <= 0.0:

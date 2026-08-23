@@ -33,6 +33,50 @@ def get_time_str():
     """Return the current local time with millisecond precision."""
     return datetime.now().strftime('%H:%M:%S.%f')[:-3]
 
+
+class _CallbackByteTransport:
+    """Serial-like byte stream backed by a caller-provided write callback."""
+
+    def __init__(self, write_callback, timeout: float = 0.1):
+        self._write_callback = write_callback
+        self._timeout = timeout
+        self._rx = bytearray()
+        self._condition = threading.Condition()
+        self.is_open = True
+
+    @property
+    def in_waiting(self) -> int:
+        with self._condition:
+            return len(self._rx)
+
+    def write(self, data: bytes) -> int:
+        if not self.is_open:
+            raise OSError("managed byte transport is closed")
+        payload = bytes(data)
+        self._write_callback(payload)
+        return len(payload)
+
+    def read(self, size: int = 1) -> bytes:
+        with self._condition:
+            if self.is_open and not self._rx:
+                self._condition.wait(self._timeout)
+            count = min(max(int(size), 1), len(self._rx))
+            data = bytes(self._rx[:count])
+            del self._rx[:count]
+            return data
+
+    def feed(self, data: bytes) -> None:
+        with self._condition:
+            if not self.is_open:
+                return
+            self._rx.extend(data)
+            self._condition.notify_all()
+
+    def close(self) -> None:
+        with self._condition:
+            self.is_open = False
+            self._condition.notify_all()
+
 class HermesDatalinkQt(QObject):
     sig_frame_received = pyqtSignal(int, int, bytes)
     sig_log_event = pyqtSignal(str, str)
@@ -60,6 +104,7 @@ class HermesDatalinkQt(QObject):
         self._tx_seq = 0  # Preserve FIFO order among requests with equal priority.
         self._seq_lock = threading.Lock()
         self._close_lock = threading.Lock()
+        self._transport_name = "Serial port"
 
     def emit_log(self, source: str, message: str) -> None:
         """Publish one source-classified message to the application log."""
@@ -68,6 +113,8 @@ class HermesDatalinkQt(QObject):
     def connect_serial(self, port, baudrate, bytesize, parity, stopbits):
         if self.serial.is_open: self.close()
         try:
+            if not isinstance(self.serial, serial.Serial):
+                self.serial = serial.Serial()
             self.serial.port = port
             self.serial.baudrate = baudrate
             self.serial.bytesize = bytesize
@@ -83,11 +130,8 @@ class HermesDatalinkQt(QObject):
                 try: self.tx_queue.get_nowait()
                 except queue.Empty: break
 
-            # Start independent receive and transmit workers.
-            self.rx_thread = threading.Thread(target=self._rx_task, daemon=True)
-            self.tx_thread = threading.Thread(target=self._tx_task, daemon=True)
-            self.rx_thread.start()
-            self.tx_thread.start()
+            self._transport_name = f"Serial port {port}"
+            self._start_io_workers()
             
             self.emit_log("System", f"Serial port {port} opened with queued I/O workers.")
             self.sig_conn_state.emit(True)
@@ -96,6 +140,39 @@ class HermesDatalinkQt(QObject):
             self.emit_log("System", f"Failed to open the serial port: {str(e)}")
             self.sig_conn_state.emit(False)
             return False
+
+    def connect_transport(self, write_callback, name="Managed transport"):
+        """Attach a serial-like byte stream without opening physical hardware."""
+        if self.serial.is_open:
+            self.close()
+        try:
+            self.serial = _CallbackByteTransport(write_callback)
+            self.running = True
+            self._transport_name = name
+            while not self.tx_queue.empty():
+                try: self.tx_queue.get_nowait()
+                except queue.Empty: break
+            self._start_io_workers()
+            self.emit_log("System", f"{name} connected with queued I/O workers.")
+            self.sig_conn_state.emit(True)
+            return True
+        except Exception as e:
+            self.emit_log("System", f"Failed to attach {name}: {str(e)}")
+            self.sig_conn_state.emit(False)
+            return False
+
+    def feed_transport(self, data: bytes) -> bool:
+        """Deliver target-originated bytes to an attached managed transport."""
+        if isinstance(self.serial, _CallbackByteTransport) and self.serial.is_open:
+            self.serial.feed(bytes(data))
+            return True
+        return False
+
+    def _start_io_workers(self):
+        self.rx_thread = threading.Thread(target=self._rx_task, daemon=True)
+        self.tx_thread = threading.Thread(target=self._tx_task, daemon=True)
+        self.rx_thread.start()
+        self.tx_thread.start()
 
     def close(self):
         """Stop both workers without attempting to join the calling worker."""
@@ -110,7 +187,7 @@ class HermesDatalinkQt(QObject):
             if self.serial.is_open:
                 self.serial.close()
             if was_connected:
-                self.emit_log("System", "Serial port disconnected.")
+                self.emit_log("System", f"{self._transport_name} disconnected.")
                 self.sig_conn_state.emit(False)
 
     # =========================================================

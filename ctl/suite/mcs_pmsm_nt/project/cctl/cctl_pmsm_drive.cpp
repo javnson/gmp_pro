@@ -9,6 +9,7 @@
 #include <csp.general.hpp>
 #include <gmp_core.hpp>
 #include <mcu_simulation.hpp>
+#include <user_main.h>
 #include <xplt.peripheral.h>
 
 #include <algorithm>
@@ -634,6 +635,11 @@ void csp_cctl_project_configure(void)
     callbacks.step = [](std::size_t index, double time_s,
                         gmp::csp::cctl::simulation_runtime &host) {
         configured_system->step(index, time_s, host);
+    };
+    callbacks.service = [] {
+        /* RX dispatch and TX framing require two state-machine passes. */
+        for (unsigned pass = 0U; pass < 4U; ++pass)
+            (void)tsk_dl_debug_device(nullptr);
     };
     callbacks.finalize = [] { configured_system->finalize(); };
     callbacks.print_summary = [](std::ostream &stream) {
