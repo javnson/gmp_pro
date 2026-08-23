@@ -27,13 +27,11 @@ from tabs.tab_ascii import TabAscii  # noqa: E402
 from tabs.tab_chronos import TabChronosManager  # noqa: E402
 from tabs.tab_dsa_scope import TabDsaScope  # noqa: E402
 from tabs.tab_mem_persp import TabMemPersp  # noqa: E402
-from tabs.tab_pil import TabPilBridge  # noqa: E402
 from tabs.tab_raw import TabRaw  # noqa: E402
-from tabs.tab_sim import TabSim  # noqa: E402
 from tabs.tab_tunable import TabTunableManager  # noqa: E402
 
 
-class PilServerPanel(QtWidgets.QWidget):
+class DataLinkPanel(QtWidgets.QWidget):
     """Reuse gmp_debugger pages over the supervised CCTL byte transport."""
 
     def __init__(self, simulation, parent=None) -> None:
@@ -56,8 +54,6 @@ class PilServerPanel(QtWidgets.QWidget):
         self.tabs = QtWidgets.QTabWidget()
         self.tab_raw = TabRaw(self.hermes)
         self.tab_ascii = TabAscii(self.hermes)
-        self.tab_sim = TabSim(self.hermes)
-        self.tab_pil_bridge = TabPilBridge(self.hermes, self.tab_sim)
         self.tab_tunable = TabTunableManager(self.hermes, self.discovery)
         self.tab_mem_persp = TabMemPersp(self.hermes, self.discovery)
         self.tab_chronos = TabChronosManager(self.hermes)
@@ -65,8 +61,6 @@ class PilServerPanel(QtWidgets.QWidget):
         for widget, title in (
             (self.tab_raw, "Raw"),
             (self.tab_ascii, "Echo"),
-            (self.tab_sim, "PIL Simulation"),
-            (self.tab_pil_bridge, "Simulink-PIL Bridge"),
             (self.tab_tunable, "Tunable"),
             (self.tab_mem_persp, "Memory"),
             (self.tab_chronos, "Chronos"),
@@ -77,15 +71,9 @@ class PilServerPanel(QtWidgets.QWidget):
 
         self.log = QtWidgets.QTextBrowser()
         self.log.setMaximumHeight(110)
-        self.log.setPlaceholderText("PIL Server and Data Link events")
+        self.log.setPlaceholderText("Data Link events")
         layout.addWidget(self.log)
 
-        self.tab_pil_bridge.sig_rx_parsed.connect(
-            self.tab_sim.update_rx_ui_from_bridge
-        )
-        self.tab_tunable.sig_global_bus_busy.connect(
-            self.tab_pil_bridge.set_bus_preempted
-        )
         self.hermes.sig_log_event.connect(self._append_log)
         self.hermes.sig_conn_state.connect(self._connection_changed)
         self.simulation.datalink_received.connect(self.hermes.feed_transport)

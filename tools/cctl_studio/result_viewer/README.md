@@ -45,19 +45,18 @@ supervised child in its wait-for-start state, so every CSV header and selectable
 channel is available before simulation. It remains in Stop with zero numerical
 steps until the user presses Start. Use `--headless` for command-line-only use.
 
-## PIL Server and online debugging
+## Data Link and online debugging
 
-The **PIL Server** page reuses the maintained GMP Data Link Debugger engine and
-its Raw, Echo, PIL, Simulink bridge, Tunable, Memory, Chronos, and Scope pages.
+The **Data Link** page reuses the maintained GMP Data Link Debugger engine and
+provides its Raw, Echo, Tunable, Memory, Chronos, and Data Link Scope pages.
 It does not open a physical serial port. Standard framed Data Link bytes are
 Base64-encoded inside the supervised JSON channel, delivered through the CCTL
 CSP virtual communication peripheral, processed by the target application's
 normal `gmp_dev_dl_loop_cb()` and facility dispatcher, and returned over the
-same route. Discovery, online access, and PIL steps remain available while the
-numerical simulation is paused.
+same route. Discovery and online access remain available while the numerical
+simulation is paused.
 
 Only facilities actually registered by the target respond. The current
-`mcs_pmsm_nt/project/cctl` target registers Echo, PIL, Tunable, and whitelisted
-Memory. Its SDPE owns `GMP_PIL_DL_BASE_COMMAND` (`0x10`), while
-`ENABLE_GMP_DL_PIL_SERVER` deliberately exposes the service without selecting
-the PIL-only controller mode used by hardware commissioning targets.
+`mcs_pmsm_nt/project/cctl` target provides Echo, Tunable, and whitelisted
+Memory through this page. Chronos and Data Link Scope remain visible for targets
+that register those standard facilities.

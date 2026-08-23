@@ -43,6 +43,7 @@ void mcu_simulation::initialize()
     for (epwm_type &module : epwm_)
         module.reset();
     outputs_ = {};
+
     if (!verify_peripheral_models())
         throw std::runtime_error(
             "SDPE-configured TI peripheral self-test failed");

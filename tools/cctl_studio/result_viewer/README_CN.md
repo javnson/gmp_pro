@@ -80,17 +80,15 @@ CCTL 仿真程序时，程序会先打开该 Manager，再由 Manager 以受管�
 等待状态；此时 CSP 已经创建所有 CSV 并写入表头，`Data and curves` 会立即列出
 可选通道，但 CSV 中还没有任何数值数据行。纯命令行运行可传 `--headless`。
 
-## PIL Server 与在线调试
+## Data Link 与在线调试
 
-`PIL Server` 页直接复用 GMP Data Link Debugger 的协议引擎和功能页，包括 Raw、
-Echo、PIL Simulation、Simulink-PIL Bridge、Tunable、Memory、Chronos 和 Data Link
-Scope。它不打开物理串口：Debugger 生成的标准 Data Link 原始帧经受管 JSON 通道
+`Data Link` 页直接复用 GMP Data Link Debugger 的协议引擎，并仅保留 Raw、Echo、
+Tunable、Memory、Chronos 和 Data Link Scope 六个功能页。它不打开物理串口：
+Debugger 生成的标准 Data Link 原始帧经受管 JSON 通道
 Base64 编码后送入 CCTL CSP 的虚拟通信外设；目标程序的 `user_main.c` 仍通过
 `gmp_dev_dl_loop_cb()`、设施分派器和标准 CRC/转义实现处理请求，回复再沿同一路径
-返回。暂停状态也可执行设施发现、参数读写和 PIL 单步，不需要先启动数值仿真。
+返回。暂停状态也可执行设施发现和参数读写，不需要先启动数值仿真。
 
-Viewer 只显示目标实际注册的设施。当前 `mcs_pmsm_nt/project/cctl` 注册 Echo、PIL、
-Tunable 和白名单 Memory；未注册的 Chronos/Scope 页会按标准协议报告不可用。PIL
-命令基址来自工程 SDPE 的 `GMP_PIL_DL_BASE_COMMAND`（当前为 `0x10`），而
-`ENABLE_GMP_DL_PIL_SERVER` 只开放在线服务，不会启用硬件工程所用的 PIL-only
-控制模式，也不会改变正常 CCTL 闭环的 ADC ISR/PWM 路径。
+当前 `mcs_pmsm_nt/project/cctl` 可通过此页使用 Echo、Tunable 和白名单 Memory；
+Chronos 与 Data Link Scope 保留给注册了对应标准设施的目标，未注册时会按协议报告
+不可用。

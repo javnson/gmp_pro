@@ -16,7 +16,7 @@ sys.path.insert(0, str(VIEWER_DIR))
 
 from PyQt5 import QtCore, QtTest, QtWidgets  # noqa: E402
 from result_viewer import LIVE_REFRESH_INTERVAL_MS, ResultViewer  # noqa: E402
-from pil_server_panel import HermesDatalinkQt  # noqa: E402
+from datalink_panel import HermesDatalinkQt  # noqa: E402
 from simulation_manager import SimulationProcessManager  # noqa: E402
 
 
@@ -227,7 +227,14 @@ class ResultViewerTests(unittest.TestCase):
         self.assertAlmostEqual(viewer.rolling_window_seconds.value(), 0.1)
         self.assertAlmostEqual(viewer.memory_window_seconds.value(), 1.0)
         self.assertEqual(viewer.view_tabs.tabText(0), "Configuration")
-        self.assertEqual(viewer.view_tabs.tabText(1), "PIL Server")
+        self.assertEqual(viewer.view_tabs.tabText(1), "Data Link")
+        self.assertEqual(
+            [
+                viewer.datalink_panel.tabs.tabText(index)
+                for index in range(viewer.datalink_panel.tabs.count())
+            ],
+            ["Raw", "Echo", "Tunable", "Memory", "Chronos", "Data Link Scope"],
+        )
         self.assertTrue(viewer.data_curve_panel.isVisibleTo(viewer))
         self.assertEqual((viewer.pages[0].rows, viewer.pages[0].columns), (1, 1))
         first_panel = viewer.pages[0].panels[0]
