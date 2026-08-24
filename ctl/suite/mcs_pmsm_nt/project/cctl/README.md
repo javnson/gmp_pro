@@ -25,7 +25,7 @@ the only project site that calls `gmp_base_ctl_step()`; it is reached from ePWM
 SOC after ADC and encoder registers are latched, never from the plant main loop.
 `xplt.ctl_interface.h` maps control callbacks and routes state-machine output
 enable/disable through the CSP.
-Generic TI-style peripheral primitives remain under `cctl/peripheral_if`.
+Generic TI-style peripheral primitives live under `cctl/component/control_peripheral`.
 
 The MCU aggregate exposes only `control_outputs()` and `control_inputs()` on
 the runtime data path. The former samples PWM/SOC outputs for the plant; the
@@ -58,7 +58,9 @@ exclusively through `GMP_PRO_LOCATION` and builds in
 
 `sdpe_mgr/sdpe_requirement.json` owns controller, ADC/eQEP/ePWM, timing, output,
 and pause parameters. `gmp_src_mgr/gmp_framework_config.json` selects the GMP
-controller dependencies plus `cctl|dsa` and `csp|cctl`; CMake consumes only the
+controller dependencies, `csp|cctl`, `cctl|component|circuit_model`, and
+`cctl|component|control_peripheral`; their dependency closure also selects the
+CCTL numerical solver and DSA modules. CMake consumes only the
 generated source-manager `.cmake` file. The CMake generator resolves `inc_dirs`
 from the selected modules and their dependency closure, including in `src_only`
 mode where the header-mirror summary may be absent or stale. `hw/PMSM.CIR` is
@@ -81,7 +83,7 @@ The testbench requires that event to occur while all three low-side gates conduc
 The ADC only stages analog values between SOC events; a trigger atomically latches
 all channels, sets interrupt pending, and immediately dispatches the control ISR.
 TI-style ADC, center-aligned complementary ePWM with dead band and compare-event
-trigger output, and eQEP models are provided by `cctl/peripheral_if`. The motor accepts load torque through
+trigger output, and eQEP models are provided by `cctl/component/control_peripheral`. The motor accepts load torque through
 `pmsm_cs_input::load_torque_nm`. The 4 s regression applies 0.02 N*m after
 0.5 s and leaves enough time to check the existing speed PI against its 300 rpm
 command.

@@ -7,7 +7,7 @@
 #define MCS_PMSM_NT_CCTL_MCU_SIMULATION_HPP
 
 #include <csp.typedef.hpp>
-#include <cctl/peripheral_if/peripheral_if.hpp>
+#include <cctl/component/control_peripheral/peripheral_if.hpp>
 
 #include <array>
 #include <cstddef>

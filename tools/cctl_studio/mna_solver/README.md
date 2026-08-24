@@ -237,7 +237,7 @@ three inputs with `pmsm_phase_current`, the three outputs with
 An incomplete triplet remains ordinary current sources, while a complete
 triplet with different neutral nodes is rejected.
 
-`cctl/circuit_model/pmsm_cs.hpp` supplies the motor side. Its initialization
+`cctl/component/circuit_model/pmsm_cs.hpp` supplies the motor side. Its initialization
 function validates SI parameters, clears the state, and precomputes inverse
 inductances/inertia, resistance and flux ratios, torque coefficients, and RK4
 step factors. Runtime calls accept phase-to-neutral voltages and return

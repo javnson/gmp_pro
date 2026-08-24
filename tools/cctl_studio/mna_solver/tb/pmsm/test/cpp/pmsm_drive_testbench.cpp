@@ -2,7 +2,7 @@
 
 // Handwritten system testbench. cpp_codegen.py regenerates the circuit header and archive.
 
-#include <cctl/circuit_model/pmsm_cs.hpp>
+#include <cctl/component/circuit_model/pmsm_cs.hpp>
 #include <ctl/hardware_preset/pmsm_motor/sm060r20b30mnad.h>
 
 #include <algorithm>

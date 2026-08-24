@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 #include <cctl/numerical_solver/fixed_vector.hpp>
-#include <cctl/power_electronics_objects/inverter/three_phase_average_inverter.hpp>
+#include <cctl/component/power_electronics_objects/inverter/three_phase_average_inverter.hpp>
 
 namespace cctl
 {

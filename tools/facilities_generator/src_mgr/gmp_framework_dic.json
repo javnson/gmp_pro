@@ -6879,6 +6879,176 @@
             }
         },
         "cctl": {
+            "numerical_solver": {
+                "type": "module",
+                "description": "Header-only fixed-size math and explicit CCTL numerical solvers",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/numerical_solver/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/cctl/numerical_solver/readme.md",
+                    "${GMP_PRO_LOCATION}/cctl/numerical_solver/readme_cn.md"
+                ],
+                "depends_on": []
+            },
+            "component|_internal": {
+                "type": "module",
+                "description": "Public aggregate header for the commonly used CCTL simulation components",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/cctl.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/cctl/readme.md",
+                    "${GMP_PRO_LOCATION}/cctl/readme_cn.md"
+                ],
+                "depends_on": [
+                    "cctl|numerical_solver",
+                    "cctl|component|circuit_model",
+                    "cctl|component|control_peripheral",
+                    "cctl|component|power_electronics|inverter",
+                    "cctl|component|power_electronics|motor_model",
+                    "cctl|dsa"
+                ]
+            },
+            "component|interface": {
+                "type": "module",
+                "description": "Base interfaces for graph-composed CCTL components",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/component/interface/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|circuit_model": {
+                "type": "module",
+                "description": "CCTL circuit-side plant interfaces and coupled machine models",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/component/circuit_model/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [],
+                "depends_on": [
+                    "cctl|numerical_solver"
+                ]
+            },
+            "component|control_peripheral": {
+                "type": "module",
+                "description": "Host models of control peripherals including ADC, ePWM, eQEP, and rate dividers",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/component/control_peripheral/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|power_electronics|buckboost_universal": {
+                "type": "module",
+                "description": "Universal buck-boost converter model",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/component/power_electronics_objects/buckboost_universal/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/cctl/component/power_electronics_objects/buckboost_universal/readme.md"
+                ],
+                "depends_on": []
+            },
+            "component|power_electronics|dfig": {
+                "type": "module",
+                "description": "Doubly-fed induction generator model",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/component/power_electronics_objects/dfig/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|power_electronics|inverter": {
+                "type": "module",
+                "description": "Three-phase average inverter model",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/component/power_electronics_objects/inverter/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [],
+                "depends_on": [
+                    "cctl|numerical_solver"
+                ]
+            },
+            "component|power_electronics|mosfet": {
+                "type": "module",
+                "description": "MOSFET half-bridge and three-phase switching models",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/component/power_electronics_objects/mosfet/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [],
+                "depends_on": []
+            },
+            "component|power_electronics|motor_model": {
+                "type": "module",
+                "description": "Average induction- and permanent-magnet motor models",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/component/power_electronics_objects/motor_model/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/cctl/component/power_electronics_objects/readme.md",
+                    "${GMP_PRO_LOCATION}/cctl/component/power_electronics_objects/readme_cn.md"
+                ],
+                "depends_on": [
+                    "cctl|numerical_solver",
+                    "cctl|component|power_electronics|inverter"
+                ]
+            },
+            "component|power_electronics|pmsm_model_constPsi_r": {
+                "type": "module",
+                "description": "Constant-flux PMSM compatibility model",
+                "src_patterns": [],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/cctl/component/power_electronics_objects/pmsm_model_constPsi_r/*.hpp"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/"
+                ],
+                "help_docs": [],
+                "depends_on": [
+                    "cctl|component|power_electronics|motor_model"
+                ]
+            },
             "dsa": {
                 "type": "module",
                 "description": "Reusable CCTL lock-free data-stream structures",

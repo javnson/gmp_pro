@@ -9,15 +9,19 @@
 | 目录 | 作用 |
 | --- | --- |
 | [`numerical_solver`](numerical_solver/readme_cn.md) | 数值方程与求解器实验 |
-| [`power_electronics_objects`](power_electronics_objects/readme_cn.md) | 变换器和被控对象的 C++ 模型 |
+| `component/circuit_model` | 电路侧被控对象接口与耦合电机模型 |
+| [`component/power_electronics_objects`](component/power_electronics_objects/readme_cn.md) | 变换器和被控对象的 C++ 模型 |
 | [`dsa`](dsa/README_CN.md) | 预分配 SPSC 无锁定长记录环等可复用数据流结构 |
-| `peripheral_if` | TI DSP 风格的 ADC、中心对齐互补 ePWM、eQEP 与固定倍率分频模型 |
-| `circuit_solver` | 历史 Python 改进节点分析实验 |
-| `component` | 尚未由 `cctl.hpp` 导出的早期 C++ 接口实验 |
+| `component/control_peripheral` | TI DSP 风格的 ADC、中心对齐互补 ePWM、eQEP 与固定倍率分频模型 |
+| `component/interface` | 用于图形化组合 CCTL 元件的基础接口 |
 
-`peripheral_if` 中的 ADC、ePWM 和 eQEP 通过各自的静态 `make()` 接收用户参数，
+`component/control_peripheral` 中的 ADC、ePWM 和 eQEP 通过各自的静态 `make()` 接收用户参数，
 配置对象创建后只读。ADC 可以保存带上下文的 ISR 函数指针，并通过
 `trigger_and_transfer()` 在分发中断前完成结果寄存器搬运。
+
+这些头文件已经注册到 GMP 源码管理器的 `cctl` 根下。工程应选择实际使用的
+`cctl|component|...` 细粒度模块；`cctl|component|_internal` 表示公共聚合头及其
+完整依赖闭包。
 
 当前硬件 suite 默认仍采用 `ctl`。正式嵌入式控制工程应优先从 `ctl/component` 和 `ctl/suite` 开始；只有在确实需要 C++ 类型或上位机数值模型时再使用 CCTL。
 

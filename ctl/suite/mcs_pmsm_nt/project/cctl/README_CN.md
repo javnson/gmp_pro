@@ -23,7 +23,7 @@ ADC SOC/中断分发和 eQEP。C 兼容的 `xplt.peripheral.*` 只保存控制�
 `gmp_base_ctl_step()` 的位置：ePWM SOC 触发 ADC 并锁存 ADC、编码器寄存器后才
 进入 ISR，不会从被控对象 mainloop 调用控制步。`xplt.ctl_interface.h` 负责控制器
 回调映射，并把状态机的输出使能/禁用连接到 CSP。通用 TI 风格外设原语仍位于
-`cctl/peripheral_if`。
+`cctl/component/control_peripheral`。
 
 运行期的 MCU 聚合接口只分成 `control_outputs()` 和 `control_inputs()`：前者
 采样 PWM/SOC 输出并送给主电路，后者一次性接收 ADC 调理电压和转子位置，并在
@@ -54,8 +54,10 @@ SDPE 形参；配置对象是只读值对象。构造函数只创建一次配置
   `sdpe_mgr/ctrl_settings.h`。ADC 分辨率/参考电压、eQEP 线数、ePWM 时钟/周期/
   死区、ADC 触发比较值、仿真时长、负载、输出缓冲区和暂停策略均由这里管理；
   不要手工修改生成头。
-- `gmp_src_mgr/gmp_framework_config.json` 选择控制器依赖、`cctl|dsa` 和
-  `csp|cctl`。源管理器生成本地扁平源以及 `gmp_config.cmake`，项目 CMake 只
+- `gmp_src_mgr/gmp_framework_config.json` 选择控制器依赖、`csp|cctl`、
+  `cctl|component|circuit_model` 和 `cctl|component|control_peripheral`；
+  依赖闭包还会带入 CCTL 数值求解器和 DSA。源管理器生成本地扁平源以及
+  `gmp_config.cmake`，项目 CMake 只
   `include` 该文件，不再手工枚举 GMP 库源文件，也不再借用 `simulate` 工程。
   CMake 生成器直接从已选模块及其依赖闭包汇总 `inc_dirs`，`src_only` 模式不
   依赖可能过期的 `gmp_compiler_includes.txt`。
@@ -75,7 +77,7 @@ SDPE 形参；配置对象是只读值对象。构造函数只创建一次配置
 的 CMPB 上数事件产生一次 ADC SOC；当前 SDPE 值为 250 TBCLK，testbench 会
 断言该事件落在三个下桥同时导通的 low-side 采样窗口。ADC 在 SOC 到来前只
 更新模拟输入，触发时同时锁存七路结果、置中断 pending，并立即执行控制主中断。
-TI 风格外设模型位于 `cctl/peripheral_if`：带 SOC/中断握手的 12/16 位右对齐
+TI 风格外设模型位于 `cctl/component/control_peripheral`：带 SOC/中断握手的 12/16 位右对齐
 ADC、带比较事件触发输出的中心对齐互补 ePWM（含 DBRED/DBFED 死区），以及
 带圈数信息的 eQEP。负载转矩通过
 `pmsm_cs_input::load_torque_nm` 输入。4 s 回归测试在 0.5 s 后施加 0.02 N·m，

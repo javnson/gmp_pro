@@ -5,7 +5,7 @@
 
 #include "pmsmcircuit.hpp"
 
-#include <cctl/circuit_model/pmsm_cs.hpp>
+#include <cctl/component/circuit_model/pmsm_cs.hpp>
 #include <csp.general.hpp>
 #include <gmp_core.hpp>
 #include <mcu_simulation.hpp>

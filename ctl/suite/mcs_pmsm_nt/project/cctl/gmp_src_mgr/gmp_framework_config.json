@@ -2,6 +2,8 @@
   "sync_mode": "src_only",
   "selected_modules": [
     { "root": "csp", "module": "cctl" },
+    { "root": "cctl", "module": "component|circuit_model" },
+    { "root": "cctl", "module": "component|control_peripheral" },
     { "root": "core", "module": "pm|function_scheduler" },
     { "root": "core", "module": "dev|datalink|variable_monitor" },
     { "root": "core", "module": "dev|datalink|mem_monitor" },

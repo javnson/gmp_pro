@@ -2,6 +2,9 @@
 
 **English** | [简体中文](README_CN.md)
 
+See [architecture and generation plan](ARCHITECTURE.md) for the reviewed target
+data model, the `mcs_pmsm_nt` generation boundary, and phased acceptance gates.
+
 This directory contains a small, offline-first validation of a data-driven circuit
 authoring flow for CCTL and Xyce. It follows the useful separation seen in TI
 SysConfig-based tools: component metadata and project wiring are data, while one

@@ -11,16 +11,20 @@ types for matrix and numerical calculations.
 | Directory | Purpose |
 | --- | --- |
 | [`numerical_solver`](numerical_solver/readme.md) | Numerical equation and solver experiments |
-| [`power_electronics_objects`](power_electronics_objects/readme.md) | C++ models of converters and controlled plants |
+| `component/circuit_model` | Circuit-side plant interfaces and coupled machine models |
+| [`component/power_electronics_objects`](component/power_electronics_objects/readme.md) | C++ models of converters and controlled plants |
 | [`dsa`](dsa/README.md) | Reusable preallocated SPSC lock-free fixed-record streams |
-| `peripheral_if` | TI DSP-style ADC, center-aligned complementary ePWM, eQEP, and fixed-rate divider models |
-| `circuit_solver` | Historical Python modified-nodal-analysis experiments |
-| `component` | Early C++ interface experiments; not exported by `cctl.hpp` |
+| `component/control_peripheral` | TI DSP-style ADC, center-aligned complementary ePWM, eQEP, and fixed-rate divider models |
+| `component/interface` | Base interfaces for graph-composed CCTL components |
 
-ADC, ePWM, and eQEP models in `peripheral_if` accept user parameters through
+ADC, ePWM, and eQEP models in `component/control_peripheral` accept user parameters through
 their static `make()` factories and expose immutable configuration values. The
 ADC can retain a context-aware ISR function pointer; `trigger_and_transfer()`
 moves result registers before dispatching that interrupt.
+
+These headers are registered under the `cctl` root in the GMP source manager.
+Projects should select the narrow `cctl|component|...` modules they consume;
+`cctl|component|_internal` selects the public aggregate and its dependency closure.
 
 CCTL is not the default runtime used by current hardware suites. For production
 embedded control, start with `ctl/component` and `ctl/suite`; use CCTL where C++
