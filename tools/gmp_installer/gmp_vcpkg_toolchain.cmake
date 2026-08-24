@@ -34,7 +34,7 @@ if(EXISTS "${_GMP_PRIVATE_MARKER}" AND NOT GMP_VCPKG_FORCE_SYSTEM)
     if(NOT IS_DIRECTORY "${_GMP_PRIVATE_INSTALLED}/x64-windows/share")
         message(FATAL_ERROR
             "The GMP private vcpkg package tree is incomplete. Run "
-            "repair_gmp_vcpkg.bat.")
+            "tools/gmp_installer/utilities/repair_gmp_vcpkg.bat.")
     endif()
 
     # The private installer has already restored the aggregate dependency set.

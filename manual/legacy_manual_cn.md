@@ -30,7 +30,7 @@ GMP项目分为跨平台支持模块、控制器模板库、外设库、软件�
 
 + CCS配套的Sysconfig和C2000ware（如果需要调试DSP程序）
 
-将GMP的软件包解压到一个没有中文、空格等命名按照标识符规则命名的地方（否则一些编译器不能正确找到路径、可能报错），运行位于根目录下的安装程序`install_gmp.bat`，正确的情况下这一程序将会创建一个环境变量`GMP_PRO_LOCATION`用于保存GMP的目录。如果需要卸载GMP ，可以手动删除`GMP_PRO_LOCATION`环境变量。
+将GMP的软件包解压到一个没有中文、空格等命名按照标识符规则命名的地方（否则一些编译器不能正确找到路径、可能报错）。现在推荐运行根目录下的 `install_gmp_virtual_env.bat`；如必须兼容旧版系统直接安装方式，可运行 `tools\gmp_installer\utilities\install_gmp.bat`。正确的情况下安装程序将创建环境变量 `GMP_PRO_LOCATION` 用于保存 GMP 目录。如果需要卸载 GMP，可以手动删除 `GMP_PRO_LOCATION` 环境变量。
 
 > 注意，需要正确运行这一程序要本地正确安装了Python3，否则一系列代码生成工具将会报错。
 

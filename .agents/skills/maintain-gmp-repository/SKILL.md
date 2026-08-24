@@ -45,7 +45,7 @@ Treat a suite README's validation record as evidence for that exact target and c
 ## Respect installation contracts
 
 - Register `GMP_PRO_LOCATION` before every installation mode.
-- Keep system installation (`install_gmp.bat`) and repository-private installation (`install_gmp_virtual_env.bat`) compatible.
+- Keep the compatibility system installation (`tools/gmp_installer/utilities/install_gmp.bat`) and repository-private installation (`install_gmp_virtual_env.bat`) compatible.
 - Consider Visual Studio optional. Only native simulation dependency restore requires its x64 C++ workload.
 - Use `tools/gmp_installer/environment_manifest.json` for private executable/Python versions, `requirements-gmp.txt` for Python packages, and convention-based `ctl/suite/*/project/simulate/vcpkg.json` manifests for native packages.
 - Preserve proxy selection for downloads and child Visual Studio/vcpkg processes.

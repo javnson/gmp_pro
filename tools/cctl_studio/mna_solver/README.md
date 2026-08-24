@@ -459,7 +459,7 @@ The generated `BuckCircuit` exposes `step_short(PWM, VS1)`,
 switching testbenches with:
 
 ```bat
-repair_gmp_vcpkg.bat
+tools\gmp_installer\utilities\repair_gmp_vcpkg.bat
 tools\cctl_studio\mna_solver\tb\buck\build_test.bat
 tools\cctl_studio\mna_solver\tb\boost\build_test.bat
 tools\cctl_studio\mna_solver\tb\fsbb\build_test.bat

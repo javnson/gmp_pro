@@ -2,13 +2,15 @@
 
 [English](README.md) | **简体中文**
 
-GMP Pro 提供经典系统环境和仓库私有环境两种兼容安装方式。两种方式都会先检查仓库路径，并注册用户环境变量：
+GMP Pro 提供经典系统环境和仓库私有环境两种兼容安装方式。推荐使用仓库私有环境。
+经典系统环境仅为历史兼容保留，日常使用不推荐，因为它会修改共享的 Scoop 和用户级
+vcpkg 状态。两种方式都会先检查仓库路径，并注册用户环境变量：
 
 ```text
 GMP_PRO_LOCATION=<gmp_pro 根目录的绝对路径>
 ```
 
-推荐使用私有环境。Python、Git、CMake、Ninja、Doxygen、Graphviz 和 vcpkg 等由 GMP 管理的工具会安装到 `gmp_pro/bin`，不会写入用户的永久 `PATH`，也不会安装 Scoop。经典环境则通过 Scoop 安装用户级工具，并在检测到 Visual Studio C++ 时启用用户级 vcpkg 集成。
+私有环境会把 Python、Git、CMake、Ninja、Doxygen、Graphviz 和 vcpkg 等由 GMP 管理的工具安装到 `gmp_pro/bin`，不会写入用户的永久 `PATH`，也不会安装 Scoop。经典环境则通过 Scoop 安装用户级工具，并在检测到 Visual Studio C++ 时启用用户级 vcpkg 集成。
 
 Visual Studio 是可选能力。没有安装 Visual Studio 或 C++ 工作负载时，硬件工程、CCS 注册、Python 工具、SDPE、源码管理和文档工具仍可正常安装；安装器只跳过 Visual Studio 仿真工程的 vcpkg 依赖恢复。
 
@@ -39,6 +41,17 @@ bash install_gmp_virtual_env.sh
 `bin/linux/cache/discovery-git` 中建立私有 Git 元数据，不会把源码目录转变为 Git
 仓库。
 
+低频 Windows 维护入口统一位于 `tools/gmp_installer/utilities`：
+
+| 工具 | 作用 |
+| --- | --- |
+| `configure_gmp_proxy.bat` | 修改私有环境持久化的代理选择。 |
+| `deploy_gmp_env.bat` | 验证并部署从其他电脑复制来的私有 `bin` 环境。 |
+| `install_gmp.bat` | 执行不推荐日常使用的旧版系统/Scoop 安装。 |
+| `repair_gmp_vcpkg.bat` | 安装 Visual Studio C++ 后补齐私有 vcpkg 工具和仿真依赖。 |
+| `upgrade_gmp.bat` | 刷新 CCS Product 元数据、facility 配置和分发的源码管理工具。 |
+| `release_clear.bat` | 制作精简发布包前删除 GMP 仓库下全部 `.github` 目录；该操作具有破坏性。 |
+
 ## 1. 在线安装私有环境
 
 在仓库根目录运行：
@@ -61,12 +74,13 @@ gmp_virtual_env_installed.flag
 
 只有所有必要安装、CCS 注册和工程工具分发全部成功后才会创建该标志。
 
-## 2. 经典系统环境
+## 2. 经典系统环境（不推荐）
 
-需要兼容历史安装方式时运行：
+正常开发应使用仓库私有环境。如果为了兼容历史工作流而必须把工具直接安装到用户级
+Scoop/vcpkg 环境，可以运行：
 
 ```bat
-install_gmp.bat
+tools\gmp_installer\utilities\install_gmp.bat
 ```
 
 该模式通过 Scoop 安装或验证 Git、Python、CMake、Ninja、Doxygen、Graphviz 和 vcpkg，并安装 GMP 所需的 Python 包。检测到 Visual Studio C++ 时，还会运行 vcpkg 集成并恢复所有 `ctl/suite/*/project/simulate/vcpkg.json` 依赖，以及 `environment_manifest.json` 显式登记的特殊项目；其中 MNA 求解器通过自己的 `vcpkg.json` 提供 Eigen3 代码生成依赖。
@@ -76,7 +90,7 @@ install_gmp.bat
 将已经准备好的完整 `bin` 文件夹复制到新的 `gmp_pro` 根目录，然后运行：
 
 ```bat
-deploy_gmp_env.bat
+tools\gmp_installer\utilities\deploy_gmp_env.bat
 ```
 
 该过程不会下载软件。它会验证 Python、便携应用和 vcpkg，重新记录本机代理选择，注册 CCS，并分发源码管理、SDPE 和独立工程 `.gitignore` 文件。
@@ -103,13 +117,13 @@ gmp_env.bat cmake --version
 重新选择私有环境代理：
 
 ```bat
-configure_gmp_proxy.bat
+tools\gmp_installer\utilities\configure_gmp_proxy.bat
 ```
 
 安装 Visual Studio C++ 后补齐私有环境的仿真依赖：
 
 ```bat
-repair_gmp_vcpkg.bat
+tools\gmp_installer\utilities\repair_gmp_vcpkg.bat
 ```
 
 Windows 私有环境会先把所有工程的 vcpkg 依赖合并为一个总 manifest，再对共享安装目录
@@ -123,7 +137,8 @@ CMake/Visual Studio 文件夹工程应把 `CMAKE_TOOLCHAIN_FILE` 指向
 系统 `VCPKG_ROOT`/`vcpkg.exe`，保留 manifest 自动下载行为。这样从桌面直接
 启动 Visual Studio 也不会让私有工程误用用户自己的 vcpkg。
 
-经典环境在后续安装 Visual Studio C++ 后，重新运行 `install_gmp.bat` 即可。
+经典环境在后续安装 Visual Studio C++ 后，如确实仍需使用该模式，可重新运行
+`tools\gmp_installer\utilities\install_gmp.bat`。
 
 ## 6. 自动化调用
 

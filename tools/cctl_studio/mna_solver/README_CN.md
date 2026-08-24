@@ -351,7 +351,7 @@ MSVC 编译超大池时需要相应提高 `/constexpr:steps` 上限。
 生成、编译并运行已验证案例的手写 C++ 测试：
 
 ```bat
-repair_gmp_vcpkg.bat
+tools\gmp_installer\utilities\repair_gmp_vcpkg.bat
 tools\cctl_studio\mna_solver\tb\buck\build_test.bat
 tools\cctl_studio\mna_solver\tb\boost\build_test.bat
 tools\cctl_studio\mna_solver\tb\fsbb\build_test.bat

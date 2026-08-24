@@ -14,7 +14,7 @@
 
 | Area | Responsibility | Representative entry points |
 | --- | --- | --- |
-| Root | Public aggregate headers and user entry BAT files | `gmp_core.h`, `gmp_core.hpp`, `install_gmp*.bat`, `gmp_env.bat` |
+| Root | Public aggregate headers and recommended user entry BAT files | `gmp_core.h`, `gmp_core.hpp`, `install_gmp_virtual_env.bat`, `gmp_env.bat` |
 | `core/std` | Types and compiler/configuration composition | `gmp.std.h`, `cfg/*.h`, `arch/*.h`, `cc/*.inl` |
 | `core/base` | Portable base services | `gmp_base.h`, tick, printing, memory and port helpers |
 | `core/rt` | Lifecycle assembly, weak application defaults and CSP runtime hooks | `gmp_runtime.h`, `csp_port.h`, `src/gmp_runtime.c` |
@@ -29,7 +29,7 @@
 | `ctl/suite` | Complete cross-platform applications | shared `src`, common SDPE, per-target projects |
 | `cctl` | Experimental/host-oriented C++ control and plant objects | numerical solvers and power-electronics objects |
 | `slib` | MATLAB/Simulink libraries and SIL bridge artifacts | source SLX, MATLAB helpers, Release output |
-| `tools` | Installers, SDPE, source/facility generators, SIL/PIL and debugger tools | each tool's canonical directory |
+| `tools` | Installers, compatibility utilities, SDPE, source/facility generators, SIL/PIL and debugger tools | each tool's canonical directory; low-frequency Windows installer utilities live under `tools/gmp_installer/utilities` |
 
 ## 2. Runtime and control flow
 

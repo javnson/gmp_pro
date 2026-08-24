@@ -7,7 +7,9 @@ maintained `ctl/suite/<suite>/project/simulate` project; the former
 
 ## Prerequisites
 
-1. Install GMP with `install_gmp_virtual_env.bat` or `install_gmp.bat`.
+1. Install GMP with the recommended `install_gmp_virtual_env.bat`. If the legacy
+   system installation is required, use
+   `tools\gmp_installer\utilities\install_gmp.bat`.
 2. Install Visual Studio with the x64 C++ workload for the native controller.
 3. Install a supported MATLAB/Simulink release. Models that use Specialized
    Power Systems require MATLAB R2025b or earlier.

@@ -49,7 +49,7 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), 'tools', ...
 
 The MATLAB installer now invokes the canonical GMP environment guard. A completed
 private installation uses `bin/python/python.exe`; otherwise it uses the system
-Python provisioned by `install_gmp.bat`. MATLAB does not need to be launched from
+Python provisioned by `tools\gmp_installer\utilities\install_gmp.bat`. MATLAB does not need to be launched from
 an activated GMP command prompt. Missing Jinja2 diagnostics identify the selected
 interpreter and direct the user to the appropriate GMP repair entry point; the
 feature installer never performs an ad-hoc `pip install`.

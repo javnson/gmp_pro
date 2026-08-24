@@ -35,7 +35,8 @@ goto :SUCCESS
 
 :MISSING_ROOT
 echo [ERROR] GMP_PRO_LOCATION is not defined.
-echo         Run install_gmp.bat or install_gmp_virtual_env.bat first.
+echo         Run install_gmp_virtual_env.bat or, for legacy system mode,
+echo         tools\gmp_installer\utilities\install_gmp.bat first.
 exit /b 1
 
 :INVALID_ROOT
@@ -45,7 +46,8 @@ goto :FAILURE
 
 :CORRUPT_VIRTUAL
 echo [ERROR] The GMP virtual environment marker exists, but private Python is missing.
-echo         Re-run install_gmp_virtual_env.bat or deploy_gmp_env.bat.
+echo         Re-run install_gmp_virtual_env.bat or
+echo         tools\gmp_installer\utilities\deploy_gmp_env.bat.
 goto :FAILURE
 
 :ACTIVATION_FAILED

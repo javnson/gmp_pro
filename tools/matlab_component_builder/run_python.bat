@@ -13,7 +13,8 @@ if errorlevel 1 exit /b 1
 where python.exe >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Python is unavailable in the selected GMP %GMP_ENV_MODE% environment.
-    echo         Run install_gmp_virtual_env.bat for private mode or install_gmp.bat for system mode.
+    echo         Run install_gmp_virtual_env.bat for private mode or
+    echo         tools\gmp_installer\utilities\install_gmp.bat for legacy system mode.
     exit /b 1
 )
 
@@ -26,7 +27,7 @@ if errorlevel 1 (
     if /i "%GMP_ENV_MODE%"=="virtual" (
         echo         Repair it with install_gmp_virtual_env.bat.
     ) else (
-        echo         Repair it with install_gmp.bat.
+        echo         Repair it with tools\gmp_installer\utilities\install_gmp.bat.
     )
     exit /b 1
 )

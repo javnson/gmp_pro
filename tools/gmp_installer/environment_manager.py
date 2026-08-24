@@ -463,7 +463,7 @@ def visual_studio_is_available() -> bool:
 def print_optional_visual_studio_warning() -> None:
     print("[OPTIONAL] Visual Studio C++ tools were not found.")
     print("           Skipping suite vcpkg package restoration; hardware/GMP tools remain available.")
-    print("           Install the VS Desktop development with C++ workload later, then run repair_gmp_vcpkg.bat.")
+    print("           Install the VS Desktop development with C++ workload later, then run tools/gmp_installer/utilities/repair_gmp_vcpkg.bat.")
 
 
 def visual_studio_environment(base_env: dict[str, str]) -> dict[str, str]:

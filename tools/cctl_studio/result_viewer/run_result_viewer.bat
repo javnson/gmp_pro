@@ -21,7 +21,8 @@ if not exist "%GMP_PYTHON_EXE%" goto :PRIVATE_PYTHON_MISSING
 "%GMP_PYTHON_EXE%" -c "import numpy, pyqtgraph, serial; from PyQt5 import QtCore, QtGui, QtWidgets"
 if errorlevel 1 (
     echo [ERROR] GMP Result Viewer dependencies are incomplete.
-    echo         Re-run install_gmp_virtual_env.bat or deploy_gmp_env.bat.
+    echo         Re-run install_gmp_virtual_env.bat or
+    echo         tools\gmp_installer\utilities\deploy_gmp_env.bat.
     pause
     exit /b 1
 )
@@ -46,6 +47,7 @@ exit /b %RESULT%
 :PRIVATE_PYTHON_MISSING
 echo [ERROR] The completed GMP private Python environment is required.
 echo         Expected: %GMP_PYTHON_EXE%
-echo         Run install_gmp_virtual_env.bat or deploy_gmp_env.bat first.
+echo         Run install_gmp_virtual_env.bat or
+echo         tools\gmp_installer\utilities\deploy_gmp_env.bat first.
 pause
 exit /b 1

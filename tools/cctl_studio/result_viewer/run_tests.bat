@@ -21,5 +21,6 @@ exit /b %ERRORLEVEL%
 :PRIVATE_PYTHON_MISSING
 echo [ERROR] Result Viewer tests require the completed GMP private Python environment.
 echo         Expected: %GMP_PYTHON_EXE%
-echo         Run install_gmp_virtual_env.bat or deploy_gmp_env.bat first.
+echo         Run install_gmp_virtual_env.bat or
+echo         tools\gmp_installer\utilities\deploy_gmp_env.bat first.
 exit /b 1

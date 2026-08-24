@@ -42,18 +42,17 @@ git submodule update --init --recursive
 
 ### 1.2 安装开发环境
 
-GMP 提供两种安装方式。
-
 推荐使用仓库私有环境，它会把 Python、Git、CMake、Ninja、Doxygen、Graphviz 和 vcpkg 等工具安装到本仓库的 `bin` 目录：
 
 ```bat
 install_gmp_virtual_env.bat
 ```
 
-如果希望沿用系统级工具和 Scoop 环境，可以运行经典安装：
+不推荐把 GMP 工具直接安装到用户级系统环境，因为该模式会修改共享的 Scoop 和
+vcpkg 状态。如果为了兼容历史工作流而必须使用直接安装模式，可以运行：
 
 ```bat
-install_gmp.bat
+tools\gmp_installer\utilities\install_gmp.bat
 ```
 
 两种方式都会注册用户环境变量：

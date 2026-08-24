@@ -2,7 +2,8 @@
 
 if not defined GMP_PRO_LOCATION (
     echo [ERROR] GMP_PRO_LOCATION is not defined.
-    echo         Run install_gmp.bat, install_gmp_virtual_env.bat, or register_gmp_root.bat first.
+    echo         Run install_gmp_virtual_env.bat, tools\gmp_installer\utilities\install_gmp.bat,
+    echo         or register_gmp_root.bat first.
     exit /b 1
 )
 if not exist "%GMP_PRO_LOCATION%\tools\gmp_installer\environment_manifest.json" (
@@ -15,7 +16,8 @@ set "GMP_BIN=%GMP_PRO_LOCATION%\bin"
 
 if not exist "%GMP_BIN%\python\python.exe" (
     echo [ERROR] GMP private environment is not installed at "%GMP_BIN%".
-    echo         Run install_gmp_virtual_env.bat or copy bin and run deploy_gmp_env.bat first.
+    echo         Run install_gmp_virtual_env.bat or copy bin and run
+    echo         tools\gmp_installer\utilities\deploy_gmp_env.bat first.
     exit /b 1
 )
 

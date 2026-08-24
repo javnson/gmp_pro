@@ -6,7 +6,9 @@ the obsolete `tools/facilities_generator/gmp_file_generator` directory.
 
 ## Prerequisites
 
-Install GMP first with `install_gmp_virtual_env.bat` or `install_gmp.bat`. A
+Install GMP first with the recommended `install_gmp_virtual_env.bat`. If the
+legacy system installation is required, use
+`tools\gmp_installer\utilities\install_gmp.bat`. A
 hardware build also requires a compatible Code Composer Studio, C2000Ware, and
 SysConfig installation. The GMP installer registers `GMP_PRO_LOCATION` and
 distributes the current source-manager and SDPE launchers.

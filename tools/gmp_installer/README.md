@@ -2,7 +2,10 @@
 
 **English** | [简体中文](README_CN.md)
 
-GMP Pro provides two compatible installation modes. Both first validate the
+GMP Pro provides two compatible installation modes. The repository-private
+mode is recommended. The classic system mode remains available only for
+historical compatibility and is not recommended for normal use because it
+modifies shared Scoop and user-wide vcpkg state. Both modes first validate the
 repository path and register the user environment variable
 `GMP_PRO_LOCATION=<gmp_pro root>`. The variable is also set immediately for the
 current installer process, so no new command prompt is needed during setup.
@@ -25,7 +28,7 @@ asks again and replaces the source computer's choice. For unattended
 installation, set `GMP_INSTALLER_PROXY_CHOICE=Y` or `N` before launching the
 installer; interactive runs leave this variable unset.
 
-The root installation/deployment launchers pause after both success and failure
+The user-facing installation/deployment launchers pause after both success and failure
 so a window opened by double-click remains visible. Automated callers can
 disable this final pause by setting `GMP_INSTALLER_NO_PAUSE=1`; the original
 exit code is preserved in both cases.
@@ -39,8 +42,10 @@ it also restores the suite simulation vcpkg packages. Otherwise it prints an
 environment completion marker. Visual Studio itself is intentionally not copied
 into `bin`; its licensing and installer servicing model do not support treating
 an existing VS installation as a portable repository tool. After Visual Studio
-is installed later, run `repair_gmp_vcpkg.bat` for a private environment or
-rerun `install_gmp.bat` for the classic environment to add simulation support.
+is installed later, run `tools\gmp_installer\utilities\repair_gmp_vcpkg.bat`
+for a private environment or
+only when the classic mode is required, rerun
+`tools\gmp_installer\utilities\install_gmp.bat` to add simulation support.
 
 ## Layout
 
@@ -62,6 +67,18 @@ bin/
 ```
 
 The complete `bin/` folder is ignored by Git.
+
+Low-frequency Windows maintenance entry points live under
+`tools/gmp_installer/utilities`:
+
+| Utility | Purpose |
+| --- | --- |
+| `configure_gmp_proxy.bat` | Change the persisted private-environment proxy choice. |
+| `deploy_gmp_env.bat` | Validate and deploy a copied private `bin` environment. |
+| `install_gmp.bat` | Run the legacy system/Scoop installation; not recommended for normal use. |
+| `repair_gmp_vcpkg.bat` | Restore private vcpkg tools and simulation dependencies after Visual Studio C++ becomes available. |
+| `upgrade_gmp.bat` | Refresh CCS Product metadata, facility configuration, and distributed source-manager tools. |
+| `release_clear.bat` | Remove every `.github` directory below the GMP repository before preparing a stripped release; this is destructive. |
 
 Linux uses a separate, repository-private layout so Windows and Linux
 installations can coexist:
@@ -122,12 +139,14 @@ An extracted source archive is also supported. When the working tree has no
 `bin/linux/cache/discovery-git`; it does not turn the source tree into a Git
 repository.
 
-## 1. Install the classic system environment
+## 1. Install the classic system environment (not recommended)
 
-For maximum compatibility with the historical GMP setup, run:
+Use the repository-private environment for normal development. If historical
+compatibility requires direct installation into the user-scoped Scoop/vcpkg
+environment, run:
 
 ```bat
-install_gmp.bat
+tools\gmp_installer\utilities\install_gmp.bat
 ```
 
 This installs or verifies Scoop-managed Git, Python, CMake, Ninja, Doxygen,
@@ -173,10 +192,10 @@ environment and should not be used when preparing a `bin` folder for others.
 
 ## 3. Deploy a copied private environment
 
-Copy a fully prepared `bin` folder beside `install_gmp.bat`, then run:
+Copy a fully prepared `bin` folder into the `gmp_pro` repository root, then run:
 
 ```bat
-deploy_gmp_env.bat
+tools\gmp_installer\utilities\deploy_gmp_env.bat
 ```
 
 This mode performs no downloads and no package installations. It validates the
@@ -191,7 +210,7 @@ so moving the repository does not require rewriting it.
 For validation without repository generation:
 
 ```bat
-deploy_gmp_env.bat --skip-project-setup
+tools\gmp_installer\utilities\deploy_gmp_env.bat --skip-project-setup
 ```
 
 ## 4. Enter the private environment
@@ -230,11 +249,11 @@ and all discovered project dependencies without reinstalling Python and other
 applications, use:
 
 ```bat
-configure_gmp_proxy.bat
-repair_gmp_vcpkg.bat
+tools\gmp_installer\utilities\configure_gmp_proxy.bat
+tools\gmp_installer\utilities\repair_gmp_vcpkg.bat
 ```
 
-`repair_gmp_vcpkg.bat` requires Visual Studio C++ and does not create the
+`tools\gmp_installer\utilities\repair_gmp_vcpkg.bat` requires Visual Studio C++ and does not create the
 installation completion marker. It
 uses the saved proxy to obtain vcpkg's auxiliary CMake/7zip/7zr tools and then
 restores every discovered suite manifest.
@@ -432,7 +451,7 @@ its Python packages as above, and invoke it through a guarded BAT launcher.
 
 Never store an absolute path in the manifest or generated inventory. Everything
 under `bin` must remain relocatable to another computer after
-`deploy_gmp_env.bat` validates and finishes the deployment.
+`tools\gmp_installer\utilities\deploy_gmp_env.bat` validates and finishes the deployment.
 
 ### Maintaining vcpkg packages
 
@@ -693,7 +712,8 @@ environment.
 
 Before committing an installer or dependency change:
 
-1. Run `install_gmp.bat --plan` and `install_gmp_virtual_env.bat --plan`; verify
+1. Run `tools\gmp_installer\utilities\install_gmp.bat --plan` and
+   `install_gmp_virtual_env.bat --plan`; verify
    that both reports match their real behavior.
 2. Test the classic installation path and build a fresh private environment on
    both a Visual Studio C++ host and a host (or test environment) without it.
@@ -707,7 +727,8 @@ Before committing an installer or dependency change:
    `bin/gmp_virtual_env_installed.flag` is absent. Verify that it appears only
    after a complete successful run.
 7. Copy the finished `bin` folder to a repository at a different absolute path
-   and run `deploy_gmp_env.bat`; this catches embedded paths and incomplete
+   and run `tools\gmp_installer\utilities\deploy_gmp_env.bat`; this catches
+   embedded paths and incomplete
    archives.
 8. On the Visual Studio test host, build the affected Visual Studio/vcpkg
    project. On both hosts, run the affected GMP service scripts from a working
@@ -723,5 +744,6 @@ bin\python\python.exe tools\gmp_installer\environment_manager.py doctor
 ```
 
 Only publish or copy `bin` after this checklist succeeds. The recipient must
-still run `deploy_gmp_env.bat`; merely copying the directory does not register
+still run `tools\gmp_installer\utilities\deploy_gmp_env.bat`; merely copying
+the directory does not register
 `GMP_PRO_LOCATION`, register CCS, or distribute/generate repository tools.

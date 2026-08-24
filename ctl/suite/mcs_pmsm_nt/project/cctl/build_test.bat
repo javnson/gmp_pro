@@ -51,7 +51,7 @@ if errorlevel 1 goto :failed
 if /I not "%GMP_ENV_MODE%"=="virtual" goto :system_environment
 if not exist "%VCPKG_INSTALLED_DIR%\x64-windows\include\eigen3\Eigen\Dense" (
     echo [ERROR] Eigen3 is not installed in the GMP vcpkg shared tree.
-    echo         Run repair_gmp_vcpkg.bat, then retry.
+    echo         Run tools\gmp_installer\utilities\repair_gmp_vcpkg.bat, then retry.
     set "RESULT=1"
     goto :failed_with_result
 )
@@ -63,7 +63,7 @@ goto :build
 :system_environment
 where vcpkg.exe >nul 2>nul
 if errorlevel 1 (
-    echo [ERROR] System vcpkg is unavailable. Run install_gmp.bat, then retry.
+    echo [ERROR] System vcpkg is unavailable. Run tools\gmp_installer\utilities\install_gmp.bat, then retry.
     set "RESULT=1"
     goto :failed_with_result
 )

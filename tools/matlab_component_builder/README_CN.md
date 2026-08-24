@@ -49,7 +49,7 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), 'tools', ...
 
 MATLAB 安装脚本会自动调用 GMP 环境守卫：如果存在完整的
 `bin/gmp_virtual_env_installed.flag`，使用 `bin/python/python.exe`；否则使用
-`install_gmp.bat` 配置的 system Python。无需从已经激活的命令行启动 MATLAB。
+`tools\gmp_installer\utilities\install_gmp.bat` 配置的 system Python。无需从已经激活的命令行启动 MATLAB。
 如果所选环境缺少 Jinja2，安装器会报告实际 Python 路径，并要求通过对应的
 GMP 安装入口修复环境，而不会在 MATLAB 中临时执行 `pip install`。
 

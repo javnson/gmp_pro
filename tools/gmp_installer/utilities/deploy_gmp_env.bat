@@ -1,5 +1,5 @@
 @echo off
-call "%~dp0tools\gmp_installer\register_gmp_root.bat"
+call "%~dp0..\register_gmp_root.bat"
 if errorlevel 1 (
     echo [GMP] GMP_PRO_LOCATION registration failed.
     if /i not "%GMP_INSTALLER_NO_PAUSE%"=="1" pause

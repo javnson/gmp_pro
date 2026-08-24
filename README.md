@@ -59,10 +59,12 @@ Doxygen, Graphviz, vcpkg, and the required Python packages under `bin`:
 install_gmp_virtual_env.bat
 ```
 
-For compatibility with user-scoped system tools and Scoop, use:
+Direct installation into the user-scoped system environment is not recommended
+because it modifies shared Scoop/vcpkg state. If historical compatibility
+requires this mode, run:
 
 ```bat
-install_gmp.bat
+tools\gmp_installer\utilities\install_gmp.bat
 ```
 
 Both modes register:

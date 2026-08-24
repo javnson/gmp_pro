@@ -3,9 +3,8 @@
 setlocal enabledelayedexpansion
 
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:: Get current path 
-set "SCRIPT_DIR=%~dp0"
-set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+:: Resolve the GMP repository root from tools\gmp_installer\utilities.
+for %%I in ("%~dp0..\..\..") do set "SCRIPT_DIR=%%~fI"
 
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: Current path compliance check
@@ -17,8 +16,8 @@ if "%SCRIPT_DIR%" neq "%SCRIPT_DIR: =%" (
 
 if %HAS_SPACE% equ 1 (
     echo Spaces are present in the directory path.
-    pause
-    exit
+    if /i not "%GMP_INSTALLER_NO_PAUSE%"=="1" pause
+    exit /b 1
 ) else (
     echo .
 )
@@ -51,8 +50,8 @@ for /l %%i in (0,1,%~z0-1) do (
 :END_CHECK
 if %HAS_CHINESE% equ 1 (
     echo Chinese characters are present in the directory path.
-    pause
-    exit
+    if /i not "%GMP_INSTALLER_NO_PAUSE%"=="1" pause
+    exit /b 1
 ) else (
     echo .
 )
@@ -76,10 +75,15 @@ if defined ENV_VAR (
     echo Creating it with value: %SCRIPT_DIR%
     setx GMP_PRO_LOCATION "%SCRIPT_DIR%"
 )
+if errorlevel 1 (
+    echo [ERROR] Failed to register GMP_PRO_LOCATION.
+    if /i not "%GMP_INSTALLER_NO_PAUSE%"=="1" pause
+    exit /b 1
+)
 
 echo Environment variable GMP_PRO_LOCATION has been set to: %SCRIPT_DIR%
 
-endlocal
+endlocal & set "SCRIPT_DIR=%SCRIPT_DIR%" & set "GMP_PRO_LOCATION=%SCRIPT_DIR%"
 
 :: Start a new local environment
 setlocal enabledelayedexpansion
@@ -87,15 +91,41 @@ setlocal enabledelayedexpansion
 
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: Call facilities generator
-cd tools/facilities_generator
+cd /d "%SCRIPT_DIR%\tools\facilities_generator"
+if errorlevel 1 (
+    echo [ERROR] Cannot enter the facilities generator directory.
+    if /i not "%GMP_INSTALLER_NO_PAUSE%"=="1" pause
+    exit /b 1
+)
 
 :: Generate the C28x and C29x CCS Product metadata from the shared registry.
 python .\ccs_product_installer\ccs_product_installer.py --root "%GMP_PRO_LOCATION%"
-if errorlevel 1 exit /b 1
+if errorlevel 1 (
+    set "RESULT=!ERRORLEVEL!"
+    goto :FINISH
+)
 
 :: generate facility_cfg.json
 python ./gmp_fac_generate_cfg_json.py
+if errorlevel 1 (
+    set "RESULT=!ERRORLEVEL!"
+    goto :FINISH
+)
 
 cd src_mgr
+if errorlevel 1 (
+    set "RESULT=!ERRORLEVEL!"
+    goto :FINISH
+)
 
 python .\framework_distribute_tools_v3.py
+set "RESULT=!ERRORLEVEL!"
+
+:FINISH
+if "%RESULT%"=="0" (
+    echo [GMP] Repository metadata and source-manager tools were refreshed successfully.
+) else (
+    echo [GMP] Repository refresh failed with exit code %RESULT%.
+)
+if /i not "%GMP_INSTALLER_NO_PAUSE%"=="1" pause
+endlocal & exit /b %RESULT%

@@ -15,6 +15,9 @@ echo       GMP Pro System Development Environment
 echo ========================================================
 echo Root: %GMP_PRO_LOCATION%
 echo.
+echo [WARNING] Direct system installation is not recommended.
+echo           Use install_gmp_virtual_env.bat unless legacy compatibility requires this mode.
+echo.
 echo This compatibility mode installs user-scoped applications with Scoop
 echo and enables user-wide vcpkg Visual Studio integration.
 echo Visual Studio is optional; suite simulation packages are restored only
@@ -129,7 +132,8 @@ goto :GMP_VCPKG_PROJECT_RESTORE_DONE
 echo [OPTIONAL] Visual Studio x64 C++ tools were not found.
 echo            Skipping Visual Studio vcpkg integration and suite package restoration.
 echo            Hardware, CCS, Python, source-management, and SDPE tools will still be installed.
-echo            Install the VS Desktop development with C++ workload later, then rerun install_gmp.bat.
+echo            Install the VS Desktop development with C++ workload later, then rerun
+echo            tools\gmp_installer\utilities\install_gmp.bat.
 
 :GMP_VCPKG_PROJECT_RESTORE_DONE
 

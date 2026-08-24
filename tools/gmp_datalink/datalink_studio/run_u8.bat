@@ -16,7 +16,8 @@ if errorlevel 1 (
 python -c "import PyQt5, serial, pyqtgraph, numpy"
 if errorlevel 1 (
     echo [ERROR] GMP Data Link Studio dependencies are incomplete.
-    echo         Re-run install_gmp.bat or install_gmp_virtual_env.bat.
+    echo         Re-run install_gmp_virtual_env.bat or
+    echo         tools\gmp_installer\utilities\install_gmp.bat.
     pause
     exit /b 1
 )
