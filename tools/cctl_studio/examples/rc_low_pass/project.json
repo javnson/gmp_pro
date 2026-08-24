@@ -42,5 +42,21 @@
   "output": {
     "format": "CSV",
     "file": "waveforms.csv"
+  },
+  "editor": {
+    "grid_size": 20,
+    "snap_to_grid": true,
+    "positions": {
+      "VSTEP": { "x": 80, "y": 160 },
+      "R1": { "x": 300, "y": 80 },
+      "C1": { "x": 520, "y": 160 }
+    },
+    "execution_order": {
+      "VSTEP": 1,
+      "R1": 2,
+      "C1": 3
+    },
+    "z_order": ["VSTEP", "R1", "C1"],
+    "view": { "zoom": 1.0, "pan_x": 80.0, "pan_y": 60.0 }
   }
 }

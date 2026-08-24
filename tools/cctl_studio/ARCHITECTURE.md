@@ -101,9 +101,10 @@ generated files carry a banner and are never reverse-edited.
    PMSM reference without editing its handwritten golden project. The generated
    build must pass the same model-gain, routing, compilation, and 40-million-step
    regression checks.
-4. **Graphical editor** — implement palette, property inspector, canvas wiring,
-   order labels, validation diagnostics, undo/redo, and deterministic save. The UI
-   reads and writes only schema-v2 data and invokes the headless generator.
+4. **Graphical editor** — the first UI framework now implements the palette,
+   inspector, canvas wiring, order labels, layout, undo/redo, and deterministic
+   save through compatible schema-v1 `editor` metadata. Migrate its document model
+   to the schema-v2 normalizer next, then invoke the headless generator.
 5. **Interconnect adapter** — import/export the compatible SysConfig concepts and
    add round-trip fixtures. Unsupported TI-specific properties must be retained as
    namespaced extension data or reported, never silently discarded.
@@ -111,6 +112,8 @@ generated files carry a banner and are never reverse-edited.
    tool, and CI matrix; document schema compatibility and generated/source
    boundaries.
 
-Do not start the full UI before the schema-v2 normalizer and headless PMSM
-generation acceptance test are stable. They are the contract that keeps the UI,
-CLI, generated code, and future importers consistent.
+The current UI work is deliberately a solver-independent editor shell and does not
+freeze schema-v1 inference as the final contract. Full multidomain validation,
+code generation, and distribution remain gated on the schema-v2 normalizer and
+the headless PMSM generation acceptance test; those layers keep the UI, CLI,
+generated code, and future importers consistent.

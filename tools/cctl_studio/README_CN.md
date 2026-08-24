@@ -1,17 +1,23 @@
-# CCTL Studio 验证原型
+# GMP CCTL Studio
 
 [English](README.md) | **简体中文**
 
 已审定的目标数据结构、`mcs_pmsm_nt` 自动生成边界与分阶段验收门槛见
 [架构与执行计划](ARCHITECTURE_CN.md)。
 
-本目录用于离线验证“数据驱动的电路编辑 + Xyce 网表生成”路线。其架构借鉴 TI
+本目录已经包含可运行的离线桌面图形编辑器和“数据驱动的电路编辑 + Xyce 网表生成”
+链路。其架构借鉴 TI
 SysConfig 工具中值得采用的分层方式：元件属性和工程连线属于数据，通用引擎只负责
 校验数据并生成求解器输入。这里不包含 TI 源码或素材，也不修改 GMP 的 UDP/TCP
 通信模块，当前阶段尚未把 CCTL 电机模型接入 Xyce。
 
 ## 已实现内容
 
+- 基于 Python/Tk 8.6 的桌面编辑器，无额外 GUI 运行依赖；
+- 可搜索元件面板、拖放/双击添加、画布拖动、框选、Shift 多选及方向键微调；
+- 端口拖线、网络合并/断开、属性编辑、执行顺序编号和工程参数编辑；
+- 网格吸附、缩放、平移、适合窗口、对齐、分布、前置/后置；
+- 撤销/重做、复制、粘贴、复制实例、删除以及 JSON 工程打开/保存；
 - 元件由 JSON 定义：端口、参数、校验类型和 Xyce 网表模板；
 - 工程由 JSON 定义：元件实例、网络连接、瞬态分析和观测量；
 - 生成保守、便于移植的 SPICE/Xyce `.cir` 网表；
@@ -26,6 +32,20 @@ SysConfig 工具中值得采用的分层方式：元件属性和工程连线属�
 ## 快速验证
 
 先运行 `tools\gmp_installer\activate_env.bat` 激活已安装的 GMP 私有环境，再在仓库根目录执行：
+
+```powershell
+tools\cctl_studio\run_cctl_studio.bat
+tools\cctl_studio\run_cctl_studio.bat tools\cctl_studio\examples\rc_low_pass\project.json
+```
+
+也可以直接运行 `python tools/cctl_studio/studio_gui.py [project.json]`。编辑器快捷操作包括：
+
+- 拖动元件端口圆点到另一端口以创建或合并网络；
+- 中键拖动画布，或聚焦画布后按住空格并拖动；滚轮缩放，`F6` 适合窗口；
+- 框选或按住 Shift 多选；方向键微调 1 个世界单位，Shift+方向键按一个网格移动；
+- `Ctrl+Z/Y` 撤销/重做，`Ctrl+D` 复制实例，Delete 删除。
+
+命令行生成器仍可独立使用：
 
 ```powershell
 python tools/cctl_studio/cctl_studio.py list-components
@@ -55,9 +75,15 @@ python tools/cctl_studio/cctl_studio.py run tools/cctl_studio/examples/rc_low_pa
 例如电流源实例可以由模板
 `$instance $port_p $port_n DC $param_current` 生成，通用程序无需知道“电流源”这一类型。
 
+## 数据兼容边界
+
+当前编辑器读取和保存 schema v1。布局、层级、视图和执行顺序存放在可选的 `editor`
+对象中，现有 Xyce 生成器会忽略这部分，因此旧工程可以直接打开，保存后的工程仍能生成
+相同网表。该元数据是 UI 框架的兼容层，不代替规划中的 schema v2 类型化显式连接。
+
 ## 后续实施边界
 
-1. 增加正式 JSON Schema，并让图形界面直接渲染相同元数据；
+1. 增加正式 JSON Schema，并将现有 UI 框架切换到 schema-v2 规范化模型；
 2. 支持层次模块、`.SUBCKT` 和厂商模型文件清单；
 3. 定义带采样周期的控制/数字端口，建立确定性的 CCTL-Xyce 协同仿真桥；
 4. 增加 PWM、ADC、编码器和记录探针适配器；

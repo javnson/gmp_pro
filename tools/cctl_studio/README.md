@@ -1,12 +1,12 @@
-# CCTL Studio prototype
+# GMP CCTL Studio
 
 **English** | [简体中文](README_CN.md)
 
 See [architecture and generation plan](ARCHITECTURE.md) for the reviewed target
 data model, the `mcs_pmsm_nt` generation boundary, and phased acceptance gates.
 
-This directory contains a small, offline-first validation of a data-driven circuit
-authoring flow for CCTL and Xyce. It follows the useful separation seen in TI
+This directory contains an offline desktop graphical editor and a data-driven
+circuit-authoring flow for CCTL and Xyce. It follows the useful separation seen in TI
 SysConfig-based tools: component metadata and project wiring are data, while one
 generic engine validates the data and generates the simulator input.
 
@@ -15,6 +15,13 @@ UDP/TCP communication code and does not yet couple CCTL plant models into Xyce.
 
 ## What is implemented
 
+- A Python/Tk 8.6 desktop editor with no additional GUI runtime dependency.
+- Searchable component palette, drag/drop and double-click creation, movement,
+  marquee/Shift selection, and keyboard nudging.
+- Port-to-port wiring, net merge/disconnect, property editing, execution-order
+  badges, and project settings.
+- Grid snapping, zoom/pan/fit, alignment, distribution, and drawing order.
+- Undo/redo, copy/paste/duplicate/delete, and JSON project open/save.
 - JSON component definitions with ports, parameters, validation types, and a Xyce
   netlist template.
 - JSON projects containing instances, connectivity, transient analysis, and probes.
@@ -33,6 +40,18 @@ file format. Vendor-specific PSpice/HSPICE/Spectre syntax may still need transla
 
 Run `tools\gmp_installer\activate_env.bat` to activate the installed GMP private
 environment, then execute these commands from the repository root:
+
+```powershell
+tools\cctl_studio\run_cctl_studio.bat
+tools\cctl_studio\run_cctl_studio.bat tools\cctl_studio\examples\rc_low_pass\project.json
+```
+
+The editor can also be launched with
+`python tools/cctl_studio/studio_gui.py [project.json]`. Drag between port dots to
+create a net; middle-drag or Space-drag pans, the wheel zooms, and F6 fits the
+diagram. Arrow keys nudge by one world unit and Shift+arrow uses one grid step.
+
+The command-line generator remains independently available:
 
 ```powershell
 python tools/cctl_studio/cctl_studio.py list-components
@@ -76,9 +95,18 @@ Reference it with a project-relative `libraries` entry or pass its file/director
 with `--library`. Template substitution is deliberately limited to one netlist line;
 this prevents a data file from silently injecting extra analyses or output commands.
 
+## Compatibility boundary
+
+The editor currently reads and writes schema v1. Optional `editor` metadata holds
+layout, z-order, view state, and execution order. The existing Xyce generator
+ignores that member, so legacy projects open directly and saved projects generate
+the same netlist. This compatibility layer does not replace the planned schema-v2
+typed explicit connection model.
+
 ## Intended next layers
 
-1. Formal JSON Schema and a graphical editor that renders the same metadata.
+1. Formal JSON Schema and migration of this UI framework to the normalized
+   schema-v2 model.
 2. Hierarchical/subcircuit modules and vendor model file manifests.
 3. Typed digital/control ports and a deterministic CCTL-to-Xyce co-simulation bridge.
 4. ADC, encoder, PWM and probe adapters with explicit sample-time contracts.
