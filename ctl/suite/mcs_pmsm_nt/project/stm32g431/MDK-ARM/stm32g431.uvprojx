@@ -555,6 +555,11 @@
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_back_stepping.c</FilePath>
             </File>
             <File>
+              <FileName>ctl_adv_fdrc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_fdrc.c</FilePath>
+            </File>
+            <File>
               <FileName>ctl_adv_flc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\ctl_adv_flc.c</FilePath>
@@ -1003,6 +1008,11 @@
               <FileName>gmp_datalink.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\gmp_src_mgr\gmp_src\gmp_datalink.c</FilePath>
+            </File>
+            <File>
+              <FileName>gmp_dl_facility.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\gmp_src_mgr\gmp_src\gmp_dl_facility.c</FilePath>
             </File>
             <File>
               <FileName>gmp_mem_presp.c</FileName>
