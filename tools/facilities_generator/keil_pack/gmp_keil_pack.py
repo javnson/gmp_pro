@@ -396,7 +396,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     repo_root = args.repo_root.resolve()
     registry = (args.registry or repo_root / "tools/facilities_generator/src_mgr/gmp_framework_dic.json").resolve()
-    metadata_xml = (args.metadata or repo_root / "GMP.GeneralMotorPlatform.xml").resolve()
+    metadata_xml = (args.metadata or Path(__file__).resolve().with_name("GMP.GeneralMotorPlatform.xml")).resolve()
     try:
         if args.check:
             with tempfile.TemporaryDirectory(prefix="gmp-keil-pack-check-") as temp:

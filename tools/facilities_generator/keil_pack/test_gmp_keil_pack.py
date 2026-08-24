@@ -11,13 +11,16 @@ class KeilPackTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.repo_root = Path(__file__).resolve().parents[3]
+        cls.metadata_xml = Path(gmp_keil_pack.__file__).resolve().with_name(
+            "GMP.GeneralMotorPlatform.xml"
+        )
 
     def test_generate_real_registry(self):
         with tempfile.TemporaryDirectory() as temp:
             pdsc, pack, component_count, file_count = gmp_keil_pack.generate(
                 self.repo_root,
                 self.repo_root / "tools/facilities_generator/src_mgr/gmp_framework_dic.json",
-                self.repo_root / "GMP.GeneralMotorPlatform.xml",
+                self.metadata_xml,
                 Path(temp),
                 False,
             )
@@ -33,7 +36,7 @@ class KeilPackTest(unittest.TestCase):
                 self.assertEqual(1, len([name for name in archive.namelist() if name.endswith(".pdsc")]))
 
     def test_metadata_has_pack_safe_name(self):
-        metadata = gmp_keil_pack.load_metadata(self.repo_root / "GMP.GeneralMotorPlatform.xml")
+        metadata = gmp_keil_pack.load_metadata(self.metadata_xml)
         self.assertNotIn(" ", metadata.name)
         self.assertRegex(metadata.version, r"^\d+\.\d+\.\d+$")
 

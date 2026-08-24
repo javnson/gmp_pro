@@ -6,7 +6,7 @@
 `tools/facilities_generator/src_mgr/gmp_framework_dic.json`，将其中已注册且
 具有实际文件的 CTL 模块转换成 CMSIS-Pack 组件，并生成 `.pdsc` 与 `.pack`。
 
-元数据（vendor、name、版本、发布日期、URL）来自仓库根目录的
+元数据（vendor、name、版本、发布日期、URL）来自本生成器目录中的
 `GMP.GeneralMotorPlatform.xml`。模块文件不会扁平化，而是保持相对 GMP 根目录
 的路径，因此同名源文件不会发生覆盖。构建结果默认写入 `build/keil_pack`。
 
