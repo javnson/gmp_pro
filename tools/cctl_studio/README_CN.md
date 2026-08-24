@@ -5,25 +5,34 @@
 已审定的目标数据结构、`mcs_pmsm_nt` 自动生成边界与分阶段验收门槛见
 [架构与执行计划](ARCHITECTURE_CN.md)。
 
-本目录已经包含可运行的离线桌面图形编辑器和“数据驱动的电路编辑 + Xyce 网表生成”
-链路。其架构借鉴 TI
+本目录已经包含可运行的 Qt 离线桌面图形编辑器，以及两条数据驱动链路：新建模拟
+电路可直接导出 `MNA_Solver` 网表，旧 schema-v1 工程继续使用 Xyce 网表生成器。
+其架构借鉴 TI
 SysConfig 工具中值得采用的分层方式：元件属性和工程连线属于数据，通用引擎只负责
 校验数据并生成求解器输入。这里不包含 TI 源码或素材，也不修改 GMP 的 UDP/TCP
 通信模块，当前阶段尚未把 CCTL 电机模型接入 Xyce。
 
 ## 已实现内容
 
-- 基于 Python/Tk 8.6 的桌面编辑器，无额外 GUI 运行依赖；
+- 基于 PyQt5/Qt 5 的桌面编辑器，使用 GMP 私有 Python 环境中固定的 Qt 运行时；
 - 两级编辑架构：主层使用数值信号模块框图，双击复合模块进入其专用子层；
 - 主层提供电气主拓扑、数字模块、电机模型和信号适配器，所有主层端口均为
   `numeric`；
-- 电路子层使用电阻、电容、电感和电压源符号、无方向正交连线、网络名与连接点；
+- 新建模拟电路子层的元件目录与 `mna_solver.py::parse_netlist()` 对齐，覆盖
+  R/L/C、独立源、理想运放、IdOpamp、E/G/F/H 受控源、D/M/S 和电流表；
+- 元件库提供可按 `GND` 或 `GMD` 搜索的接地符号，两者导出时均规范化为 MNA 节点 `0`；
+- MOSFET 和压控开关是内置理想 PWM 驱动的复合元件，只暴露 D/S 或功率端；导出器按
+  图中顺序展开为 `MTn/SWn + VPWMn`，MNA 生成器再把 `VPWMn` 识别为 `PWMn` 控制端；
+- 电路子层使用电气符号和可编辑多段正交导线；单击端口开始布线，单击空白处放置
+  拐点，再单击目标端口结束；双击导线可增加路径点；
 - 数字子层使用输入/输出、AND/OR/NOT、延时和单稳态符号及类型化有向逻辑连线；
 - 工具栏返回、面包屑导航和设计树均可在主层与子层之间切换；
-- 可搜索元件面板、拖放/双击添加、画布拖动、框选、Shift 多选及方向键微调；
-- 端口拖线、网络合并/断开、属性编辑、执行顺序编号和工程参数编辑；
-- 网格吸附、缩放、平移、适合窗口、对齐、分布、前置/后置；
-- 撤销/重做、复制、粘贴、复制实例、删除以及 JSON 工程打开/保存；
+- 可搜索元件面板、拖放/双击添加、元件拖动、框选和多选；
+- 右侧属性检查器以元件参数为中心；执行顺序仅显示在主系统层，不显示在模拟/数字子层；
+- 元件支持 90° 旋转和水平镜像，导线端点会随变换后的引脚移动；空格旋转选中元件；
+- 网格吸附、滚轮缩放、中键平移、适合窗口、对齐和分布；
+- 撤销/重做、复制实例、删除以及 JSON 工程打开/保存；
+- 新建模拟电路可导出 MNA `.cir`，并由现有 MNA 解析器直接读取；
 - 元件由 JSON 定义：端口、参数、校验类型和 Xyce 网表模板；
 - 工程由 JSON 定义：元件实例、网络连接、瞬态分析和观测量；
 - 生成保守、便于移植的 SPICE/Xyce `.cir` 网表；
@@ -41,40 +50,42 @@ SysConfig 工具中值得采用的分层方式：元件属性和工程连线属�
 
 ```powershell
 tools\cctl_studio\run_cctl_studio.bat
-tools\cctl_studio\run_cctl_studio.bat tools\cctl_studio\examples\rc_low_pass\project.json
+tools\cctl_studio\run_cctl_studio.bat tools\cctl_studio\cctl_core\examples\rc_low_pass\project.json
 ```
 
-也可以直接运行 `python tools/cctl_studio/studio_gui.py [project.json]`。启动后首先显示
+也可以直接运行 `python tools/cctl_studio/cctl_core/qt_studio.py [project.json]`。启动后首先显示
 `System [system]` 主层，双击带有 “Double-click to open” 的复合模块进入子层。编辑器
 快捷操作包括：
 
-- 拖动元件端口圆点到另一端口以创建或合并网络；
-- 中键拖动画布，或聚焦画布后按住空格并拖动；滚轮缩放，`F6` 适合窗口；
-- 框选或按住 Shift 多选；方向键微调 1 个世界单位，Shift+方向键按一个网格移动；
-- `Ctrl+Z/Y` 撤销/重做，`Ctrl+D` 复制实例，Delete 删除。
+- 单击元件端口圆点开始导线，单击画布放置任意多个正交拐点，单击目标端口完成；
+  布线过程中按空格可在两种正交拐角方向之间切换；
+- 选择导线后拖动蓝色路径点；双击导线增加路径点；右键或 `Esc` 取消正在绘制的导线；
+- 中键拖动画布，滚轮缩放，`F6` 适合窗口；
+- 框选或按住 Shift 多选；空格或 `R` 顺时针旋转，`Shift+R` 逆时针旋转，`M` 镜像；
+- `Ctrl+Z/Y` 撤销/重做，`Ctrl+D` 复制实例，Delete 删除；
 - `Alt+Left` 或工具栏 Back 返回父层，面包屑按钮可直接跳回任一祖先层。
 
 命令行生成器仍可独立使用：
 
 ```powershell
-python tools/cctl_studio/cctl_studio.py list-components
-python tools/cctl_studio/cctl_studio.py validate tools/cctl_studio/examples/rc_low_pass/project.json
+python tools/cctl_studio/cctl_core/cctl_studio.py list-components
+python tools/cctl_studio/cctl_core/cctl_studio.py validate tools/cctl_studio/cctl_core/examples/rc_low_pass/project.json
 $output = Join-Path $env:GMP_PRO_LOCATION 'tmp\cctl_studio\rc_low_pass\cctl_studio_rc.cir'
-python tools/cctl_studio/cctl_studio.py generate tools/cctl_studio/examples/rc_low_pass/project.json -o $output
+python tools/cctl_studio/cctl_core/cctl_studio.py generate tools/cctl_studio/cctl_core/examples/rc_low_pass/project.json -o $output
 ```
 
 安装 Xyce 后可直接求解：
 
 ```powershell
 $runOutput = Join-Path $env:GMP_PRO_LOCATION 'tmp\cctl_studio\rc_low_pass\xyce'
-python tools/cctl_studio/cctl_studio.py run tools/cctl_studio/examples/rc_low_pass/project.json -o $runOutput --xyce C:/path/to/Xyce.exe
+python tools/cctl_studio/cctl_core/cctl_studio.py run tools/cctl_studio/cctl_core/examples/rc_low_pass/project.json -o $runOutput --xyce C:/path/to/Xyce.exe
 ```
 
 求解波形由 `.PRINT TRAN FORMAT=CSV` 写入运行目录。
 
 ## 无代码增加元件
 
-参照 `components/` 增加一个 JSON 文件，在工程的 `libraries` 数组中引用其相对路径，
+参照 `cctl_core/components/` 增加一个 JSON 文件，在工程的 `libraries` 数组中引用其相对路径，
 或通过可重复的 `--library` 参数传入文件/目录。模板当前被限制为一行，允许使用：
 
 - `$instance`：实例名；
@@ -91,9 +102,12 @@ python tools/cctl_studio/cctl_studio.py run tools/cctl_studio/examples/rc_low_pa
 相同网表。该元数据是 UI 框架的兼容层，不代替规划中的 schema v2 类型化显式连接。
 
 `editor.hierarchy` 明确保存每层的 `kind`、节点、连接、视图和复合节点的 `child_layer`。
-旧工程的 `project.instances` 自动映射为默认 `Main Topology` 的电路子层。新增的编辑器私有
-电路/数字子层目前可以完整绘制和保存，但在 schema v2 生成器完成前不会被静默加入
-Xyce/CCTL 生成输入。
+旧工程的 `project.instances` 自动映射为默认 `Main Topology` 的兼容电路子层，并继续走
+原有 Xyce 生成器。新建模拟电路采用显式连接，能够导出当前 MNA Solver 可解析的网表；
+数字子层和跨层系统图在 schema v2 生成器完成前不会被静默加入 CCTL 代码生成输入。
+
+所有 Studio Python 源码、内置元件、示例和测试集中在 `cctl_core/`；外层入口由
+`run_cctl_studio.bat` 和 `run_tests.bat` 提供。
 
 ## 后续实施边界
 

@@ -10,7 +10,7 @@ sys.path.insert(0, str(TOOL_ROOT))
 import cctl_studio  # noqa: E402
 from editor_model import EditorDocument  # noqa: E402
 from hierarchy_model import HierarchyDocument  # noqa: E402
-from layered_ui import LayerAdapter  # noqa: E402
+from qt_studio import LayerAdapter  # noqa: E402
 
 
 EXAMPLE = TOOL_ROOT / "examples" / "rc_low_pass" / "project.json"
@@ -23,14 +23,16 @@ class HierarchyDocumentTests(unittest.TestCase):
     def document(self) -> EditorDocument:
         return EditorDocument(None, self.components)
 
-    def test_default_root_owns_the_semantic_circuit_layer(self):
+    def test_default_root_owns_an_mna_ready_circuit_layer(self):
         document = self.document()
         hierarchy = HierarchyDocument(document)
         root = hierarchy.layer(hierarchy.root_layer_id)
         topology = hierarchy.node(root["id"], "TOP1")
         self.assertEqual(root["kind"], "system")
         self.assertEqual(topology["child_layer"], "circuit_main")
-        self.assertEqual(hierarchy.layer("circuit_main")["source"], "project.instances")
+        circuit = hierarchy.layer("circuit_main")
+        self.assertNotIn("source", circuit)
+        self.assertEqual(circuit["nodes"], [])
 
     def test_system_ports_are_numeric_and_child_editor_kind_is_explicit(self):
         hierarchy = HierarchyDocument(self.document())
@@ -81,7 +83,8 @@ class HierarchyDocumentTests(unittest.TestCase):
         self.assertNotIn(child, hierarchy.data["layers"])
 
     def test_schema_v1_main_topology_cannot_be_orphaned(self):
-        hierarchy = HierarchyDocument(self.document())
+        project = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+        hierarchy = HierarchyDocument(EditorDocument(project, self.components))
         with self.assertRaisesRegex(cctl_studio.StudioError, "cannot be deleted"):
             hierarchy.delete_nodes("system_root", ["TOP1"])
 
@@ -93,7 +96,7 @@ class HierarchyDocumentTests(unittest.TestCase):
         self.assertEqual(adapter.kind, "circuit")
         self.assertEqual(adapter.node("R1").symbol, "resistor")
         self.assertEqual(adapter.node("C1").symbol, "capacitor")
-        self.assertEqual(adapter.node("VSTEP").symbol, "voltage_pulse")
+        self.assertEqual(adapter.node("VSTEP").symbol, "voltage_source")
 
     def test_hierarchy_metadata_does_not_change_xyce_netlist(self):
         project = json.loads(EXAMPLE.read_text(encoding="utf-8"))

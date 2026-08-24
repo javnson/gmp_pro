@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
 from cctl_studio import StudioError
+from component_catalog import MNA_COMPONENTS
 from editor_model import EditorDocument, default_editor_hierarchy
 
 
@@ -88,54 +89,6 @@ NODE_TYPES: dict[str, NodeType] = {
             _port("out", "out", "output", "numeric"),
         ),
         defaults={"gain": 1.0, "offset": 0.0},
-    ),
-    "circuit.resistor": NodeType(
-        "circuit.resistor",
-        "Resistor",
-        "circuit",
-        "resistor",
-        "R",
-        (
-            _port("p", "p", "passive", "electrical"),
-            _port("n", "n", "passive", "electrical"),
-        ),
-        defaults={"resistance": "1k"},
-    ),
-    "circuit.capacitor": NodeType(
-        "circuit.capacitor",
-        "Capacitor",
-        "circuit",
-        "capacitor",
-        "C",
-        (
-            _port("p", "p", "passive", "electrical"),
-            _port("n", "n", "passive", "electrical"),
-        ),
-        defaults={"capacitance": "1u", "initial_condition": "0"},
-    ),
-    "circuit.inductor": NodeType(
-        "circuit.inductor",
-        "Inductor",
-        "circuit",
-        "inductor",
-        "L",
-        (
-            _port("p", "p", "passive", "electrical"),
-            _port("n", "n", "passive", "electrical"),
-        ),
-        defaults={"inductance": "1m", "initial_condition": "0"},
-    ),
-    "circuit.voltage_source": NodeType(
-        "circuit.voltage_source",
-        "Voltage Source",
-        "circuit",
-        "voltage_pulse",
-        "V",
-        (
-            _port("p", "+", "passive", "electrical"),
-            _port("n", "−", "passive", "electrical"),
-        ),
-        defaults={"voltage": "24"},
     ),
     "digital.input": NodeType(
         "digital.input",
@@ -216,38 +169,24 @@ NODE_TYPES: dict[str, NodeType] = {
     ),
 }
 
+# The analog palette is owned by the same metadata set as the MNA exporter.
+for _spec in MNA_COMPONENTS.values():
+    NODE_TYPES[_spec.type_id] = NodeType(
+        _spec.type_id,
+        _spec.display_name,
+        "circuit",
+        _spec.symbol,
+        _spec.designator,
+        tuple(
+            _port(port.port_id, port.label, "passive", "electrical")
+            for port in _spec.ports
+        ),
+        defaults=_spec.defaults,
+    )
+
 
 def default_hierarchy(has_circuit: bool = True) -> dict[str, Any]:
-    if has_circuit:
-        return default_editor_hierarchy()
-    topology = {
-        "id": "TOP1",
-        "name": "Main Topology",
-        "type": "system.electrical_topology",
-        "position": {"x": 180.0, "y": 160.0},
-        "parameters": {},
-        "execution_order": 1,
-        "child_layer": "circuit_main",
-    }
-    return {
-        "root_layer": "system_root",
-        "layers": {
-            "system_root": {
-                "id": "system_root",
-                "name": "System",
-                "kind": "system",
-                "nodes": [],
-                "connections": [],
-                "z_order": [],
-            },
-            "circuit_main": {
-                "id": "circuit_main",
-                "name": "Main Topology",
-                "kind": "circuit",
-                "source": "project.instances",
-            },
-        },
-    }
+    return default_editor_hierarchy(legacy_source=has_circuit)
 
 
 class HierarchyDocument:
@@ -325,6 +264,8 @@ class HierarchyDocument:
                 node.setdefault("position", {"x": 100.0, "y": 100.0})
                 node.setdefault("parameters", copy.deepcopy(dict(node_type.defaults or {})))
                 node.setdefault("execution_order", len(ids))
+                node.setdefault("rotation", 0)
+                node.setdefault("mirror_x", False)
             layer["z_order"] = [node_id for node_id in z_order if node_id in ids]
             layer["z_order"].extend(
                 node_id for node_id in ordered_ids if node_id not in layer["z_order"]
@@ -364,6 +305,8 @@ class HierarchyDocument:
                     default=0,
                 )
                 + 1,
+                "rotation": 0,
+                "mirror_x": False,
             }
             if node_type.child_kind:
                 child_id = self._unique_layer_id(f"{node_id.lower()}_{node_type.child_kind}")
@@ -502,6 +445,24 @@ class HierarchyDocument:
 
         self.document.change(operation)
 
+    def set_transform(
+        self,
+        layer_id: str,
+        node_ids: Sequence[str],
+        rotation_delta: int = 0,
+        toggle_mirror: bool = False,
+    ) -> None:
+        def operation() -> None:
+            for node_id in node_ids:
+                node = self.node(layer_id, node_id)
+                node["rotation"] = (int(node.get("rotation", 0)) + rotation_delta) % 360
+                if node["rotation"] not in {0, 90, 180, 270}:
+                    raise StudioError("component rotation must be a multiple of 90 degrees")
+                if toggle_mirror:
+                    node["mirror_x"] = not bool(node.get("mirror_x", False))
+
+        self.document.change(operation)
+
     def port_spec(self, layer_id: str, endpoint: tuple[str, str]) -> PortSpec:
         node_type = self.node_type(self.node(layer_id, endpoint[0]))
         for port in node_type.ports:
@@ -514,6 +475,7 @@ class HierarchyDocument:
         layer_id: str,
         first: tuple[str, str],
         second: tuple[str, str],
+        points: Sequence[tuple[float, float]] = (),
     ) -> str:
         if first == second:
             raise StudioError("cannot connect a port to itself")
@@ -537,29 +499,70 @@ class HierarchyDocument:
         )
         layer = self.layer(layer_id)
         for connection in layer["connections"]:
-            if connection["source"] == {"node": source[0], "port": source[1]} and connection[
-                "target"
-            ] == {"node": target[0], "port": target[1]}:
+            existing_source = (
+                str(connection["source"]["node"]),
+                str(connection["source"]["port"]),
+            )
+            existing_target = (
+                str(connection["target"]["node"]),
+                str(connection["target"]["port"]),
+            )
+            same_passive_wire = passive_electrical and {
+                existing_source,
+                existing_target,
+            } == {source, target}
+            if same_passive_wire or (
+                existing_source == source and existing_target == target
+            ):
                 return str(connection["id"])
-        connection_id = f"wire_{len(layer['connections']) + 1}"
+        used_ids = {str(connection.get("id")) for connection in layer["connections"]}
+        next_index = 1
+        while f"wire_{next_index}" in used_ids:
+            next_index += 1
+        connection_id = f"wire_{next_index}"
 
         def operation() -> None:
-            layer["connections"] = [
-                connection
-                for connection in layer["connections"]
-                if connection["target"] != {"node": target[0], "port": target[1]}
-            ]
+            if not passive_electrical:
+                layer["connections"] = [
+                    connection
+                    for connection in layer["connections"]
+                    if connection["target"]
+                    != {"node": target[0], "port": target[1]}
+                ]
             layer["connections"].append(
                 {
                     "id": connection_id,
                     "domain": first_port.domain,
                     "source": {"node": source[0], "port": source[1]},
                     "target": {"node": target[0], "port": target[1]},
+                    "points": [
+                        {"x": float(point[0]), "y": float(point[1])} for point in points
+                    ],
                 }
             )
 
         self.document.change(operation)
         return connection_id
+
+    def connection(self, layer_id: str, connection_id: str) -> dict[str, Any]:
+        for connection in self.layer(layer_id).get("connections", []):
+            if connection.get("id") == connection_id:
+                return connection
+        raise StudioError(f"unknown wire {connection_id!r}")
+
+    def set_wire_points(
+        self,
+        layer_id: str,
+        connection_id: str,
+        points: Sequence[tuple[float, float]],
+    ) -> None:
+        def operation() -> None:
+            connection = self.connection(layer_id, connection_id)
+            connection["points"] = [
+                {"x": float(point[0]), "y": float(point[1])} for point in points
+            ]
+
+        self.document.change(operation)
 
     def disconnect_port(self, layer_id: str, endpoint: tuple[str, str]) -> None:
         def operation() -> None:
@@ -569,6 +572,17 @@ class HierarchyDocument:
                 for connection in layer["connections"]
                 if connection["source"] != {"node": endpoint[0], "port": endpoint[1]}
                 and connection["target"] != {"node": endpoint[0], "port": endpoint[1]}
+            ]
+
+        self.document.change(operation)
+
+    def delete_connection(self, layer_id: str, connection_id: str) -> None:
+        def operation() -> None:
+            layer = self.layer(layer_id)
+            layer["connections"] = [
+                connection
+                for connection in layer.get("connections", [])
+                if connection.get("id") != connection_id
             ]
 
         self.document.change(operation)

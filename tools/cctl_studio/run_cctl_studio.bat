@@ -18,9 +18,9 @@ set "GMP_CCTL_STUDIO_PYTHON=%GMP_PRO_LOCATION%\bin\python\python.exe"
 if /I not "%GMP_ENV_MODE%"=="virtual" goto :PRIVATE_PYTHON_MISSING
 if not exist "%GMP_CCTL_STUDIO_PYTHON%" goto :PRIVATE_PYTHON_MISSING
 
-"%GMP_CCTL_STUDIO_PYTHON%" -c "import tkinter; assert tkinter.TkVersion >= 8.6"
+"%GMP_CCTL_STUDIO_PYTHON%" -c "from PyQt5 import QtCore; assert QtCore.QT_VERSION_STR.startswith('5.')"
 if errorlevel 1 (
-    echo [ERROR] The GMP private Python does not provide Tk 8.6 or newer.
+    echo [ERROR] The GMP private Python does not provide PyQt5 / Qt 5.
     pause
     exit /b 1
 )
@@ -32,7 +32,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-"%GMP_CCTL_STUDIO_PYTHON%" "%~dp0studio_gui.py" %*
+"%GMP_CCTL_STUDIO_PYTHON%" "%~dp0cctl_core\qt_studio.py" %*
 set "GMP_CCTL_STUDIO_RESULT=%ERRORLEVEL%"
 popd
 

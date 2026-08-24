@@ -83,16 +83,25 @@ at this layer.
 
 A composite block opens a `child_layer`, whose `kind` selects its renderer:
 
-- `circuit` uses standard electrical symbols, undirected electrical nets,
-  orthogonal wires, net labels, and junctions;
+- `circuit` uses standard electrical symbols, undirected electrical nets, and
+  user-editable orthogonal polyline wires. Components support 90-degree rotation
+  and mirroring; child-layer inspectors prioritize parameters and omit order;
 - `digital` uses logic/timing symbols and directed logic connections;
 - future mechanical, thermal, or other domains receive separate renderers rather
   than inheriting root-layer block semantics.
 
 The compatibility implementation stores this graph in schema-v1
 `editor.hierarchy` and maps existing `project.instances` into the default Main
-Topology circuit child. This fixes the UI/navigation contract only; editor-private
-children must not enter solver or code generation until schema v2 defines it.
+Topology compatibility child. New analog circuits share their catalog with the
+MNA parser and explicit edges export directly to its netlist dialect. Digital and
+cross-layer system graphs do not enter CCTL code generation until schema v2 defines
+that contract.
+
+MOSFET and VSWITCH nodes are composite editor components: the UI exposes only power
+terminals, assigns `PWM1..PWMn` in stable graph order, and expands each node to the
+`MT/SW` device plus ideal `VPWM` control source required by the MNA examples. MOSFET
+bulk is tied to source; VSWITCH control negative is tied to node `0`. GMD is a UI
+search alias, while canonical MNA ground remains `0/GND`.
 
 ## Deterministic generation pipeline
 
@@ -121,12 +130,13 @@ generated files carry a banner and are never reverse-edited.
    PMSM reference without editing its handwritten golden project. The generated
    build must pass the same model-gain, routing, compilation, and 40-million-step
    regression checks.
-4. **Graphical editor** — the first two-level UI framework now implements a numeric
-   root block diagram, composite navigation, circuit-symbol and digital-logic child
-   renderers, palette, inspector, wiring, order labels, layout, undo/redo, and
-   deterministic save through compatible schema-v1 `editor.hierarchy` metadata.
-   Migrate its document model to the schema-v2 normalizer next, then invoke the
-   headless generator.
+4. **Graphical editor** — the first Qt two-level UI framework now implements a
+   numeric root block diagram, composite navigation, the complete MNA component
+   catalog, circuit and digital renderers, a parameter-first inspector, editable
+   polyline wires, rotate/mirror, layout, undo/redo, deterministic save, and MNA
+   netlist export through compatible schema-v1 `editor.hierarchy` metadata. Migrate
+   its document model to the schema-v2 normalizer next, then invoke the headless
+   generator.
 5. **Interconnect adapter** — import/export the compatible SysConfig concepts and
    add round-trip fixtures. Unsupported TI-specific properties must be retained as
    namespaced extension data or reported, never silently discarded.

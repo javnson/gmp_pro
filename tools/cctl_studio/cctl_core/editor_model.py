@@ -1,6 +1,6 @@
 """Document model for the CCTL Studio graphical editor.
 
-The model deliberately has no Tk dependency.  UI state lives in the optional
+The model deliberately has no Qt dependency.  UI state lives in the optional
 ``editor`` member of a schema-v1 project, so existing netlist generation keeps
 working while the desktop editor gains deterministic layout metadata.
 """
@@ -20,7 +20,7 @@ DEFAULT_ANALYSIS = {"type": "tran", "step": "10us", "stop": "10ms", "start": "0"
 DEFAULT_OUTPUT = {"format": "CSV", "file": "waveforms.csv"}
 
 
-def default_editor_hierarchy() -> dict[str, Any]:
+def default_editor_hierarchy(legacy_source: bool = True) -> dict[str, Any]:
     """Compatibility hierarchy: one system block owns project.instances."""
     return {
         "root_layer": "system_root",
@@ -43,12 +43,23 @@ def default_editor_hierarchy() -> dict[str, Any]:
                 "connections": [],
                 "z_order": ["TOP1"],
             },
-            "circuit_main": {
-                "id": "circuit_main",
-                "name": "Main Topology",
-                "kind": "circuit",
-                "source": "project.instances",
-            },
+            "circuit_main": (
+                {
+                    "id": "circuit_main",
+                    "name": "Main Topology",
+                    "kind": "circuit",
+                    "source": "project.instances",
+                }
+                if legacy_source
+                else {
+                    "id": "circuit_main",
+                    "name": "Main Topology",
+                    "kind": "circuit",
+                    "nodes": [],
+                    "connections": [],
+                    "z_order": [],
+                }
+            ),
         },
     }
 
@@ -86,7 +97,7 @@ class EditorDocument:
                 "execution_order": {},
                 "z_order": [],
                 "view": {"zoom": 1.0, "pan_x": 80.0, "pan_y": 60.0},
-                "hierarchy": default_editor_hierarchy(),
+                "hierarchy": default_editor_hierarchy(False),
             },
         }
 
@@ -146,7 +157,9 @@ class EditorDocument:
         execution = editor.setdefault("execution_order", {})
         z_order = editor.setdefault("z_order", [])
         editor.setdefault("view", {"zoom": 1.0, "pan_x": 80.0, "pan_y": 60.0})
-        hierarchy = editor.setdefault("hierarchy", default_editor_hierarchy())
+        hierarchy = editor.setdefault(
+            "hierarchy", default_editor_hierarchy(bool(self.project.get("instances")))
+        )
         if isinstance(hierarchy, dict) and isinstance(hierarchy.get("layers"), dict):
             for layer in hierarchy["layers"].values():
                 if isinstance(layer, dict):
