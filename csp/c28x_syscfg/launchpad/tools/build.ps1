@@ -20,6 +20,7 @@ param(
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $productRoot = Split-Path -Parent $projectRoot
+$repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $projectRoot "..\..\..")).Path
 $eclipse = Join-Path $CcsRoot "eclipse\eclipsec.exe"
 if (-not (Test-Path -LiteralPath $eclipse -PathType Leaf)) {
     throw "CCS headless executable not found: $eclipse"
@@ -37,7 +38,8 @@ if ($GenerateSdpe -or $GenerateGmpSources) {
     }
 }
 
-$workspace = Join-Path $env:TEMP ("gmp_launchpad_ccs_" + [guid]::NewGuid().ToString("N"))
+$workspaceRoot = Join-Path $repositoryRoot "tmp\csp\c28x_syscfg\launchpad\ccs_workspace"
+$workspace = Join-Path $workspaceRoot ([guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Force -Path $workspace | Out-Null
 $workspaceArg = $workspace.Replace("\", "/")
 $projectArg = $projectRoot.Replace("\", "/")

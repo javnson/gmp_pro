@@ -291,6 +291,11 @@ tb\buck\
 变量替代环境配置。脚本不依赖当前工作目录或仓库所在盘符。用户直接运行时
 成功和失败都会暂停；自动化调用可传入 `--no-pause`。
 
+全部 C++ 测试构建树都位于
+`%GMP_PRO_LOCATION%\tmp\cctl_studio\mna_solver\tb\<case>\cpp_build`，不再使用
+操作系统临时目录。汇总验证的短期 CSV/JSON 位于同级 `validation` 树中，测试
+结束后删除本次运行目录。
+
 每个开关案例把 JSON 和计算类都写入 `generated`。Eigen 后端的计算类由一份
 轻量 `*.hpp` 和同名 `*.archive` 组成；fixed 后端仍把系数内嵌在单个头文件中。
 JSON、archive、CSV、本地构建目录和 IDE 缓存均被忽略，因为它们可重复生成，

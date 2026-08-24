@@ -347,6 +347,12 @@ The scripts do not depend on the checkout drive or current working directory.
 User-facing scripts pause on success and failure, while automation can pass
 `--no-pause`.
 
+All C++ test build trees are kept under
+`%GMP_PRO_LOCATION%\tmp\cctl_studio\mna_solver\tb\<case>\cpp_build` instead of
+the operating-system temporary directory. Aggregate validation places its
+short-lived CSV/JSON files under the sibling `validation` tree and removes the
+per-run directory when the suite finishes.
+
 Each switching case writes its portable JSON and generated C++ calculation class
 under `generated`. An Eigen class consists of a small `*.hpp` plus a same-stem
 `*.archive`; fixed continues to embed coefficients in one header. JSON, archives,

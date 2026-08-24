@@ -570,6 +570,6 @@ tools/hvhb40040_Antaioz/**/impl_1
 /bin/
 /bin.*
 
-# debug temp
+# Repository-local generated/test workspace
 tmp/**
 ctl\component\motor_control\observer\tests

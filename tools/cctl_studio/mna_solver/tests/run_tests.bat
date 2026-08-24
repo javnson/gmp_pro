@@ -19,16 +19,19 @@ call "%GMP_PRO_LOCATION%\tools\gmp_installer\ensure_gmp_environment.bat" >nul
 if errorlevel 1 goto :failed
 
 set "VALIDATION_TAG=%RANDOM%_%RANDOM%"
-set "BUCK_CSV=%TEMP%\gmp_mna_buck_%VALIDATION_TAG%.csv"
-set "BOOST_CSV=%TEMP%\gmp_mna_boost_%VALIDATION_TAG%.csv"
-set "BUCK_JSON=%TEMP%\gmp_mna_buck_%VALIDATION_TAG%.json"
-set "BOOST_JSON=%TEMP%\gmp_mna_boost_%VALIDATION_TAG%.json"
-set "FSBB_JSON=%TEMP%\gmp_mna_fsbb_%VALIDATION_TAG%.json"
-set "SINV_JSON=%TEMP%\gmp_mna_sinv_%VALIDATION_TAG%.json"
-set "RECTIFIER_JSON=%TEMP%\gmp_mna_rectifier_%VALIDATION_TAG%.json"
-set "INV_JSON=%TEMP%\gmp_mna_inv_%VALIDATION_TAG%.json"
-set "BUCK_NPC_JSON=%TEMP%\gmp_mna_buck_npc_%VALIDATION_TAG%.json"
-set "PMSM_JSON=%TEMP%\gmp_mna_pmsm_%VALIDATION_TAG%.json"
+set "VALIDATION_DIR=%GMP_PRO_LOCATION%\tmp\cctl_studio\mna_solver\validation\%VALIDATION_TAG%"
+if not exist "%VALIDATION_DIR%" mkdir "%VALIDATION_DIR%"
+if errorlevel 1 goto :failed
+set "BUCK_CSV=%VALIDATION_DIR%\buck.csv"
+set "BOOST_CSV=%VALIDATION_DIR%\boost.csv"
+set "BUCK_JSON=%VALIDATION_DIR%\buck.json"
+set "BOOST_JSON=%VALIDATION_DIR%\boost.json"
+set "FSBB_JSON=%VALIDATION_DIR%\fsbb.json"
+set "SINV_JSON=%VALIDATION_DIR%\sinv.json"
+set "RECTIFIER_JSON=%VALIDATION_DIR%\rectifier.json"
+set "INV_JSON=%VALIDATION_DIR%\inv.json"
+set "BUCK_NPC_JSON=%VALIDATION_DIR%\buck_npc.json"
+set "PMSM_JSON=%VALIDATION_DIR%\pmsm.json"
 
 echo [1/13] Compiling Python sources...
 python -m py_compile "%SOLVER_DIR%\mna_solver.py" "%SOLVER_DIR%\switched_solver.py" "%SOLVER_DIR%\circuit_data.py" "%SOLVER_DIR%\cpp_codegen.py"
@@ -147,4 +150,5 @@ if exist "%RECTIFIER_JSON%" del /q "%RECTIFIER_JSON%" >nul 2>nul
 if exist "%INV_JSON%" del /q "%INV_JSON%" >nul 2>nul
 if exist "%BUCK_NPC_JSON%" del /q "%BUCK_NPC_JSON%" >nul 2>nul
 if exist "%PMSM_JSON%" del /q "%PMSM_JSON%" >nul 2>nul
+if defined VALIDATION_DIR if exist "%VALIDATION_DIR%" rmdir "%VALIDATION_DIR%" >nul 2>nul
 exit /b 0

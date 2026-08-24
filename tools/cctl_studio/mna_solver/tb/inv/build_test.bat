@@ -25,7 +25,7 @@ set "VSLANG=1033"
 set "CASE_DIR=%~dp0"
 for %%I in ("%NETLIST_FILE%") do set "NETLIST_STEM=%%~nI"
 set "TEST_DIR=%CASE_DIR%test\cpp"
-set "BUILD_DIR=%TEMP%\gmp_mna_%NETLIST_STEM%_cpp_build"
+set "BUILD_DIR=%GMP_PRO_LOCATION%\tmp\cctl_studio\mna_solver\tb\%NETLIST_STEM%\cpp_build"
 if not exist "%TEST_DIR%\CMakeLists.txt" (
     echo [ERROR] Handwritten C++ test was not found: %TEST_DIR%
     set "RESULT=1"

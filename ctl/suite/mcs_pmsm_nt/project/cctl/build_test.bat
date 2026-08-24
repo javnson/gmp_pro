@@ -26,7 +26,7 @@ for %%I in ("%~dp0.") do set "PROJECT_DIR=%%~fI"
 set "SDPE_DIR=%PROJECT_DIR%\sdpe_mgr"
 set "GMP_SRC_MGR=%PROJECT_DIR%\gmp_src_mgr"
 set "HW_DIR=%PROJECT_DIR%\hw"
-set "BUILD_DIR=%TEMP%\gmp_mcs_pmsm_nt_cctl_build"
+set "BUILD_DIR=%GMP_PRO_LOCATION%\tmp\cctl\suite\mcs_pmsm_nt\cctl_build"
 
 echo [1/8] Generating target hardware and simulation macros with SDPE...
 call "%SDPE_DIR%\sdpe_generate.bat"

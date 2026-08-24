@@ -34,13 +34,15 @@ environment, then execute these commands from the repository root:
 ```powershell
 python tools/cctl_studio/cctl_studio.py list-components
 python tools/cctl_studio/cctl_studio.py validate tools/cctl_studio/examples/rc_low_pass/project.json
-python tools/cctl_studio/cctl_studio.py generate tools/cctl_studio/examples/rc_low_pass/project.json -o $env:TEMP/cctl_studio_rc.cir
+$output = Join-Path $env:GMP_PRO_LOCATION 'tmp\cctl_studio\rc_low_pass\cctl_studio_rc.cir'
+python tools/cctl_studio/cctl_studio.py generate tools/cctl_studio/examples/rc_low_pass/project.json -o $output
 ```
 
 When Xyce is installed:
 
 ```powershell
-python tools/cctl_studio/cctl_studio.py run tools/cctl_studio/examples/rc_low_pass/project.json -o tools/cctl_studio/build/rc --xyce C:/path/to/Xyce.exe
+$runOutput = Join-Path $env:GMP_PRO_LOCATION 'tmp\cctl_studio\rc_low_pass\xyce'
+python tools/cctl_studio/cctl_studio.py run tools/cctl_studio/examples/rc_low_pass/project.json -o $runOutput --xyce C:/path/to/Xyce.exe
 ```
 
 The generated `.PRINT TRAN FORMAT=CSV` directive writes the configured waveform file

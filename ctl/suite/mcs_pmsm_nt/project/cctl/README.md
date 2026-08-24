@@ -54,7 +54,7 @@ Run `build_test.bat`. The seven-stage flow generates the target SDPE bindings,
 deploys the selected sources, generates `gmp_config.cmake`, regenerates the
 project-local main circuit, builds, and runs the regression. It locates GMP
 exclusively through `GMP_PRO_LOCATION` and builds in
-`%TEMP%\gmp_mcs_pmsm_nt_cctl_build`.
+`%GMP_PRO_LOCATION%\tmp\cctl\suite\mcs_pmsm_nt\cctl_build`.
 
 `sdpe_mgr/sdpe_requirement.json` owns controller, ADC/eQEP/ePWM, timing, output,
 and pause parameters. `gmp_src_mgr/gmp_framework_config.json` selects the GMP

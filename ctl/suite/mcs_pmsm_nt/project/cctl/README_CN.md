@@ -45,7 +45,8 @@ SDPE 形参；配置对象是只读值对象。构造函数只创建一次配置
 
 运行 `build_test.bat` 即可完成 SDPE、GMP 源文件、CMake 接口、主电路代码、
 编译和闭环回归这七个阶段。脚本只从环境变量 `GMP_PRO_LOCATION` 定位 GMP；
-生成物位于系统临时目录 `%TEMP%\gmp_mcs_pmsm_nt_cctl_build`。
+生成物位于 GMP 仓库局部目录
+`%GMP_PRO_LOCATION%\tmp\cctl\suite\mcs_pmsm_nt\cctl_build`。
 
 工程配置遵循两套 GMP 管理机制：
 

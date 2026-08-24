@@ -5,7 +5,7 @@
 ## 构建与测试
 
 ```powershell
-$build = Join-Path $env:TEMP 'gmp_cctl_pmsm_build'
+$build = Join-Path $env:GMP_PRO_LOCATION 'tmp\cctl\tb\pmsm_average_model_test\build'
 cmake -S E:\lib\gmp_pro\cctl\tb\pmsm_average_model_test -B $build `
   -G "Visual Studio 17 2022" -A x64
 cmake --build $build --config Release

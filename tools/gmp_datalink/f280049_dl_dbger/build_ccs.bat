@@ -1,11 +1,16 @@
 @echo off
-setlocal
+setlocal EnableExtensions
+
+if not defined GMP_PRO_LOCATION (
+    echo [ERROR] GMP_PRO_LOCATION is not defined. Run a GMP installer first.
+    exit /b 1
+)
 
 if not defined CCS_ROOT set "CCS_ROOT=C:\ti\ccs1281\ccs"
 
 set "CCS_ECLIPSE=%CCS_ROOT%\eclipse\eclipsec.exe"
 for %%I in ("%~dp0.") do set "PROJECT_DIR=%%~fI"
-set "CCS_WORKSPACE=%TEMP%\gmp_f280049_dl_ccs_workspace"
+set "CCS_WORKSPACE=%GMP_PRO_LOCATION%\tmp\gmp_datalink\f280049_dl_ccs_workspace"
 
 if not exist "%CCS_ECLIPSE%" (
     echo [ERROR] CCS was not found at "%CCS_ROOT%".

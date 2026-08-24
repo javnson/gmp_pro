@@ -74,6 +74,10 @@ source-set change in one invocation:
 .\tools\build.ps1 -Board F280049C -Mode All -GenerateSdpe -GenerateGmpSources
 ```
 
+The headless helper keeps its CCS workspaces below the repository-local
+`tmp/csp/c28x_syscfg/launchpad/ccs_workspace` directory, which is ignored by
+Git. This avoids filling the system drive while retaining build diagnostics.
+
 Every CCS configuration declares `C2000WARE:5.4.0.00` and
 `GMP-Core-C28x:2.10.00.00` as products.  GMP includes and symbols enter through
 `${COM_TI_COM_GMP_CORE_C28X_SDK_*}`; C2000 device and DriverLib headers enter
