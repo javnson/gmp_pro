@@ -2,10 +2,10 @@
 
 [English](readme.md) | **简体中文**
 
-`slib` 提供 GMP 的 Simulink 库、标准模型、SDPE 初始化工具，以及统一 TCP/UDP
-软件在环（SIL）接口。SIL 的 C++ 源码只在
-`tools/gmp_sil/sil_helper` 维护，`slib` 只发布 MATLAB 脚本、模型和安装时编译的
-`GMP_SIL_Core` MEX。
+`slib` 提供 GMP 的 Simulink 库、自动生成的 CTL 元件 Block、标准模型、SDPE 初始化
+工具，以及统一 TCP/UDP 软件在环（SIL）接口。SIL 的 C++ 源码只在
+`tools/gmp_sil/sil_helper` 维护；CTL Block 的定义、模板和生成器在
+`ctl_simulink_components` 中维护。
 
 ## 支持范围
 
@@ -23,6 +23,7 @@
 | `simulink_lib_src/gmp_sil_core_pack_src.slx` | 仓库发布的 R2022b 兼容源模型 | 只能通过 `export_gmp_simulink_lib_src` 从 R2024b 导出，不应独立手改。 |
 | `simulink_lib_src/src/` | MATLAB 辅助函数和已编译 MEX | MATLAB 脚本在此维护；MEX 由安装器从唯一 C++ 源码重新编译。 |
 | `simulink_lib_src/tests/` | MATLAB/SIL 回归测试 | 修改通信、Mask 或安装链后运行。 |
+| `ctl_simulink_components/` | CTL 元件定义、生成器、MATLAB 构建程序和测试 | 取代原 `slib/tools` 下手工维护的控制元件 S-Function。 |
 | `tools/gmp_sil/sil_helper/` | TCP/UDP 协议、控制器对象、S-function 和测试的唯一 C++ 源码 | 不在 `slib` 复制源码。 |
 | `install_path/<Release>/` | 当前 MATLAB Release 的安装结果 | 除上述 R2024b 编辑流程外，不直接维护；由安装器重新生成。 |
 
@@ -63,10 +64,14 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), ...
 2. 调用 `tools/gmp_sil/sil_helper/build_gmp_sil_mex.m`，使用 MATLAB 自带 `mex` 编译器；
 3. 只把生成的 `GMP_SIL_Core.<mexext>` 放入 `simulink_lib_src/src`；
 4. 从 R2022b 源模型生成 `install_path/<Release>` 的兼容库；
-5. 复制脚本和 MEX、注册 MATLAB 路径并刷新 Library Browser。
+5. 复制脚本和 MEX，并注册主库 MATLAB 路径；
+6. 调用 `ctl_simulink_components/matlab/install_ctl_simulink_components.m`，生成、编译并注册 CTL 元件库；
+7. 刷新 Library Browser。
 
 MATLAB 安装阶段不会运行 vcpkg，也不会访问网络。缺少依赖时，应先从
-`gmp_env.bat` 修复 GMP 私有环境。
+`gmp_env.bat` 修复 GMP 私有环境。MATLAB 侧原生依赖统一读取
+`bin/vcpkg_installed/<triplet>/<triplet>`；不得创建或填充
+`slib/vcpkg_installed`。
 
 ## SIL Core Mask
 
@@ -128,4 +133,5 @@ Failed 或 Incomplete 结果均视为回归失败。
 | 快速加速不通信 | 确认使用定步长和当前 Release 编译的 MEX；构建日志中应显示网络已延后，控制器只能收到一次 `session_hello`。 |
 | 源库版本错误 | 重新从 R2024b 导出，并用 `Simulink.MDLInfo` 验证 `R2022b`。 |
 
-卸载当前 Release 可运行 `slib/uninstall_gmp_simulink_lib.m`。
+卸载当前 Release 可运行 `slib/uninstall_gmp_simulink_lib.m`。它会同步调用 CTL
+元件卸载程序，并持久化两部分 MATLAB 路径的移除结果。

@@ -27,6 +27,10 @@ addpath(m_file_path);
 
 savepath;
 
+%% install CTL generated Simulink components
+
+install_ctl_simulink_components_package(matlab_path);
+
 %% enable Simulink Model Library
 
 disp('GMP Simulink Library: Register to Simulink Library');
@@ -70,6 +74,22 @@ disp('GMP Simulink Library has installed Successfully.');
 
 
 end % function end
+
+
+function install_ctl_simulink_components_package(slib_path)
+% Keep the generated CTL component library synchronized with the main slib
+% installation. The component installer owns generation, MEX compilation,
+% library creation, MATLAB path registration, and savepath.
+
+installer = fullfile(slib_path, 'ctl_simulink_components', 'matlab', ...
+    'install_ctl_simulink_components.m');
+if ~isfile(installer)
+    error('GMP:Simulink:MissingCtlComponentsInstaller', ...
+        'CTL Simulink Components installer is missing: %s', installer);
+end
+
+run(installer);
+end
 
 
 function include_root = ensure_gmp_sil_vcpkg_dependencies(slib_path)

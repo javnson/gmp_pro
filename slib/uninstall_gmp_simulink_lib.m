@@ -2,19 +2,27 @@
 
 function uninstall_gmp_simulink_lib()
 
-clear all; %#ok
+matlab_path = fileparts(mfilename('fullpath'));
+component_uninstaller = fullfile(matlab_path, 'ctl_simulink_components', ...
+    'matlab', 'uninstall_ctl_simulink_components.m');
+if isfile(component_uninstaller)
+    run(component_uninstaller);
+else
+    warning('GMP:Simulink:MissingCtlComponentsUninstaller', ...
+        'CTL Simulink Components uninstaller is missing: %s', ...
+        component_uninstaller);
+end
 
 %% remove MATLAB path
 disp('Remove MATLAB path');
 
 matlab_version = matlabRelease; %matlab_version.Release => R2022b
-matlab_path = fileparts(mfilename('fullpath'));
-simulink_lib_path = append(fullfile(matlab_path), '\install_path\', matlab_version.Release);
+simulink_lib_path = fullfile(matlab_path, 'install_path', matlab_version.Release);
 
-rmpath(simulink_lib_path);
+if contains(path, simulink_lib_path), rmpath(simulink_lib_path); end
 
-m_file_path = append(simulink_lib_path, '/src');
-rmpath(m_file_path);
+m_file_path = fullfile(simulink_lib_path, 'src');
+if contains(path, m_file_path), rmpath(m_file_path); end
 
 % Persist the removal so deleted GMP paths are not restored in the next
 % MATLAB session.
@@ -22,7 +30,7 @@ savepath;
 
 %% remove files
 disp('Remove Simlink Related files.');
-rmdir(simulink_lib_path, 's');
+if isfolder(simulink_lib_path), rmdir(simulink_lib_path, 's'); end
 
 disp('GMP Simulink Library is uninstalled successfully.');
 end

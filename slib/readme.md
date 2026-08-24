@@ -2,10 +2,10 @@
 
 **English** | [简体中文](readme_cn.md)
 
-`slib` provides GMP Simulink libraries, standard models, SDPE initialization,
-and the unified TCP/UDP software-in-the-loop (SIL) bridge. The only maintained
-C++ source tree is `tools/gmp_sil/sil_helper`; `slib` publishes MATLAB code,
-models, and the `GMP_SIL_Core` MEX built during installation.
+`slib` provides GMP Simulink libraries, generated CTL component blocks, standard
+models, SDPE initialization, and the unified TCP/UDP software-in-the-loop (SIL)
+bridge. SIL C++ is maintained only in `tools/gmp_sil/sil_helper`; generated CTL
+block definitions and templates are maintained in `ctl_simulink_components`.
 
 ## Support boundary
 
@@ -23,6 +23,7 @@ models, and the `GMP_SIL_Core` MEX built during installation.
 | `simulink_lib_src/gmp_sil_core_pack_src.slx` | Published R2022b-compatible source model | Generate only with `export_gmp_simulink_lib_src`; do not maintain a divergent copy. |
 | `simulink_lib_src/src/` | MATLAB helpers and compiled MEX | Maintain MATLAB code here; rebuild MEX from the canonical C++ tree. |
 | `simulink_lib_src/tests/` | MATLAB/SIL regression tests | Run after protocol, Mask, or installer changes. |
+| `ctl_simulink_components/` | CTL component definitions, generators, MATLAB builders, and tests | Replaces the retired hand-maintained component S-functions formerly under `slib/tools`. |
 | `tools/gmp_sil/sil_helper/` | Sole C++ source for protocol, controller API, S-function, and tests | Never duplicate these sources under `slib`. |
 | `install_path/<Release>/` | Installed output for one MATLAB Release | Regenerate with the installer, apart from the explicit R2024b editing workflow above. |
 
@@ -65,10 +66,15 @@ The installer:
 2. calls `tools/gmp_sil/sil_helper/build_gmp_sil_mex.m` with MATLAB's own `mex` compiler;
 3. stages only `GMP_SIL_Core.<mexext>` in `simulink_lib_src/src`;
 4. generates the current `install_path/<Release>` libraries from the R2022b source;
-5. copies helpers/MEX, registers paths, and refreshes the Library Browser.
+5. copies helpers/MEX and registers the main library paths;
+6. invokes `ctl_simulink_components/matlab/install_ctl_simulink_components.m` to generate, compile, and register the CTL component library;
+7. refreshes the Library Browser.
 
 MATLAB never invokes vcpkg or downloads packages during installation. Repair
 the GMP private environment through `gmp_env.bat` when dependencies are absent.
+All MATLAB-side native dependencies come from the shared
+`bin/vcpkg_installed/<triplet>/<triplet>` tree; `slib/vcpkg_installed` must not
+be created or populated.
 
 ## SIL Core Mask
 
@@ -137,3 +143,4 @@ Recommended SIL library workflow:
 | Published source has the wrong Release | Re-export from R2024b and verify it with `Simulink.MDLInfo`. |
 
 Run `slib/uninstall_gmp_simulink_lib.m` to remove the current Release installation.
+It also invokes the CTL component uninstaller and persists both path removals.
