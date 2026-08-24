@@ -1,1 +1,0 @@
-python ./dev_resource_mgr_gui_v3.py

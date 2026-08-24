@@ -1,1 +1,0 @@
-python %GMP_PRO_LOCATION%\tools\facilities_generator\peripheral_mgr\gmp_peripheral_config_v3.py

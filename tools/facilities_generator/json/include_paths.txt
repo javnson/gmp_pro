@@ -1,5 +1,0 @@
-E:\lib\gmp_pro
-E:\lib\gmp_pro\csp/windows_simulink
-E:\lib\gmp_pro\third_party/asio/include
-E:\lib\gmp_pro\third_party/eigen/Eigen
-E:\lib\gmp_pro\third_party/fmt/include/fmt
