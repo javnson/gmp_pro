@@ -20,6 +20,39 @@ DEFAULT_ANALYSIS = {"type": "tran", "step": "10us", "stop": "10ms", "start": "0"
 DEFAULT_OUTPUT = {"format": "CSV", "file": "waveforms.csv"}
 
 
+def default_editor_hierarchy() -> dict[str, Any]:
+    """Compatibility hierarchy: one system block owns project.instances."""
+    return {
+        "root_layer": "system_root",
+        "layers": {
+            "system_root": {
+                "id": "system_root",
+                "name": "System",
+                "kind": "system",
+                "nodes": [
+                    {
+                        "id": "TOP1",
+                        "name": "Main Topology",
+                        "type": "system.electrical_topology",
+                        "position": {"x": 180.0, "y": 160.0},
+                        "parameters": {},
+                        "execution_order": 1,
+                        "child_layer": "circuit_main",
+                    }
+                ],
+                "connections": [],
+                "z_order": ["TOP1"],
+            },
+            "circuit_main": {
+                "id": "circuit_main",
+                "name": "Main Topology",
+                "kind": "circuit",
+                "source": "project.instances",
+            },
+        },
+    }
+
+
 class EditorDocument:
     """Mutable project document with snapshot-based undo and redo."""
 
@@ -53,6 +86,7 @@ class EditorDocument:
                 "execution_order": {},
                 "z_order": [],
                 "view": {"zoom": 1.0, "pan_x": 80.0, "pan_y": 60.0},
+                "hierarchy": default_editor_hierarchy(),
             },
         }
 
@@ -112,6 +146,13 @@ class EditorDocument:
         execution = editor.setdefault("execution_order", {})
         z_order = editor.setdefault("z_order", [])
         editor.setdefault("view", {"zoom": 1.0, "pan_x": 80.0, "pan_y": 60.0})
+        hierarchy = editor.setdefault("hierarchy", default_editor_hierarchy())
+        if isinstance(hierarchy, dict) and isinstance(hierarchy.get("layers"), dict):
+            for layer in hierarchy["layers"].values():
+                if isinstance(layer, dict):
+                    layer.setdefault(
+                        "view", {"zoom": 1.0, "pan_x": 80.0, "pan_y": 70.0}
+                    )
         if not isinstance(positions, dict) or not isinstance(execution, dict):
             raise StudioError("editor positions and execution_order must be objects")
         if not isinstance(z_order, list):
@@ -516,4 +557,3 @@ class EditorDocument:
                 if isinstance(node, str) and not self._is_unconnected(node):
                     networks.setdefault(node, []).append((instance["name"], port))
         return networks
-

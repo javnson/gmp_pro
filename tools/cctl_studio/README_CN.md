@@ -14,6 +14,12 @@ SysConfig 工具中值得采用的分层方式：元件属性和工程连线属�
 ## 已实现内容
 
 - 基于 Python/Tk 8.6 的桌面编辑器，无额外 GUI 运行依赖；
+- 两级编辑架构：主层使用数值信号模块框图，双击复合模块进入其专用子层；
+- 主层提供电气主拓扑、数字模块、电机模型和信号适配器，所有主层端口均为
+  `numeric`；
+- 电路子层使用电阻、电容、电感和电压源符号、无方向正交连线、网络名与连接点；
+- 数字子层使用输入/输出、AND/OR/NOT、延时和单稳态符号及类型化有向逻辑连线；
+- 工具栏返回、面包屑导航和设计树均可在主层与子层之间切换；
 - 可搜索元件面板、拖放/双击添加、画布拖动、框选、Shift 多选及方向键微调；
 - 端口拖线、网络合并/断开、属性编辑、执行顺序编号和工程参数编辑；
 - 网格吸附、缩放、平移、适合窗口、对齐、分布、前置/后置；
@@ -38,12 +44,15 @@ tools\cctl_studio\run_cctl_studio.bat
 tools\cctl_studio\run_cctl_studio.bat tools\cctl_studio\examples\rc_low_pass\project.json
 ```
 
-也可以直接运行 `python tools/cctl_studio/studio_gui.py [project.json]`。编辑器快捷操作包括：
+也可以直接运行 `python tools/cctl_studio/studio_gui.py [project.json]`。启动后首先显示
+`System [system]` 主层，双击带有 “Double-click to open” 的复合模块进入子层。编辑器
+快捷操作包括：
 
 - 拖动元件端口圆点到另一端口以创建或合并网络；
 - 中键拖动画布，或聚焦画布后按住空格并拖动；滚轮缩放，`F6` 适合窗口；
 - 框选或按住 Shift 多选；方向键微调 1 个世界单位，Shift+方向键按一个网格移动；
 - `Ctrl+Z/Y` 撤销/重做，`Ctrl+D` 复制实例，Delete 删除。
+- `Alt+Left` 或工具栏 Back 返回父层，面包屑按钮可直接跳回任一祖先层。
 
 命令行生成器仍可独立使用：
 
@@ -81,10 +90,15 @@ python tools/cctl_studio/cctl_studio.py run tools/cctl_studio/examples/rc_low_pa
 对象中，现有 Xyce 生成器会忽略这部分，因此旧工程可以直接打开，保存后的工程仍能生成
 相同网表。该元数据是 UI 框架的兼容层，不代替规划中的 schema v2 类型化显式连接。
 
+`editor.hierarchy` 明确保存每层的 `kind`、节点、连接、视图和复合节点的 `child_layer`。
+旧工程的 `project.instances` 自动映射为默认 `Main Topology` 的电路子层。新增的编辑器私有
+电路/数字子层目前可以完整绘制和保存，但在 schema v2 生成器完成前不会被静默加入
+Xyce/CCTL 生成输入。
+
 ## 后续实施边界
 
 1. 增加正式 JSON Schema，并将现有 UI 框架切换到 schema-v2 规范化模型；
-2. 支持层次模块、`.SUBCKT` 和厂商模型文件清单；
+2. 将编辑器私有层级节点规范化为可生成的层次模块、`.SUBCKT` 和厂商模型文件清单；
 3. 定义带采样周期的控制/数字端口，建立确定性的 CCTL-Xyce 协同仿真桥；
 4. 增加 PWM、ADC、编码器和记录探针适配器；
 5. 在工程格式上层增加 OpenDSS 工况/工作点导入。

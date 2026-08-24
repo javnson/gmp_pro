@@ -74,6 +74,26 @@ unique order within a phase and dependency direction; when order is omitted it
 uses a deterministic topological order. An MNA subnet is one atomic plant module,
 not a separately ordered item for each resistor.
 
+## Two-level editor contract
+
+The root system-composition layer carries numeric signals only. Electrical
+topologies, motors, digital modules, and voltage/current adapters are blocks with
+typed `numeric` ports; resistors, logic gates, and physical wires are not rendered
+at this layer.
+
+A composite block opens a `child_layer`, whose `kind` selects its renderer:
+
+- `circuit` uses standard electrical symbols, undirected electrical nets,
+  orthogonal wires, net labels, and junctions;
+- `digital` uses logic/timing symbols and directed logic connections;
+- future mechanical, thermal, or other domains receive separate renderers rather
+  than inheriting root-layer block semantics.
+
+The compatibility implementation stores this graph in schema-v1
+`editor.hierarchy` and maps existing `project.instances` into the default Main
+Topology circuit child. This fixes the UI/navigation contract only; editor-private
+children must not enter solver or code generation until schema v2 defines it.
+
 ## Deterministic generation pipeline
 
 ```text
@@ -101,10 +121,12 @@ generated files carry a banner and are never reverse-edited.
    PMSM reference without editing its handwritten golden project. The generated
    build must pass the same model-gain, routing, compilation, and 40-million-step
    regression checks.
-4. **Graphical editor** — the first UI framework now implements the palette,
-   inspector, canvas wiring, order labels, layout, undo/redo, and deterministic
-   save through compatible schema-v1 `editor` metadata. Migrate its document model
-   to the schema-v2 normalizer next, then invoke the headless generator.
+4. **Graphical editor** — the first two-level UI framework now implements a numeric
+   root block diagram, composite navigation, circuit-symbol and digital-logic child
+   renderers, palette, inspector, wiring, order labels, layout, undo/redo, and
+   deterministic save through compatible schema-v1 `editor.hierarchy` metadata.
+   Migrate its document model to the schema-v2 normalizer next, then invoke the
+   headless generator.
 5. **Interconnect adapter** — import/export the compatible SysConfig concepts and
    add round-trip fixtures. Unsupported TI-specific properties must be retained as
    namespaced extension data or reported, never silently discarded.

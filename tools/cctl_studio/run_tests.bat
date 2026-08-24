@@ -12,7 +12,7 @@ set "GMP_CCTL_TEST_PYTHON=%GMP_PRO_LOCATION%\bin\python\python.exe"
 if /I not "%GMP_ENV_MODE%"=="virtual" goto :PRIVATE_PYTHON_MISSING
 if not exist "%GMP_CCTL_TEST_PYTHON%" goto :PRIVATE_PYTHON_MISSING
 
-"%GMP_CCTL_TEST_PYTHON%" -m py_compile "%~dp0cctl_studio.py" "%~dp0editor_model.py" "%~dp0studio_gui.py"
+"%GMP_CCTL_TEST_PYTHON%" -m py_compile "%~dp0cctl_studio.py" "%~dp0editor_model.py" "%~dp0hierarchy_model.py" "%~dp0layered_ui.py" "%~dp0studio_gui.py"
 if errorlevel 1 exit /b %ERRORLEVEL%
 "%GMP_CCTL_TEST_PYTHON%" -m unittest discover -s "%~dp0tests" -v
 exit /b %ERRORLEVEL%
@@ -21,4 +21,3 @@ exit /b %ERRORLEVEL%
 echo [ERROR] CCTL Studio tests require the completed GMP private Python environment.
 echo         Expected: %GMP_CCTL_TEST_PYTHON%
 exit /b 1
-

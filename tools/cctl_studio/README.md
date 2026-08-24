@@ -16,6 +16,15 @@ UDP/TCP communication code and does not yet couple CCTL plant models into Xyce.
 ## What is implemented
 
 - A Python/Tk 8.6 desktop editor with no additional GUI runtime dependency.
+- A two-level editor: the system layer is a numeric-signal block diagram, and a
+  composite block opens its type-specific child editor on double-click.
+- System-layer electrical topology, digital module, motor, and signal-adapter
+  blocks. Every system-layer port has the `numeric` domain.
+- Circuit child layers with resistor, capacitor, inductor, and voltage-source
+  symbols, undirected orthogonal wires, net labels, and junction dots.
+- Digital child layers with input/output, AND/OR/NOT, delay, and one-shot symbols
+  plus typed directed logic wires.
+- Back and breadcrumb navigation between parent and child layers.
 - Searchable component palette, drag/drop and double-click creation, movement,
   marquee/Shift selection, and keyboard nudging.
 - Port-to-port wiring, net merge/disconnect, property editing, execution-order
@@ -47,9 +56,11 @@ tools\cctl_studio\run_cctl_studio.bat tools\cctl_studio\examples\rc_low_pass\pro
 ```
 
 The editor can also be launched with
-`python tools/cctl_studio/studio_gui.py [project.json]`. Drag between port dots to
-create a net; middle-drag or Space-drag pans, the wheel zooms, and F6 fits the
-diagram. Arrow keys nudge by one world unit and Shift+arrow uses one grid step.
+`python tools/cctl_studio/studio_gui.py [project.json]`. It opens at
+`System [system]`; double-click a composite module to enter its child. Drag between
+port dots to connect; middle-drag or Space-drag pans, the wheel zooms, and F6 fits
+the diagram. Arrow keys nudge by one world unit, Shift+arrow uses one grid step,
+and Alt+Left returns to the parent layer.
 
 The command-line generator remains independently available:
 
@@ -103,11 +114,18 @@ ignores that member, so legacy projects open directly and saved projects generat
 the same netlist. This compatibility layer does not replace the planned schema-v2
 typed explicit connection model.
 
+`editor.hierarchy` records each layer kind, nodes, connections, view state, and
+composite `child_layer`. Legacy `project.instances` are mapped to the default Main
+Topology circuit child. Newly created editor-private circuit and digital children
+can be drawn and saved, but are not silently included in Xyce/CCTL generation until
+the schema-v2 generator owns that contract.
+
 ## Intended next layers
 
 1. Formal JSON Schema and migration of this UI framework to the normalized
    schema-v2 model.
-2. Hierarchical/subcircuit modules and vendor model file manifests.
+2. Normalize editor-private hierarchy nodes into generated hierarchical/subcircuit
+   modules and vendor model manifests.
 3. Typed digital/control ports and a deterministic CCTL-to-Xyce co-simulation bridge.
 4. ADC, encoder, PWM and probe adapters with explicit sample-time contracts.
 5. An OpenDSS operating-point importer above the transient project format.

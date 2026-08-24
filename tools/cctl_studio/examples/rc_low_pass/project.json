@@ -57,6 +57,37 @@
       "C1": 3
     },
     "z_order": ["VSTEP", "R1", "C1"],
-    "view": { "zoom": 1.0, "pan_x": 80.0, "pan_y": 60.0 }
+    "view": { "zoom": 1.0, "pan_x": 80.0, "pan_y": 60.0 },
+    "hierarchy": {
+      "root_layer": "system_root",
+      "layers": {
+        "system_root": {
+          "id": "system_root",
+          "name": "System",
+          "kind": "system",
+          "nodes": [
+            {
+              "id": "TOP1",
+              "name": "Main Topology",
+              "type": "system.electrical_topology",
+              "position": { "x": 180.0, "y": 160.0 },
+              "parameters": {},
+              "execution_order": 1,
+              "child_layer": "circuit_main"
+            }
+          ],
+          "connections": [],
+          "z_order": ["TOP1"],
+          "view": { "zoom": 1.0, "pan_x": 80.0, "pan_y": 70.0 }
+        },
+        "circuit_main": {
+          "id": "circuit_main",
+          "name": "Main Topology",
+          "kind": "circuit",
+          "source": "project.instances",
+          "view": { "zoom": 1.0, "pan_x": 80.0, "pan_y": 70.0 }
+        }
+      }
+    }
   }
 }
