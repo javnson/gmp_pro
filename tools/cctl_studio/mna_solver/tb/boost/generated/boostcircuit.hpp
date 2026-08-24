@@ -46,6 +46,7 @@ public:
     static constexpr double matrix_tolerance = 9.9999999999999998e-13;
     static constexpr const char* discretization_method = "backward_euler";
 
+
     struct Inputs {
         std::uint32_t PWM{0U};
         double VS1{5.0};
@@ -101,6 +102,7 @@ public:
     const auto& state() const noexcept { return state_; }
     std::size_t last_topology_index() const noexcept { return last_topology_index_; }
     std::size_t last_calculation_state_index() const noexcept { return last_calculation_state_index_; }
+
 
 private:
     using StateMatrix = Eigen::Matrix<double, 4, 4>;
