@@ -14,5 +14,5 @@ addpath(paths.mexDir);
 savepath;
 rehash toolboxcache;
 sl_refresh_customizations;
-fprintf('CTL Simulink Components installed for %s.\nLibrary: %s\n', version('-release'), libraryPath);
+fprintf('CTL Simulink Components installed for %s.\nLibrary: %s\n', paths.release, libraryPath);
 end

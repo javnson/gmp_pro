@@ -520,6 +520,7 @@ slib/install_path/R2024a/**
 slib/install_path/R2023b/**
 slib/install_path/R2023a/**
 slib/install_path/R2022b/**
+slib/install_path/ctl_simulink_components/**
 
 **/slprj/
 *.asv

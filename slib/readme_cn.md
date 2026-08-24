@@ -26,6 +26,7 @@
 | `ctl_simulink_components/` | CTL 元件定义、生成器、MATLAB 构建程序和测试 | 取代原 `slib/tools` 下手工维护的控制元件 S-Function。 |
 | `tools/gmp_sil/sil_helper/` | TCP/UDP 协议、控制器对象、S-function 和测试的唯一 C++ 源码 | 不在 `slib` 复制源码。 |
 | `install_path/<Release>/` | 当前 MATLAB Release 的安装结果 | 除上述 R2024b 编辑流程外，不直接维护；由安装器重新生成。 |
+| `install_path/ctl_simulink_components/<Release>/` | CTL 组件库、MEX 目录和 `slblocks.m` 的独立安装结果 | 由 CTL 组件安装器生成；不要与主库合并注册文件。 |
 
 其他 `_src.slx` 仍是各自库的跨版本源。SIL Core 特别采用 R2024b 编辑、R2022b
 发布的流程，是为了能够先用当前工具调试，再向较老 MATLAB 发布兼容模型。
@@ -65,7 +66,7 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), ...
 3. 只把生成的 `GMP_SIL_Core.<mexext>` 放入 `simulink_lib_src/src`；
 4. 从 R2022b 源模型生成 `install_path/<Release>` 的兼容库；
 5. 复制脚本和 MEX，并注册主库 MATLAB 路径；
-6. 调用 `ctl_simulink_components/matlab/install_ctl_simulink_components.m`，生成、编译并注册 CTL 元件库；
+6. 调用 `ctl_simulink_components/matlab/install_ctl_simulink_components.m`，生成独立的 `install_path/ctl_simulink_components/<Release>` 目录，其中维护自己的 `slblocks.m` 和 `mex/`；
 7. 刷新 Library Browser。
 
 MATLAB 安装阶段不会运行 vcpkg，也不会访问网络。缺少依赖时，应先从

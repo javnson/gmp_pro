@@ -16,7 +16,7 @@
 | `python/gmp_mcb/` | 校验、生成器和 PyQt 编辑器。 |
 | `matlab/+gmp_mcb/` | MATLAB 编译、建库、Mask、模型和测量程序。 |
 | `build/` | 生成的 C++ 源码和注册表，不提交。 |
-| `install/<Release>/` | 生成的 MEX 和 Simulink Library，不提交。 |
+| `../install_path/ctl_simulink_components/R<Release>/` | CTL 组件独立安装目录，包含自己的 SLX、`slblocks.m` 和 `mex/`；该目录是生成物，默认忽略。 |
 | `cache/` | 频响测量结果，不提交。 |
 
 JSON 中的 GMP 头文件和源文件位置必须相对 `GMP_PRO_LOCATION`。本地生成物可以包含解析后的绝对路径，但绝对路径不会成为权威输入。
@@ -67,7 +67,7 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), 'slib', ...
     'uninstall_ctl_simulink_components.m'));
 ```
 
-`slib/uninstall_gmp_simulink_lib.m` 会自动调用上述卸载程序。卸载只移除 MATLAB 路径，不删除生成物。如需完全重建，可手动删除被忽略的 `build/`、`install/` 和 `cache/`。
+`slib/uninstall_gmp_simulink_lib.m` 会自动调用上述卸载程序。组件卸载程序只注销并删除自身的当前 Release 独立目录，不影响 GMP Simulink 主库。如需完全重建生成器，可手动删除被忽略的 `build/` 和 `cache/`。
 
 ## 调度频率与 `fs`
 

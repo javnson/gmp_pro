@@ -4,9 +4,10 @@ toolRoot = gmp_mcb.tool_root();
 gmpRoot = gmp_mcb.gmp_root();
 registry = gmp_mcb.load_registry();
 if nargin < 1 || strlength(string(outputDir)) == 0
-    paths.installDir = fullfile(toolRoot, 'install', version('-release'));
-    paths.mexDir = fullfile(paths.installDir, 'mex');
+    paths = gmp_mcb.install_paths();
 else
+    matlabVersion = matlabRelease;
+    paths.release = char(matlabVersion.Release);
     paths.installDir = '';
     paths.mexDir = char(outputDir);
 end

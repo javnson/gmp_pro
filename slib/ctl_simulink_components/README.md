@@ -16,7 +16,7 @@ The current catalog includes basic hysteresis/saturation/slope limiting, continu
 | `python/gmp_mcb/` | Validation, generation, and PyQt editor. |
 | `matlab/+gmp_mcb/` | MATLAB build, library, mask, model, and measurement package. |
 | `build/` | Generated C++ source and registry; ignored. |
-| `install/<Release>/` | Generated MEX and Simulink library; ignored. |
+| `../install_path/ctl_simulink_components/R<Release>/` | Independent CTL component installation, containing its SLX, `slblocks.m`, and `mex/`; ignored because it is generated. |
 | `cache/` | Frequency measurement results; ignored. |
 
 All GMP source/header locations in JSON are relative to `GMP_PRO_LOCATION`. Generated files may contain resolved paths for the local build but are never authoritative inputs.
@@ -68,7 +68,7 @@ run(fullfile(getenv('GMP_PRO_LOCATION'), 'slib', ...
     'uninstall_ctl_simulink_components.m'));
 ```
 
-The main `slib/uninstall_gmp_simulink_lib.m` calls this uninstaller automatically. Uninstalling removes paths but retains generated files for inspection. Delete the ignored `install/`, `build/`, or `cache/` directories manually when a clean rebuild is desired.
+The main `slib/uninstall_gmp_simulink_lib.m` calls this uninstaller automatically. The component uninstaller unregisters and removes only its independent current-Release directory; the main GMP Simulink installation is unaffected. Delete the ignored `build/` or `cache/` directories manually when a clean generator rebuild is desired.
 
 ## Scheduling and `fs`
 

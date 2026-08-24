@@ -1,5 +1,5 @@
 function blkStruct = slblocks
-% Register the generated CTL component library.
+% Register the independently installed CTL component library.
 blkStruct.Name = sprintf('CTL Simulink Components');
 blkStruct.OpenFcn = 'open_system(''ctl_simulink_components'')';
 Browser.Library = 'ctl_simulink_components';

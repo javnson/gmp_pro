@@ -2,7 +2,8 @@ function libraryPath = create_library()
 % Create a masked Simulink library from the generated registry.
 toolRoot = gmp_mcb.tool_root();
 registry = gmp_mcb.load_registry();
-installDir = fullfile(toolRoot, 'install', version('-release'));
+paths = gmp_mcb.install_paths();
+installDir = paths.installDir;
 if ~isfolder(installDir), mkdir(installDir); end
 libraryName = 'ctl_simulink_components';
 libraryPath = fullfile(installDir, [libraryName '.slx']);
@@ -36,7 +37,8 @@ save_system(libraryName, libraryPath);
 close_system(libraryName, 0);
 clear cleanup;
 
-copyfile(fullfile(toolRoot, 'matlab', 'slblocks.m'), fullfile(installDir, 'slblocks.m'), 'f');
+copyfile(fullfile(toolRoot, 'matlab', 'slblocks.m'), ...
+    fullfile(installDir, 'slblocks.m'), 'f');
 end
 
 function close_if_loaded(name)

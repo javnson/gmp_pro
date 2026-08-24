@@ -12,6 +12,7 @@ libraryPath = gmp_mcb.create_library();
 addpath(paths.mexDir, '-begin');
 load_system(libraryPath);
 testCase.TestData.toolRoot = toolRoot;
+testCase.TestData.libraryPath = libraryPath;
 end
 
 function teardownOnce(~)
@@ -35,6 +36,27 @@ for index = 1:numel(blocks)
     tabs = mask.getDialogControl('mcb_tabs');
     verifyEqual(testCase, string({tabs.DialogControls.Name}), ["parameters_tab" "analysis_tab"]);
 end
+end
+
+function testUsesIndependentSlibInstallTree(testCase)
+paths = gmp_mcb.install_paths();
+slibRoot = fileparts(testCase.TestData.toolRoot);
+matlabVersion = matlabRelease;
+expectedInstallDir = fullfile(slibRoot, 'install_path', ...
+    'ctl_simulink_components', char(matlabVersion.Release));
+verifyEqual(testCase, paths.installDir, expectedInstallDir);
+verifyEqual(testCase, paths.mexDir, fullfile(expectedInstallDir, 'mex'));
+verifyEqual(testCase, testCase.TestData.libraryPath, ...
+    fullfile(expectedInstallDir, 'ctl_simulink_components.slx'));
+
+originalPath = path;
+restorePath = onCleanup(@() path(originalPath));
+addpath(paths.installDir, '-begin');
+clear slblocks;
+registration = slblocks();
+verifyEqual(testCase, string(registration.Browser.Library), ...
+    "ctl_simulink_components");
+clear restorePath;
 end
 
 function testPythonGenerationUsesGmpEnvironment(testCase)
