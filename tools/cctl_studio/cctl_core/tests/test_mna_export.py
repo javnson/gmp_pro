@@ -99,7 +99,11 @@ class MnaExportTests(unittest.TestCase):
         driven_count = sum(
             spec.integrated_pwm_driver for spec in MNA_COMPONENTS.values()
         )
-        self.assertEqual(len(parsed.elements), len(created) + driven_count)
+        rendered_count = sum(
+            MNA_COMPONENTS[type_id].netlist_kind is not None
+            for type_id in MNA_COMPONENTS
+        )
+        self.assertEqual(len(parsed.elements), rendered_count + driven_count)
         self.assertEqual(
             {element.kind for element in parsed.elements},
             {"R", "L", "C", "V", "I", "O", "E", "G", "F", "H", "D", "M", "S", "AMMETER"},
@@ -166,6 +170,29 @@ class MnaExportTests(unittest.TestCase):
         self.assertEqual(device.nodes[3], driver.nodes[1])
         model = build_multi_diode_switch_model(circuit)
         self.assertEqual(model.control_sources[0].name, "VPWM1")
+
+    def test_junction_merges_branches_without_emitting_an_element(self):
+        resistor_a = self.hierarchy.add_node(
+            self.layer_id, "circuit.resistor", 0, 0
+        )
+        resistor_b = self.hierarchy.add_node(
+            self.layer_id, "circuit.resistor", 240, 0
+        )
+        junction = self.hierarchy.add_node(
+            self.layer_id, "circuit.junction", 120, 0
+        )
+        self.hierarchy.connect(
+            self.layer_id, (resistor_a, "n"), (junction, "node")
+        )
+        self.hierarchy.connect(
+            self.layer_id, (junction, "node"), (resistor_b, "p")
+        )
+
+        parsed = self.parse_export(
+            export_mna_netlist(self.hierarchy, self.layer_id, "Junction")
+        )
+        self.assertEqual([element.name for element in parsed.elements], ["R1", "R2"])
+        self.assertEqual(parsed.elements[0].nodes[1], parsed.elements[1].nodes[0])
 
     def test_nonlinear_model_name_must_match_its_definition(self):
         diode = self.hierarchy.add_node(

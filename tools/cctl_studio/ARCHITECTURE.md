@@ -84,8 +84,9 @@ at this layer.
 A composite block opens a `child_layer`, whose `kind` selects its renderer:
 
 - `circuit` uses standard electrical symbols, undirected electrical nets, and
-  user-editable orthogonal polyline wires. Components support 90-degree rotation
-  and mirroring; child-layer inspectors prioritize parameters and omit order;
+  user-editable orthogonal polyline wires. Junctions merge nets without emitting
+  MNA element lines. Components support 90-degree rotation and mirroring;
+  child-layer inspectors prioritize parameters and omit order;
 - `digital` uses logic/timing symbols and directed logic connections;
 - future mechanical, thermal, or other domains receive separate renderers rather
   than inheriting root-layer block semantics.

@@ -33,6 +33,8 @@ COLOR_WIRE = QtGui.QColor("#d1d5db")
 COLOR_LOGIC = QtGui.QColor("#60a5fa")
 COLOR_NUMERIC = QtGui.QColor("#22d3ee")
 COLOR_PORT = QtGui.QColor("#6ee7b7")
+MOSFET_BODY_DIODE_CATHODE_Y = -8
+MOSFET_BODY_DIODE_TIP = QtCore.QPointF(34.0, MOSFET_BODY_DIODE_CATHODE_Y)
 
 
 @dataclass(frozen=True)
@@ -86,7 +88,11 @@ class LayerAdapter:
 
     def palette(self) -> dict[str, str]:
         if self.kind == "circuit" and not self.legacy_circuit:
-            return {type_id: spec.display_name for type_id, spec in MNA_COMPONENTS.items()}
+            return {
+                type_id: spec.display_name
+                for type_id, spec in MNA_COMPONENTS.items()
+                if type_id != "circuit.junction"
+            }
         if self.legacy_circuit:
             return {
                 component_id: component.display_name
@@ -353,6 +359,10 @@ class WireItem(QtWidgets.QGraphicsPathItem):
         self.data = data
         self.points = list(data.points)
         self.handles: list[VertexHandle] = []
+        self.drag_origin: QtCore.QPointF | None = None
+        self.drag_route: list[QtCore.QPointF] = []
+        self.drag_segment = -1
+        self.dragging_segment = False
         self.setFlag(self.ItemIsSelectable, data.editable)
         self.setZValue(-2)
         self.refresh()
@@ -430,21 +440,60 @@ class WireItem(QtWidgets.QGraphicsPathItem):
         self.scene_ref.adapter.set_wire_points(self.data.wire_id, self.points)
         self.scene_ref.changed("Wire route updated")
 
+    def mousePressEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
+        super().mousePressEvent(event)
+        if event.button() != QtCore.Qt.LeftButton or not self.data.editable:
+            return
+        self.drag_origin = QtCore.QPointF(event.scenePos())
+        self.drag_route = self.full_points()
+        self.drag_segment = min(
+            range(max(1, len(self.drag_route) - 1)),
+            key=lambda index: _distance_to_segment(
+                event.scenePos(), self.drag_route[index], self.drag_route[index + 1]
+            ),
+        )
+        self.dragging_segment = False
+
+    def mouseMoveEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
+        if (
+            self.drag_origin is not None
+            and event.buttons() & QtCore.Qt.LeftButton
+            and self.drag_segment >= 0
+        ):
+            if QtCore.QLineF(self.drag_origin, event.scenePos()).length() >= 4:
+                self.dragging_segment = True
+                route = _drag_orthogonal_segment(
+                    self.drag_route,
+                    self.drag_segment,
+                    self.scene_ref.snap_point(event.scenePos()),
+                )
+                self.points = route[1:-1]
+                self._set_preview_path(route)
+                event.accept()
+                return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
+        if self.dragging_segment and event.button() == QtCore.Qt.LeftButton:
+            self.scene_ref.adapter.set_wire_points(self.data.wire_id, self.points)
+            self.drag_origin = None
+            self.dragging_segment = False
+            self.scene_ref.changed("Wire segment moved")
+            event.accept()
+            return
+        self.drag_origin = None
+        super().mouseReleaseEvent(event)
+
+    def _set_preview_path(self, points: Sequence[QtCore.QPointF]) -> None:
+        path = QtGui.QPainterPath(points[0])
+        for point in points[1:]:
+            path.lineTo(point)
+        self.setPath(path)
+
     def mouseDoubleClickEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
         if not self.data.editable:
             return super().mouseDoubleClickEvent(event)
-        point = self.scene_ref.snap_point(event.scenePos())
-        all_points = self.full_points()
-        insert_at = 0
-        best_distance = float("inf")
-        for index, (first, second) in enumerate(zip(all_points, all_points[1:])):
-            distance = _distance_to_segment(point, first, second)
-            if distance < best_distance:
-                best_distance = distance
-                insert_at = index
-        self.points.insert(insert_at, point)
-        self.commit_vertices()
-        self.refresh()
+        self.scene_ref.create_junction_on_wire(self.data.wire_id, event.scenePos())
         event.accept()
 
 
@@ -467,13 +516,108 @@ def _distance_to_segment(
     return math.hypot(point.x() - projection.x(), point.y() - projection.y())
 
 
+def _same_point(first: QtCore.QPointF, second: QtCore.QPointF) -> bool:
+    return math.isclose(first.x(), second.x()) and math.isclose(first.y(), second.y())
+
+
+def _clean_orthogonal_route(points: Sequence[QtCore.QPointF]) -> list[QtCore.QPointF]:
+    result: list[QtCore.QPointF] = []
+    for point in points:
+        value = QtCore.QPointF(point)
+        if result and _same_point(result[-1], value):
+            continue
+        result.append(value)
+        while len(result) >= 3:
+            first, middle, last = result[-3:]
+            if (
+                math.isclose(first.x(), middle.x(), abs_tol=1e-6)
+                and math.isclose(middle.x(), last.x(), abs_tol=1e-6)
+            ) or (
+                math.isclose(first.y(), middle.y(), abs_tol=1e-6)
+                and math.isclose(middle.y(), last.y(), abs_tol=1e-6)
+            ):
+                result.pop(-2)
+            else:
+                break
+    return result
+
+
+def _drag_orthogonal_segment(
+    route: Sequence[QtCore.QPointF], segment: int, cursor: QtCore.QPointF
+) -> list[QtCore.QPointF]:
+    """Move one orthogonal segment while retaining fixed electrical endpoints."""
+    points = [QtCore.QPointF(point) for point in route]
+    first, second = points[segment], points[segment + 1]
+    horizontal = math.isclose(first.y(), second.y())
+    if horizontal:
+        replacement = [
+            QtCore.QPointF(first.x(), cursor.y()),
+            QtCore.QPointF(second.x(), cursor.y()),
+        ]
+    else:
+        replacement = [
+            QtCore.QPointF(cursor.x(), first.y()),
+            QtCore.QPointF(cursor.x(), second.y()),
+        ]
+    if segment == 0:
+        replacement.insert(0, QtCore.QPointF(points[0]))
+    if segment + 1 == len(points) - 1:
+        replacement.append(QtCore.QPointF(points[-1]))
+    return _clean_orthogonal_route(
+        [*points[:segment], *replacement, *points[segment + 2 :]]
+    )
+
+
+def _reroute_for_moved_endpoints(
+    route: Sequence[QtCore.QPointF],
+    source: QtCore.QPointF,
+    target: QtCore.QPointF,
+) -> list[QtCore.QPointF]:
+    """Stretch the endpoint-adjacent segments like an EDA component drag."""
+    old = [QtCore.QPointF(point) for point in route]
+    if len(old) < 2:
+        return [QtCore.QPointF(source), QtCore.QPointF(target)]
+    source_delta = source - old[0]
+    target_delta = target - old[-1]
+    if _same_point(source_delta, target_delta) and not _same_point(
+        source_delta, QtCore.QPointF()
+    ):
+        moved = [point + source_delta for point in old]
+        moved[0], moved[-1] = QtCore.QPointF(source), QtCore.QPointF(target)
+        return _clean_orthogonal_route(moved)
+
+    interior = [QtCore.QPointF(point) for point in old[1:-1]]
+    if not interior:
+        if math.isclose(source.x(), target.x()) or math.isclose(source.y(), target.y()):
+            return [QtCore.QPointF(source), QtCore.QPointF(target)]
+        old_horizontal = math.isclose(old[0].y(), old[1].y())
+        corner = (
+            QtCore.QPointF(target.x(), source.y())
+            if old_horizontal
+            else QtCore.QPointF(source.x(), target.y())
+        )
+        return [QtCore.QPointF(source), corner, QtCore.QPointF(target)]
+
+    if not _same_point(source, old[0]):
+        if math.isclose(old[0].y(), old[1].y()):
+            interior[0].setY(source.y())
+        else:
+            interior[0].setX(source.x())
+    if not _same_point(target, old[-1]):
+        if math.isclose(old[-2].y(), old[-1].y()):
+            interior[-1].setY(target.y())
+        else:
+            interior[-1].setX(target.x())
+    return _clean_orthogonal_route([source, *interior, target])
+
+
 class NodeItem(QtWidgets.QGraphicsObject):
     def __init__(self, scene: "SchematicScene", data: NodeData) -> None:
         super().__init__()
         self.scene_ref = scene
         self.data = data
         self.press_position = QtCore.QPointF(data.position)
-        self.setPos(data.position)
+        self.setPos(scene.snap_point(data.position))
         self.setRotation(data.rotation)
         if data.mirror_x:
             self.setTransform(QtGui.QTransform().scale(-1, 1))
@@ -484,9 +628,16 @@ class NodeItem(QtWidgets.QGraphicsObject):
         self.setZValue(2)
 
     def boundingRect(self) -> QtCore.QRectF:
+        if self.data.symbol == "junction":
+            return QtCore.QRectF(-10, -10, 20, 20)
         if self.scene_ref.adapter.kind == "system":
             return QtCore.QRectF(-90, -52, 180, 112)
         return QtCore.QRectF(-76, -55, 152, 120)
+
+    @staticmethod
+    def _port_row(index: int, count: int) -> float:
+        """Return a grid-aligned, vertically centred port row."""
+        return float((2 * index - (count - 1)) * DEFAULT_GRID_SIZE)
 
     def port_local_position(self, port_id: str) -> QtCore.QPointF:
         ports = list(self.data.ports)
@@ -497,41 +648,43 @@ class NodeItem(QtWidgets.QGraphicsObject):
             outputs = [value for value in ports if value.direction == "output"]
             if port.direction == "input":
                 index = inputs.index(port)
-                return QtCore.QPointF(-70, -25 + 50 * (index + 1) / (len(inputs) + 1))
+                return QtCore.QPointF(-60, self._port_row(index, len(inputs)))
             index = outputs.index(port)
-            return QtCore.QPointF(70, -25 + 50 * (index + 1) / (len(outputs) + 1))
+            return QtCore.QPointF(60, self._port_row(index, len(outputs)))
+        if self.data.symbol == "junction":
+            return QtCore.QPointF(0, 0)
         if self.data.symbol == "ground":
-            return QtCore.QPointF(0, -38)
+            return QtCore.QPointF(0, -40)
         if self.data.symbol == "opamp":
             positions = {
-                "plus": QtCore.QPointF(-62, -18),
-                "minus": QtCore.QPointF(-62, 18),
-                "out": QtCore.QPointF(62, 0),
+                "plus": QtCore.QPointF(-60, -20),
+                "minus": QtCore.QPointF(-60, 20),
+                "out": QtCore.QPointF(60, 0),
             }
             return positions[port_id]
         if self.data.symbol == "mosfet":
             positions = {
-                "drain": QtCore.QPointF(18, -45),
-                "source": QtCore.QPointF(18, 45),
+                "drain": QtCore.QPointF(20, -40),
+                "source": QtCore.QPointF(20, 40),
             }
             return positions[port_id]
         if len(ports) == 1:
-            return QtCore.QPointF(0, -38)
+            return QtCore.QPointF(0, -40)
         if len(ports) == 2:
-            return QtCore.QPointF(-62 if ports.index(port) == 0 else 62, 0)
+            return QtCore.QPointF(-60 if ports.index(port) == 0 else 60, 0)
         if len(ports) == 3:
             return (
-                QtCore.QPointF(-58, -18)
+                QtCore.QPointF(-60, -20)
                 if ports.index(port) == 0
-                else QtCore.QPointF(-58, 18)
+                else QtCore.QPointF(-60, 20)
                 if ports.index(port) == 1
-                else QtCore.QPointF(62, 0)
+                else QtCore.QPointF(60, 0)
             )
         positions = (
-            QtCore.QPointF(-62, -20),
-            QtCore.QPointF(62, -20),
-            QtCore.QPointF(-62, 20),
-            QtCore.QPointF(62, 20),
+            QtCore.QPointF(-60, -20),
+            QtCore.QPointF(60, -20),
+            QtCore.QPointF(-60, 20),
+            QtCore.QPointF(60, 20),
         )
         return positions[ports.index(port) % 4]
 
@@ -550,12 +703,12 @@ class NodeItem(QtWidgets.QGraphicsObject):
     def mousePressEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
         self.press_position = self.pos()
         super().mousePressEvent(event)
+        self.scene_ref.begin_node_drag(self)
 
     def mouseReleaseEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
         super().mouseReleaseEvent(event)
         if self.pos() != self.press_position:
-            self.scene_ref.adapter.set_position(self.data.node_id, self.pos())
-            self.scene_ref.changed(f"Moved {self.data.name}")
+            self.scene_ref.finish_node_drag(self.data.name)
 
     def mouseDoubleClickEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
         if self.data.child_layer:
@@ -672,9 +825,9 @@ class NodeItem(QtWidgets.QGraphicsObject):
         painter.setPen(QtGui.QPen(color, 2))
         painter.setBrush(QtCore.Qt.NoBrush)
         symbol = self.data.symbol
-        if len(self.data.ports) == 2:
-            painter.drawLine(-62, 0, -35, 0)
-            painter.drawLine(35, 0, 62, 0)
+        if len(self.data.ports) == 2 and symbol != "mosfet":
+            painter.drawLine(-60, 0, -35, 0)
+            painter.drawLine(35, 0, 60, 0)
         if symbol == "resistor":
             points = [QtCore.QPointF(-35, 0)]
             for index in range(1, 8):
@@ -692,10 +845,10 @@ class NodeItem(QtWidgets.QGraphicsObject):
         elif symbol in {"voltage_source", "current_source", "dependent_voltage", "dependent_current"}:
             if symbol.startswith("dependent"):
                 if len(self.data.ports) == 4:
-                    painter.drawLine(-62, -20, -22, -20)
-                    painter.drawLine(22, -20, 62, -20)
-                    painter.drawLine(-62, 20, -22, 20)
-                    painter.drawLine(22, 20, 62, 20)
+                    painter.drawLine(-60, -20, -22, -20)
+                    painter.drawLine(22, -20, 60, -20)
+                    painter.drawLine(-60, 20, -22, 20)
+                    painter.drawLine(22, 20, 60, 20)
                 painter.drawPolygon(
                     QtGui.QPolygonF(
                         [QtCore.QPointF(0, -28), QtCore.QPointF(28, 0), QtCore.QPointF(0, 28), QtCore.QPointF(-28, 0)]
@@ -712,14 +865,14 @@ class NodeItem(QtWidgets.QGraphicsObject):
             )
             painter.drawLine(20, -22, 20, 22)
         elif symbol == "ground":
-            painter.drawLine(0, -36, 0, -5)
+            painter.drawLine(0, -40, 0, -5)
             painter.drawLine(-24, -5, 24, -5)
             painter.drawLine(-16, 3, 16, 3)
             painter.drawLine(-8, 11, 8, 11)
         elif symbol == "opamp":
-            painter.drawLine(-62, -18, -45, -18)
-            painter.drawLine(-62, 18, -45, 18)
-            painter.drawLine(45, 0, 62, 0)
+            painter.drawLine(-60, -20, -45, -20)
+            painter.drawLine(-60, 20, -45, 20)
+            painter.drawLine(45, 0, 60, 0)
             painter.drawPolygon(
                 QtGui.QPolygonF([QtCore.QPointF(-45, -32), QtCore.QPointF(45, 0), QtCore.QPointF(-45, 32)])
             )
@@ -730,23 +883,26 @@ class NodeItem(QtWidgets.QGraphicsObject):
             # channel at the right, drain above and source below.  Gate drive
             # and bulk are internal to this Studio composite and are therefore
             # deliberately not exposed as connection ports.
-            painter.drawLine(18, -45, 18, -28)
-            painter.drawLine(18, 28, 18, 45)
-            painter.drawLine(18, -28, 18, -13)
-            painter.drawLine(18, -8, 18, 8)
-            painter.drawLine(18, 13, 18, 28)
+            painter.drawLine(20, -40, 20, -28)
+            painter.drawLine(20, 28, 20, 40)
+            painter.drawLine(20, -28, 20, -13)
+            painter.drawLine(20, -8, 20, 8)
+            painter.drawLine(20, 13, 20, 28)
             painter.drawLine(-8, -27, -8, 27)
             painter.drawLine(-28, 0, -8, 0)
-            painter.drawLine(18, 18, 34, 18)
-            painter.drawLine(34, 18, 34, -18)
-            painter.drawLine(34, -18, 18, -18)
-            painter.drawLine(28, 4, 40, 4)
+            painter.drawLine(20, 18, 34, 18)
+            painter.drawLine(34, -18, 20, -18)
+            # Body diode: source is the anode and drain is the cathode.  The
+            # cathode bar touches the triangle tip and is on the drain side.
+            painter.drawLine(34, -18, 34, MOSFET_BODY_DIODE_CATHODE_Y)
+            painter.drawLine(34, 7, 34, 18)
+            painter.drawLine(28, MOSFET_BODY_DIODE_CATHODE_Y, 40, MOSFET_BODY_DIODE_CATHODE_Y)
             painter.drawPolygon(
                 QtGui.QPolygonF(
                     [
-                        QtCore.QPointF(28, 4),
-                        QtCore.QPointF(34, -5),
-                        QtCore.QPointF(40, 4),
+                        QtCore.QPointF(28, 7),
+                        MOSFET_BODY_DIODE_TIP,
+                        QtCore.QPointF(40, 7),
                     ]
                 )
             )
@@ -757,10 +913,10 @@ class NodeItem(QtWidgets.QGraphicsObject):
             )
         elif symbol == "switch":
             if len(self.data.ports) == 4:
-                painter.drawLine(-62, -20, -24, -20)
-                painter.drawLine(24, -20, 62, -20)
-                painter.drawLine(-62, 20, -8, 20)
-                painter.drawLine(8, 20, 62, 20)
+                painter.drawLine(-60, -20, -24, -20)
+                painter.drawLine(24, -20, 60, -20)
+                painter.drawLine(-60, 20, -8, 20)
+                painter.drawLine(8, 20, 60, 20)
             painter.drawEllipse(QtCore.QPointF(-24, 0), 3, 3)
             painter.drawEllipse(QtCore.QPointF(24, 0), 3, 3)
             painter.drawLine(-21, -2, 17, -19)
@@ -772,12 +928,19 @@ class NodeItem(QtWidgets.QGraphicsObject):
         elif symbol == "ammeter":
             painter.drawEllipse(QtCore.QPointF(0, 0), 25, 25)
             painter.drawText(QtCore.QRectF(-20, -13, 40, 26), QtCore.Qt.AlignCenter, "A")
+        elif symbol == "junction":
+            painter.setBrush(color)
+            painter.setPen(QtCore.Qt.NoPen)
+            painter.drawEllipse(QtCore.QPointF(0, 0), 5, 5)
+            return
         else:
             painter.drawRect(QtCore.QRectF(-35, -25, 70, 50))
         painter.setPen(COLOR_TEXT)
         painter.drawText(QtCore.QRectF(-75, 38, 150, 19), QtCore.Qt.AlignCenter, self.data.name)
 
     def _paint_ports(self, painter: QtGui.QPainter) -> None:
+        if self.data.symbol == "junction":
+            return
         painter.setBrush(COLOR_PORT)
         painter.setPen(QtGui.QPen(QtGui.QColor("#065f46"), 1))
         for port in self.data.ports:
@@ -804,10 +967,12 @@ class SchematicScene(QtWidgets.QGraphicsScene):
         self.draft_path.setPen(QtGui.QPen(COLOR_SELECT, 2, QtCore.Qt.DashLine))
         self.draft_path.setZValue(10)
         self.addItem(self.draft_path)
+        self.node_drag_positions: dict[str, QtCore.QPointF] = {}
+        self.node_drag_routes: dict[str, list[QtCore.QPointF]] = {}
         self.rebuild()
 
     def changed(self, message: str) -> None:
-        self.window.document_changed(message)
+        self.window.document_changed(message, focus_canvas=True)
 
     def open_child(self, node_id: str) -> None:
         self.window.enter_child(node_id)
@@ -856,6 +1021,70 @@ class SchematicScene(QtWidgets.QGraphicsScene):
                     best = (node_id, port.port_id)
         return best
 
+    def wire_at(self, point: QtCore.QPointF) -> WireItem | None:
+        candidates = [
+            item
+            for item in self.items(point)
+            if isinstance(item, WireItem) and item.data.editable
+        ]
+        if candidates:
+            return min(
+                candidates,
+                key=lambda item: min(
+                    _distance_to_segment(point, first, second)
+                    for first, second in zip(item.full_points(), item.full_points()[1:])
+                ),
+            )
+        return None
+
+    def begin_node_drag(self, active: NodeItem) -> None:
+        selected = [
+            item for item in self.selectedItems() if isinstance(item, NodeItem)
+        ]
+        if active not in selected:
+            selected.append(active)
+        self.node_drag_positions = {
+            item.data.node_id: QtCore.QPointF(item.pos()) for item in selected
+        }
+        self.node_drag_routes = {
+            wire_id: wire.full_points()
+            for wire_id, wire in self.wire_items.items()
+            if wire.data.source[0] in self.node_drag_positions
+            or wire.data.target[0] in self.node_drag_positions
+        }
+
+    def _reflow_saved_wires(
+        self, routes: Mapping[str, Sequence[QtCore.QPointF]]
+    ) -> None:
+        for wire_id, old_route in routes.items():
+            wire = self.wire_items.get(wire_id)
+            if wire is None:
+                continue
+            route = _reroute_for_moved_endpoints(
+                old_route,
+                self.port_scene_position(wire.data.source),
+                self.port_scene_position(wire.data.target),
+            )
+            self.adapter.set_wire_points(wire_id, route[1:-1])
+
+    def finish_node_drag(self, name: str) -> None:
+        moved = {
+            node_id: self.node_items[node_id].pos()
+            for node_id, old_position in self.node_drag_positions.items()
+            if node_id in self.node_items
+            and not _same_point(self.node_items[node_id].pos(), old_position)
+        }
+        if not moved:
+            self.node_drag_positions.clear()
+            self.node_drag_routes.clear()
+            return
+        for node_id, position in moved.items():
+            self.adapter.set_position(node_id, position)
+        self._reflow_saved_wires(self.node_drag_routes)
+        self.node_drag_positions.clear()
+        self.node_drag_routes.clear()
+        self.changed(f"Moved {name}")
+
     def refresh_wires(self) -> None:
         for wire in self.wire_items.values():
             wire.refresh()
@@ -874,7 +1103,22 @@ class SchematicScene(QtWidgets.QGraphicsScene):
         ]
         if not node_ids:
             return
+        routes = {
+            wire_id: wire.full_points()
+            for wire_id, wire in self.wire_items.items()
+            if wire.data.source[0] in node_ids or wire.data.target[0] in node_ids
+        }
         self.adapter.transform_nodes(node_ids, rotation, mirror)
+        for node_id in node_ids:
+            item = self.node_items[node_id]
+            item.data = self.adapter.node(node_id)
+            item.setRotation(item.data.rotation)
+            item.setTransform(
+                QtGui.QTransform().scale(-1, 1)
+                if item.data.mirror_x
+                else QtGui.QTransform()
+            )
+        self._reflow_saved_wires(routes)
         self.changed("Component transform updated")
 
     def delete_selected(self) -> None:
@@ -948,6 +1192,48 @@ class SchematicScene(QtWidgets.QGraphicsScene):
             path.lineTo(point)
         self.draft_path.setPath(path)
 
+    def _joint_point_on_wire(
+        self, wire: WireItem, cursor: QtCore.QPointF
+    ) -> tuple[QtCore.QPointF, int, list[QtCore.QPointF]]:
+        route = wire.full_points()
+        segment = min(
+            range(len(route) - 1),
+            key=lambda index: _distance_to_segment(
+                cursor, route[index], route[index + 1]
+            ),
+        )
+        first, second = route[segment], route[segment + 1]
+        snapped = self.snap_point(cursor)
+        if math.isclose(first.y(), second.y()):
+            low, high = sorted((first.x(), second.x()))
+            point = QtCore.QPointF(min(high, max(low, snapped.x())), first.y())
+        else:
+            low, high = sorted((first.y(), second.y()))
+            point = QtCore.QPointF(first.x(), min(high, max(low, snapped.y())))
+        return point, segment, route
+
+    def create_junction_on_wire(
+        self,
+        wire_id: str,
+        cursor: QtCore.QPointF,
+        branch_source: tuple[str, str] | None = None,
+    ) -> str:
+        wire = self.wire_items[wire_id]
+        point, segment, route = self._joint_point_on_wire(wire, cursor)
+        left = _clean_orthogonal_route([*route[: segment + 1], point])
+        right = _clean_orthogonal_route([point, *route[segment + 1 :]])
+        junction_id = self.adapter.add_node("circuit.junction", point)
+        endpoint = (junction_id, "node")
+        self.adapter.delete_wire(wire_id)
+        self.adapter.connect(wire.data.source, endpoint, left[1:-1])
+        self.adapter.connect(endpoint, wire.data.target, right[1:-1])
+        if branch_source is not None:
+            branch = self._draft_full_path(point)
+            self.adapter.connect(branch_source, endpoint, branch[1:-1])
+            self.cancel_wire()
+        self.changed("Junction created")
+        return junction_id
+
     def cancel_wire(self) -> None:
         self.draft_source = None
         self.draft_points.clear()
@@ -978,6 +1264,13 @@ class SchematicScene(QtWidgets.QGraphicsScene):
                         self.changed("Wire created")
                     except backend.StudioError as exc:
                         QtWidgets.QMessageBox.critical(self.window, APP_NAME, str(exc))
+                    event.accept()
+                    return
+                wire = self.wire_at(event.scenePos())
+                if wire is not None:
+                    self.create_junction_on_wire(
+                        wire.data.wire_id, event.scenePos(), self.draft_source
+                    )
                     event.accept()
                     return
                 snapped = self.snap_point(event.scenePos())
@@ -1036,6 +1329,7 @@ class SchematicView(QtWidgets.QGraphicsView):
         self.setBackgroundBrush(COLOR_BG)
         self._panning = False
         self._pan_start = QtCore.QPoint()
+        self._pan_button = QtCore.Qt.NoButton
 
     @property
     def schematic_scene(self) -> SchematicScene:
@@ -1075,8 +1369,14 @@ class SchematicView(QtWidgets.QGraphicsView):
         super().keyPressEvent(event)
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
-        if event.button() == QtCore.Qt.MiddleButton:
+        right_background_pan = (
+            event.button() == QtCore.Qt.RightButton
+            and self.itemAt(event.pos()) is None
+            and self.schematic_scene.draft_source is None
+        )
+        if event.button() == QtCore.Qt.MiddleButton or right_background_pan:
             self._panning = True
+            self._pan_button = event.button()
             self._pan_start = event.pos()
             self.setCursor(QtCore.Qt.ClosedHandCursor)
             event.accept()
@@ -1094,8 +1394,9 @@ class SchematicView(QtWidgets.QGraphicsView):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QtGui.QMouseEvent) -> None:
-        if event.button() == QtCore.Qt.MiddleButton:
+        if self._panning and event.button() == self._pan_button:
             self._panning = False
+            self._pan_button = QtCore.Qt.NoButton
             self.setCursor(QtCore.Qt.ArrowCursor)
             event.accept()
             return
@@ -1376,9 +1677,28 @@ class StudioWindow(QtWidgets.QMainWindow):
             )
         self.update_title()
 
-    def document_changed(self, message: str) -> None:
+    def document_changed(self, message: str, focus_canvas: bool = False) -> None:
         current_layer = self.layer_stack[-1]
+        selected_nodes = [
+            item.data.node_id
+            for item in self.scene.selectedItems()
+            if isinstance(item, NodeItem)
+        ] if self.scene else []
+        selected_wires = [
+            item.data.wire_id
+            for item in self.scene.selectedItems()
+            if isinstance(item, WireItem)
+        ] if self.scene else []
         self.load_layer(current_layer, preserve_view=True)
+        for node_id in selected_nodes:
+            if node_id in self.scene.node_items:
+                self.scene.node_items[node_id].setSelected(True)
+        for wire_id in selected_wires:
+            if wire_id in self.scene.wire_items:
+                self.scene.wire_items[wire_id].setSelected(True)
+        self.scene.selection_changed()
+        if focus_canvas:
+            self.view.setFocus(QtCore.Qt.OtherFocusReason)
         self.statusBar().showMessage(message, 5000)
 
     def selection_changed(self, node_ids: Sequence[str]) -> None:

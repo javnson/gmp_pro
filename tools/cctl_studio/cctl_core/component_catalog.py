@@ -60,6 +60,13 @@ MNA_COMPONENTS: dict[str, MnaComponentSpec] = {
         "ground",
         (_port("node", "GND"),),
     ),
+    "circuit.junction": MnaComponentSpec(
+        "circuit.junction",
+        "Junction",
+        "J",
+        "junction",
+        (_port("node", ""),),
+    ),
     "circuit.resistor": MnaComponentSpec(
         "circuit.resistor",
         "Resistor",

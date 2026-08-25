@@ -31,6 +31,7 @@ UDP/TCP communication code and does not yet couple CCTL plant models into Xyce.
   as the external `PWMn` command.
 - Circuit symbols with user-routed, editable polyline wires. Click a port to start,
   click the canvas for any number of orthogonal corners, then click the destination.
+  Ending on a wire or double-clicking a wire creates an electrical junction.
 - Digital child layers with input/output, AND/OR/NOT, delay, and one-shot symbols
   plus typed directed logic wires.
 - Back and breadcrumb navigation between parent and child layers.
@@ -38,9 +39,10 @@ UDP/TCP communication code and does not yet couple CCTL plant models into Xyce.
   marquee/Shift selection.
 - A parameter-first inspector. Execution order appears only on the system layer,
   never on circuit or digital child components.
-- 90-degree rotation and horizontal mirroring with transformed connection ports;
-  Space rotates the selected component.
-- Grid snapping, zoom/pan/fit, alignment, and distribution.
+- 90-degree rotation and horizontal mirroring with transformed connection ports.
+  Moving or transforming a component stretches adjacent wire segments orthogonally;
+  Space rotates it without clearing the selection.
+- Grid-aligned connection terminals, zoom/pan/fit, alignment, and distribution.
 - Undo/redo, duplicate/delete, and JSON project open/save.
 - Direct MNA `.cir` export accepted by the repository MNA parser.
 - JSON component definitions with ports, parameters, validation types, and a Xyce
@@ -71,8 +73,9 @@ The editor can also be launched with
 `python tools/cctl_studio/cctl_core/qt_studio.py [project.json]`. It opens at
 `System [system]`; double-click a composite module to enter its child. Click a port,
 place polyline corners on the canvas, and click the destination port. During routing,
-Space toggles the orthogonal corner direction. Double-click a wire to add a route
-vertex. Middle-drag pans, the wheel zooms, F6 fits, Space or R rotates, M mirrors,
+Space toggles the orthogonal corner direction. Drag a wire segment directly;
+double-click a wire to create a junction. Middle-drag or right-drag empty canvas pans,
+the wheel zooms, F6 fits, Space or R rotates, M mirrors,
 and Alt+Left returns to the parent layer.
 
 The command-line generator remains independently available:
