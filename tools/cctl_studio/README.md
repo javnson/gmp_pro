@@ -21,6 +21,10 @@ UDP/TCP communication code and does not yet couple CCTL plant models into Xyce.
   composite block opens its type-specific child editor on double-click.
 - System-layer electrical topology, digital module, motor, and signal-adapter
   blocks. Every system-layer port has the `numeric` domain.
+- File > Import compiled topology loads a `*.cctl-topology.json`, verifies the
+  sibling HPP/archive size and SHA-256, and creates numeric ports from its C++ ABI.
+- Each imported input can be exposed or fixed to a constant; each output can be
+  exposed or hidden. Connections to a port are removed when that port is disabled.
 - An analog catalog synchronized with `mna_solver.py::parse_netlist()`: R/L/C,
   independent sources, ideal op-amps, IdOpamp, E/G/F/H controlled sources,
   D/M/S devices, and ammeters.
@@ -77,6 +81,13 @@ Space toggles the orthogonal corner direction. Drag a wire segment directly;
 double-click a wire to create a junction. Middle-drag or right-drag empty canvas pans,
 the wheel zooms, F6 fits, Space or R rotates, M mirrors,
 and Alt+Left returns to the parent layer.
+
+After MNA code generation, use File > Import compiled topology on the system
+layer and select the same-stem `*.cctl-topology.json`. An Eigen deployment unit
+keeps that manifest, HPP, and archive together; the potentially huge circuit-matrix
+JSON is an intermediate generator input, not a Studio import format. Select the
+new block to expose inputs, assign input constants, hide outputs, and wire it to
+other system blocks.
 
 The command-line generator remains independently available:
 
@@ -136,6 +147,11 @@ Topology compatibility child and retain their Xyce path. New analog children use
 explicit edges and export to the current MNA Solver netlist dialect. Digital
 children and cross-layer system graphs are not silently included in CCTL code
 generation until schema v2 owns that contract.
+Compiled topologies are the exception: `editor.hierarchy` retains a lightweight
+manifest snapshot, the source manifest path, and instance-level pin bindings so
+projects containing several connected topology blocks reopen deterministically.
+Emitting their final C++ scheduling/assembly code remains a responsibility of the
+schema-v2 headless generator.
 
 All Studio Python sources, built-in component data, examples, and tests live under
 `cctl_core/`; the outer directory provides the batch entry points.

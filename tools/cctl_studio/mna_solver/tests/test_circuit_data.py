@@ -15,11 +15,13 @@ import numpy as np
 
 SOLVER_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SOLVER_DIR))
+sys.path.insert(0, str(SOLVER_DIR.parent / "cctl_core"))
 
 import circuit_data as data  # noqa: E402
 import cpp_codegen as codegen  # noqa: E402
 import mna_solver as mna  # noqa: E402
 import switched_solver as switched  # noqa: E402
+from topology_bundle import load_topology_manifest  # noqa: E402
 
 
 TB_DIR = SOLVER_DIR / "tb"
@@ -148,7 +150,9 @@ class CircuitDataTests(unittest.TestCase):
             files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp", "BuckCircuit")
             header = files["header"].read_text(encoding="utf-8")
             archive = files["archive"].read_bytes()
-        self.assertEqual(set(files), {"header", "archive"})
+            manifest = json.loads(files["manifest"].read_text(encoding="utf-8"))
+            imported_manifest = load_topology_manifest(files["manifest"])
+        self.assertEqual(set(files), {"header", "archive", "manifest"})
         self.assertEqual(archive[:8], b"GMPMNA1\0")
         self.assertEqual(struct.unpack_from("<I", archive, 8)[0], 1)
         self.assertEqual(struct.unpack_from("<I", archive, 12)[0], 140)
@@ -172,6 +176,23 @@ class CircuitDataTests(unittest.TestCase):
         self.assertNotIn("value <<", header)
         self.assertIn("matrix_tolerance", header)
         self.assertIn('matrix_backend = "eigen"', header)
+        self.assertEqual(
+            manifest["schema"],
+            {"name": "gmp.cctl.compiled_topology", "version": 1},
+        )
+        self.assertEqual(manifest["topology"]["class_name"], "BuckCircuit")
+        self.assertEqual(manifest["artifacts"]["header"]["path"], "buckcircuit.hpp")
+        self.assertEqual(manifest["artifacts"]["archive"]["path"], "buckcircuit.archive")
+        self.assertEqual(
+            [(port["name"], port["field"], port["default"]) for port in manifest["interface"]["inputs"]],
+            [("PWM", "PWM", 0), ("VS1", "VS1", 5.0)],
+        )
+        self.assertEqual(
+            [port["field"] for port in manifest["interface"]["outputs"]],
+            ["VAM1", "VF1"],
+        )
+        self.assertEqual(manifest["cpp"]["methods"]["normal_step"], "step_normal")
+        self.assertEqual(imported_manifest, manifest)
 
     def test_rk4_document_preserves_method_through_compact_json_and_archive(self) -> None:
         source = BUCK_DIR / "buck.CIR"
@@ -206,8 +227,9 @@ class CircuitDataTests(unittest.TestCase):
                 backend="fixed",
             )
             header = files["header"].read_text(encoding="utf-8")
+            manifest = json.loads(files["manifest"].read_text(encoding="utf-8"))
 
-        self.assertEqual(set(files), {"header"})
+        self.assertEqual(set(files), {"header", "manifest"})
         self.assertIn("#include <cctl/numerical_solver/fixed_matrix.hpp>", header)
         self.assertIn("#include <cctl/numerical_solver/fixed_vector.hpp>", header)
         self.assertNotIn("#include <Eigen/Dense>", header)
@@ -218,6 +240,7 @@ class CircuitDataTests(unittest.TestCase):
         self.assertIn("cctl::affine_transform", header)
         self.assertIn("static constexpr std::array<StateMatrix", header)
         self.assertNotIn("value <<", header)
+        self.assertIsNone(manifest["artifacts"]["archive"])
 
         with self.assertRaisesRegex(ValueError, "unsupported matrix backend"):
             codegen.render_header(self.document, "InvalidCircuit", backend="dynamic")
@@ -251,7 +274,7 @@ class CircuitDataTests(unittest.TestCase):
             files = codegen.generate_cpp_project(data_path, Path(directory) / "cpp")
             header = files["header"].read_text(encoding="utf-8")
         self.assertIn("class BuckCircuit", header)
-        self.assertEqual(set(files), {"header", "archive"})
+        self.assertEqual(set(files), {"header", "archive", "manifest"})
 
     def test_fsbb_exports_four_pwm_ports_and_81_mosfet_topologies(self) -> None:
         source = FSBB_DIR / "FSBB.CIR"

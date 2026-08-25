@@ -1,16 +1,20 @@
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 
 TOOL_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOL_ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import cctl_studio  # noqa: E402
 from editor_model import EditorDocument  # noqa: E402
 from hierarchy_model import HierarchyDocument  # noqa: E402
 from qt_studio import LayerAdapter  # noqa: E402
+from topology_bundle import binding_key  # noqa: E402
+from topology_fixture import write_topology_bundle  # noqa: E402
 
 
 EXAMPLE = TOOL_ROOT / "examples" / "rc_low_pass" / "project.json"
@@ -108,6 +112,66 @@ class HierarchyDocumentTests(unittest.TestCase):
             generated.append(self.components[instance["module"]].render(instance))
         self.assertIn("R1 vin out 1k", generated)
         self.assertEqual(len(document.instances), 3)
+
+    def test_compiled_topology_import_configures_ports_and_survives_reload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest_path = write_topology_bundle(root)
+            document = self.document()
+            hierarchy = HierarchyDocument(document)
+            topology = hierarchy.import_compiled_topology(
+                "system_root", str(manifest_path), 320, 180
+            )
+            self.assertEqual(topology, "CTOP1")
+            self.assertEqual(
+                [port.port_id for port in hierarchy.node_type(
+                    hierarchy.node("system_root", topology)
+                ).ports],
+                ["in_PWM", "in_VS1", "out_VF1"],
+            )
+
+            adapter = hierarchy.add_node(
+                "system_root", "system.signal_adapter", 600, 180
+            )
+            hierarchy.connect(
+                "system_root", (topology, "out_VF1"), (adapter, "in")
+            )
+            hierarchy.connect(
+                "system_root", (adapter, "out"), (topology, "in_VS1")
+            )
+            raw = hierarchy.node("system_root", topology)
+            parameters = dict(raw["parameters"])
+            parameters[binding_key("input", "VS1", "mode")] = "constant"
+            parameters[binding_key("input", "VS1", "value")] = "12.5"
+            parameters[binding_key("output", "VF1", "mode")] = "hidden"
+            hierarchy.update_node(
+                "system_root", topology, raw["name"], raw["execution_order"], parameters
+            )
+
+            updated = hierarchy.node("system_root", topology)
+            self.assertEqual(
+                updated["parameters"][binding_key("input", "VS1", "value")],
+                12.5,
+            )
+            self.assertEqual(
+                [port.port_id for port in hierarchy.node_type(updated).ports],
+                ["in_PWM"],
+            )
+            self.assertEqual(hierarchy.layer("system_root")["connections"], [])
+
+            project_path = root / "project.json"
+            document.save(project_path)
+            reloaded = EditorDocument.load(project_path, self.components)
+            reloaded_hierarchy = HierarchyDocument(reloaded)
+            reloaded_node = reloaded_hierarchy.node("system_root", topology)
+            self.assertEqual(
+                [port.port_id for port in reloaded_hierarchy.node_type(reloaded_node).ports],
+                ["in_PWM"],
+            )
+            self.assertEqual(
+                Path(reloaded_node["compiled_topology"]["manifest_path"]),
+                manifest_path.resolve(),
+            )
 
 
 if __name__ == "__main__":

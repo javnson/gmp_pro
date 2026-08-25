@@ -9,11 +9,20 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from cctl_studio import StudioError
 from component_catalog import MNA_COMPONENTS
 from editor_model import EditorDocument, default_editor_hierarchy
+from topology_bundle import (
+    TOPOLOGY_NODE_TYPE,
+    default_bindings,
+    exposed_port_documents,
+    load_topology_manifest,
+    normalize_bindings,
+    validate_topology_manifest,
+)
 
 
 @dataclass(frozen=True)
@@ -38,6 +47,15 @@ class NodeType:
 
 def _port(port_id: str, label: str, direction: str, domain: str) -> PortSpec:
     return PortSpec(port_id, label, direction, domain)
+
+
+def _mapping_value(
+    value: Mapping[str, Any], key: str, label: str
+) -> Mapping[str, Any]:
+    result = value.get(key)
+    if not isinstance(result, Mapping):
+        raise StudioError(f"{label} must be an object")
+    return result
 
 
 NODE_TYPES: dict[str, NodeType] = {
@@ -89,6 +107,14 @@ NODE_TYPES: dict[str, NodeType] = {
             _port("out", "out", "output", "numeric"),
         ),
         defaults={"gain": 1.0, "offset": 0.0},
+    ),
+    TOPOLOGY_NODE_TYPE: NodeType(
+        TOPOLOGY_NODE_TYPE,
+        "Compiled Topology",
+        "system",
+        "compiled_topology",
+        "CTOP",
+        (),
     ),
     "digital.input": NodeType(
         "digital.input",
@@ -226,6 +252,34 @@ class HierarchyDocument:
         return self.layer(layer_id).setdefault("nodes", [])
 
     def node_type(self, node: Mapping[str, Any]) -> NodeType:
+        if str(node.get("type")) == TOPOLOGY_NODE_TYPE:
+            bundle = node.get("compiled_topology")
+            if not isinstance(bundle, Mapping):
+                raise StudioError("compiled topology node has no bundle metadata")
+            manifest = validate_topology_manifest(
+                _mapping_value(bundle, "manifest", "compiled topology manifest")
+            )
+            parameters = node.get("parameters")
+            if not isinstance(parameters, Mapping):
+                parameters = default_bindings(manifest)
+            ports = tuple(
+                PortSpec(
+                    value["port_id"],
+                    value["label"],
+                    value["direction"],
+                    value["domain"],
+                )
+                for value in exposed_port_documents(manifest, parameters)
+            )
+            return NodeType(
+                TOPOLOGY_NODE_TYPE,
+                str(manifest["topology"]["name"]),
+                "system",
+                "compiled_topology",
+                "CTOP",
+                ports,
+                defaults=default_bindings(manifest),
+            )
         try:
             return NODE_TYPES[str(node["type"])]
         except KeyError as exc:
@@ -276,7 +330,7 @@ class HierarchyDocument:
         return {
             type_id: node_type
             for type_id, node_type in NODE_TYPES.items()
-            if node_type.layer_kind == kind
+            if node_type.layer_kind == kind and type_id != TOPOLOGY_NODE_TYPE
         }
 
     def _next_id(self, layer_id: str, node_type: NodeType) -> str:
@@ -320,6 +374,46 @@ class HierarchyDocument:
                     "z_order": [],
                 }
             self.nodes(layer_id).append(node)
+            self.layer(layer_id)["z_order"].append(node_id)
+            created.append(node_id)
+
+        self.document.change(operation)
+        return created[0]
+
+    def import_compiled_topology(
+        self, layer_id: str, manifest_path: str, x: float, y: float
+    ) -> str:
+        if self.layer_kind(layer_id) != "system":
+            raise StudioError("compiled topologies can only be imported on the system layer")
+        manifest = load_topology_manifest(manifest_path, verify_artifacts=True)
+        node_type = NODE_TYPES[TOPOLOGY_NODE_TYPE]
+        created: list[str] = []
+
+        def operation() -> None:
+            node_id = self._next_id(layer_id, node_type)
+            self.nodes(layer_id).append(
+                {
+                    "id": node_id,
+                    "name": str(manifest["topology"]["name"]),
+                    "type": TOPOLOGY_NODE_TYPE,
+                    "position": {"x": float(x), "y": float(y)},
+                    "parameters": default_bindings(manifest),
+                    "execution_order": max(
+                        (
+                            int(item.get("execution_order", 0))
+                            for item in self.nodes(layer_id)
+                        ),
+                        default=0,
+                    )
+                    + 1,
+                    "rotation": 0,
+                    "mirror_x": False,
+                    "compiled_topology": {
+                        "manifest_path": str(Path(manifest_path).resolve()),
+                        "manifest": manifest,
+                    },
+                }
+            )
             self.layer(layer_id)["z_order"].append(node_id)
             created.append(node_id)
 
@@ -438,7 +532,30 @@ class HierarchyDocument:
             node = self.node(layer_id, node_id)
             node["name"] = name.strip()
             node["execution_order"] = int(execution_order)
-            node["parameters"] = copy.deepcopy(dict(parameters))
+            if node.get("type") == TOPOLOGY_NODE_TYPE:
+                bundle = _mapping_value(
+                    node, "compiled_topology", "compiled topology bundle"
+                )
+                manifest = validate_topology_manifest(
+                    _mapping_value(bundle, "manifest", "compiled topology manifest")
+                )
+                node["parameters"] = normalize_bindings(manifest, parameters)
+                allowed = {port.port_id for port in self.node_type(node).ports}
+                layer = self.layer(layer_id)
+                layer["connections"] = [
+                    connection
+                    for connection in layer.get("connections", [])
+                    if not (
+                        connection["source"]["node"] == node_id
+                        and connection["source"]["port"] not in allowed
+                    )
+                    and not (
+                        connection["target"]["node"] == node_id
+                        and connection["target"]["port"] not in allowed
+                    )
+                ]
+            else:
+                node["parameters"] = copy.deepcopy(dict(parameters))
             child = node.get("child_layer")
             if child:
                 self.layer(str(child))["name"] = node["name"]

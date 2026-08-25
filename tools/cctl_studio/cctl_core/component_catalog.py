@@ -18,6 +18,7 @@ class ParameterSpec:
     label: str
     default: Any
     description: str = ""
+    choices: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

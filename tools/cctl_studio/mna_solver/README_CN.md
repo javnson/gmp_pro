@@ -296,10 +296,13 @@ tb\buck\
 操作系统临时目录。汇总验证的短期 CSV/JSON 位于同级 `validation` 树中，测试
 结束后删除本次运行目录。
 
-每个开关案例把 JSON 和计算类都写入 `generated`。Eigen 后端的计算类由一份
-轻量 `*.hpp` 和同名 `*.archive` 组成；fixed 后端仍把系数内嵌在单个头文件中。
-JSON、archive、CSV、本地构建目录和 IDE 缓存均被忽略，因为它们可重复生成，
-且 JSON 与二进制矩阵池可能很大。
+每个开关案例把 JSON 和计算类都写入 `generated`。Eigen 后端的正式可部署单元由
+同名的 `*.cctl-topology.json`、`*.hpp` 和 `*.archive` 三个文件组成。轻量 manifest
+描述输入/输出字段及类型、C++ 类和方法、求解器设置、头文件和 archive 相对路径、
+文件大小及 SHA-256；CCTL Studio 只导入该 manifest，并据此校验另外两个文件。
+矩阵 JSON 仍是生成器中间数据，不是部署接口，因其在大拓扑中可能非常庞大。
+fixed 后端把系数内嵌在 HPP 中，所以 manifest 的 archive 字段为 `null`。JSON、archive、
+CSV、本地构建目录和 IDE 缓存仍被忽略，因为它们均可重复生成。
 
 ### 生成和构建
 
@@ -324,6 +327,10 @@ CIR 和 `1E-12` 精度，也可以把其他 CIR 作为第一个参数传入。�
 不会覆盖手写 testbench。生成的 `BuckCircuit` 提供
 `step_short(PWM, VS1)`、`step_normal(PWM, VS1)`、`run` 和 `operator()`；
 探针既可通过 `circuit.output.VF1`，也可通过 `circuit["V(VF1)"]` 读取。
+
+例如 Buck 会同时生成 `buckcircuit.cctl-topology.json`、`buckcircuit.hpp` 和
+`buckcircuit.archive`。复制、发布或导入时应把三者作为一个目录内的完整单元；修改或
+替换 HPP/archive 后，manifest 的完整性校验将拒绝导入，必须重新运行生成器。
 
 默认 Eigen 后端将去重后的六类矩阵池、拓扑到计算状态映射及每个计算状态的
 九个池索引写入版本 1 二进制 archive。归档固定使用 little-endian `float64`、

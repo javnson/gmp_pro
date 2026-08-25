@@ -55,6 +55,8 @@ _ARCHIVE_SCALAR_BYTES = 8
 _ARCHIVE_HEADER_SIZE = 140
 _FNV1A64_OFFSET = 14695981039346656037
 _FNV1A64_PRIME = 1099511628211
+_TOPOLOGY_MANIFEST_SCHEMA = "gmp.cctl.compiled_topology"
+_TOPOLOGY_MANIFEST_VERSION = 1
 
 
 def _identifier(value: str, default: str = "Circuit") -> str:
@@ -102,6 +104,114 @@ def _source_hash_bytes(document: Mapping) -> bytes:
         source_hash = bytes(32)
     method = str(document.get("solver", {}).get("method", "")).encode("utf-8")
     return hashlib.sha256(source_hash + b"\0" + method).digest()
+
+
+def _file_artifact(path: Path) -> dict[str, str | int]:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return {
+        "path": path.name,
+        "size_bytes": path.stat().st_size,
+        "sha256": digest.hexdigest(),
+    }
+
+
+def build_topology_manifest(
+    document: Mapping,
+    class_name: str,
+    backend: str,
+    header: Path,
+    archive: Path | None,
+    plan: "MatrixDedupPlan",
+) -> dict:
+    """Describe the public generated-code ABI without copying matrix data."""
+    input_ports = document["ports"]["inputs"]
+    ordered_inputs = [
+        port for port in input_ports if port["data_type"] == "uint32_t"
+    ] + [port for port in input_ports if port["data_type"] == "double"]
+    inputs = []
+    for port in ordered_inputs:
+        inputs.append(
+            {
+                "name": str(port["name"]),
+                "field": _identifier(str(port["name"]), "input"),
+                "data_type": str(port["data_type"]),
+                "role": str(port.get("role", "analog_input")),
+                "default": port.get("default", 0),
+            }
+        )
+    outputs = []
+    for port in document["ports"]["outputs"]:
+        value = {
+            "name": str(port["name"]),
+            "field": _identifier(str(port["field"]), "output"),
+            "data_type": str(port["data_type"]),
+            "role": str(port.get("role", "signal_output")),
+        }
+        if "signal_index" in port:
+            value["signal_index"] = int(port["signal_index"])
+        outputs.append(value)
+    selection_count = int(
+        document.get("switching", {}).get(
+            "selection_topology_count", len(document["topologies"])
+        )
+    )
+    source = document.get("circuit", {}).get("source", {})
+    archive_document = _file_artifact(archive) if archive is not None else None
+    return {
+        "schema": {
+            "name": _TOPOLOGY_MANIFEST_SCHEMA,
+            "version": _TOPOLOGY_MANIFEST_VERSION,
+        },
+        "topology": {
+            "name": str(document.get("circuit", {}).get("name", class_name)),
+            "class_name": class_name,
+            "source": {
+                "file": source.get("file"),
+                "sha256": source.get("sha256"),
+            },
+        },
+        "artifacts": {
+            "header": _file_artifact(header),
+            "archive": archive_document,
+        },
+        "cpp": {
+            "standard": 17,
+            "include": header.name,
+            "class_name": class_name,
+            "constructor": (
+                {"archive_path_argument": True, "default_archive": archive.name}
+                if archive is not None
+                else {"archive_path_argument": False}
+            ),
+            "methods": {
+                "normal_step": "step_normal",
+                "short_step": "step_short",
+                "reset": "reset",
+            },
+            "dependencies": (["Eigen3"] if backend == "eigen" else ["cctl"]),
+        },
+        "interface": {"inputs": inputs, "outputs": outputs},
+        "solver": {
+            "method": str(document["solver"]["method"]),
+            "normal_step_s": float(document["solver"]["normal_step_s"]),
+            "short_step_s": float(document["solver"]["short_step_s"]),
+            "matrix_backend": backend,
+            "matrix_tolerance": float(plan.tolerance),
+        },
+        "dimensions": {
+            "states": len(document["state"]["names"]),
+            "signals": len(document["signals"]["names"]),
+            "analog_inputs": sum(port["data_type"] == "double" for port in inputs),
+            "command_inputs": sum(port["data_type"] == "uint32_t" for port in inputs),
+            "outputs": len(outputs),
+            "selection_topologies": selection_count,
+            "stored_topologies": plan.logical_state_count,
+            "calculation_states": plan.unique_state_count,
+        },
+    }
 
 
 def write_matrix_archive(
@@ -1352,6 +1462,7 @@ def generate_cpp_project(
     output.mkdir(parents=True, exist_ok=True)
     header = output / f"{stem}.hpp"
     archive = output / f"{stem}.archive"
+    manifest = output / f"{stem}.cctl-topology.json"
     generated: dict[str, Path] = {"header": header}
     if selected_backend == "eigen":
         write_matrix_archive(archive, document, plan)
@@ -1367,6 +1478,24 @@ def generate_cpp_project(
         ),
         encoding="utf-8",
     )
+    manifest.write_text(
+        json.dumps(
+            build_topology_manifest(
+                document,
+                selected_class,
+                selected_backend,
+                header,
+                archive if selected_backend == "eigen" else None,
+                plan,
+            ),
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    generated["manifest"] = manifest
     return generated
 
 

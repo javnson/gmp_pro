@@ -104,6 +104,16 @@ terminals, assigns `PWM1..PWMn` in stable graph order, and expands each node to 
 bulk is tied to source; VSWITCH control negative is tied to node `0`. GMD is a UI
 search alias, while canonical MNA ground remains `0/GND`.
 
+Compiled MNA topologies enter the system layer through a versioned
+`gmp.cctl.compiled_topology` manifest. For Eigen, the manifest, HPP, and archive
+form one indivisible deployment unit. The manifest carries ABI, solver, and artifact
+integrity metadata without copying the large matrices. Studio validates relative
+paths, sizes, and SHA-256 at import, then stores a manifest snapshot and per-instance
+pin bindings in the project. Inputs bind as `port/constant`; outputs bind as
+`port/hidden`, and disabling a port explicitly removes its connections. This boundary
+allows several atomic MNA blocks to be composed now while leaving C++ construction,
+constant assignment, stepping, and output routing to the headless generator.
+
 ## Deterministic generation pipeline
 
 ```text
@@ -135,9 +145,10 @@ generated files carry a banner and are never reverse-edited.
    numeric root block diagram, composite navigation, the complete MNA component
    catalog, circuit and digital renderers, a parameter-first inspector, editable
    polyline wires, rotate/mirror, layout, undo/redo, deterministic save, and MNA
-   netlist export through compatible schema-v1 `editor.hierarchy` metadata. Migrate
-   its document model to the schema-v2 normalizer next, then invoke the headless
-   generator.
+   netlist export through compatible schema-v1 `editor.hierarchy` metadata. It also
+   validates/imports compiled topologies and supports per-instance pin exposure and
+   constants. Migrate its document model to the schema-v2 normalizer next, then
+   invoke the headless generator.
 5. **Interconnect adapter** — import/export the compatible SysConfig concepts and
    add round-trip fixtures. Unsupported TI-specific properties must be retained as
    namespaced extension data or reported, never silently discarded.

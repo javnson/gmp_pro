@@ -354,10 +354,14 @@ short-lived CSV/JSON files under the sibling `validation` tree and removes the
 per-run directory when the suite finishes.
 
 Each switching case writes its portable JSON and generated C++ calculation class
-under `generated`. An Eigen class consists of a small `*.hpp` plus a same-stem
-`*.archive`; fixed continues to embed coefficients in one header. JSON, archives,
-and local CSV/build/IDE outputs are ignored because they are reproducible and can
-be large.
+under `generated`. The deployable Eigen unit is the same-stem trio
+`*.cctl-topology.json`, `*.hpp`, and `*.archive`. The lightweight manifest records
+the typed input/output ABI, C++ class and methods, solver settings, relative artifact
+paths, sizes, and SHA-256 digests. CCTL Studio imports that manifest and verifies
+the other two files. The circuit-matrix JSON remains an intermediate generator input
+and can be extremely large. Fixed embeds coefficients in the HPP, so its manifest
+sets the archive artifact to `null`. Generated JSON, archives, and local
+CSV/build/IDE outputs remain ignored because they are reproducible.
 
 ### Generation and build
 
@@ -380,6 +384,11 @@ The CLI and every supplied case default to `eigen`. Select `--backend fixed`, or
 change a case's `MATRIX_BACKEND`, only when the allocation-free fixed backend is
 specifically required. Fixed generation remains supported but is not part of the
 default generation or build path.
+
+For example, Buck emits `buckcircuit.cctl-topology.json`, `buckcircuit.hpp`, and
+`buckcircuit.archive`. Copy, publish, and import them as one directory-local unit.
+Replacing either HPP or archive invalidates the manifest integrity check, so rerun
+the generator instead.
 
 The generator exposes four MOS switching models. `N` is the MOS count and `H`
 is the number of verified two-level half bridges.

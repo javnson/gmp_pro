@@ -1,5 +1,7 @@
+import json
 import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -7,6 +9,7 @@ from pathlib import Path
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 CORE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(CORE_ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from PyQt5 import QtCore, QtGui, QtTest, QtWidgets  # noqa: E402
 
@@ -21,6 +24,8 @@ from qt_studio import (  # noqa: E402
     StudioWindow,
     _drag_orthogonal_segment,
 )
+from topology_bundle import binding_key  # noqa: E402
+from topology_fixture import write_topology_bundle  # noqa: E402
 
 
 class QtUiTests(unittest.TestCase):
@@ -55,6 +60,72 @@ class QtUiTests(unittest.TestCase):
         inspector.set_node(adapter, adapter.node("TOP1"))
         self.assertFalse(inspector.order_spin.isHidden())
         self.assertTrue(inspector.rotate_right.isHidden())
+
+    def test_compiled_topology_import_has_pin_controls_and_adaptive_geometry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest_path = write_topology_bundle(root)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for index in range(5):
+                manifest["interface"]["inputs"].append(
+                    {
+                        "name": f"AIN{index}",
+                        "field": f"AIN{index}",
+                        "data_type": "double",
+                        "role": "analog_input",
+                        "default": 0.0,
+                    }
+                )
+            manifest_path.write_text(
+                json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+            )
+
+            window = StudioWindow()
+            topology = window.adapter.import_compiled_topology(
+                manifest_path, QtCore.QPointF(320, 180)
+            )
+            window.document_changed("Imported test topology")
+            item = window.scene.node_items[topology]
+            item.setSelected(True)
+            window.scene.selection_changed()
+            self.application.processEvents()
+
+            self.assertIn("Class: BuckCircuit", window.inspector.summary.text())
+            mode_rows = {
+                spec.parameter_id: row
+                for row, spec in enumerate(window.inspector.specs)
+                if spec.choices
+            }
+            input_mode = binding_key("input", "VS1", "mode")
+            output_mode = binding_key("output", "VF1", "mode")
+            self.assertIsInstance(
+                window.inspector.parameters.cellWidget(mode_rows[input_mode], 1),
+                QtWidgets.QComboBox,
+            )
+
+            for port in item.data.ports:
+                position = item.port_local_position(port.port_id)
+                self.assertTrue(item.boundingRect().contains(position))
+                self.assertAlmostEqual(position.y() % 20, 0)
+
+            raw = window.hierarchy.node("system_root", topology)
+            parameters = dict(raw["parameters"])
+            parameters[input_mode] = "constant"
+            parameters[binding_key("input", "VS1", "value")] = "24"
+            parameters[output_mode] = "hidden"
+            window.adapter.update_node(
+                topology, raw["name"], parameters, raw["execution_order"]
+            )
+            window.document_changed("Configured test topology")
+            configured = window.adapter.node(topology)
+            self.assertNotIn("in_VS1", {port.port_id for port in configured.ports})
+            self.assertNotIn("out_VF1", {port.port_id for port in configured.ports})
+            self.assertEqual(
+                configured.parameters[binding_key("input", "VS1", "value")],
+                24.0,
+            )
+            window.hide()
+            window.deleteLater()
 
     def test_wire_vertices_remain_editable_and_render_orthogonally(self):
         window = StudioWindow()

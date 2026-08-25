@@ -12,7 +12,7 @@ set "GMP_CCTL_TEST_PYTHON=%GMP_PRO_LOCATION%\bin\python\python.exe"
 if /I not "%GMP_ENV_MODE%"=="virtual" goto :PRIVATE_PYTHON_MISSING
 if not exist "%GMP_CCTL_TEST_PYTHON%" goto :PRIVATE_PYTHON_MISSING
 
-"%GMP_CCTL_TEST_PYTHON%" -m py_compile "%~dp0cctl_core\cctl_studio.py" "%~dp0cctl_core\editor_model.py" "%~dp0cctl_core\hierarchy_model.py" "%~dp0cctl_core\component_catalog.py" "%~dp0cctl_core\mna_export.py" "%~dp0cctl_core\qt_studio.py"
+"%GMP_CCTL_TEST_PYTHON%" -m py_compile "%~dp0cctl_core\cctl_studio.py" "%~dp0cctl_core\editor_model.py" "%~dp0cctl_core\hierarchy_model.py" "%~dp0cctl_core\component_catalog.py" "%~dp0cctl_core\mna_export.py" "%~dp0cctl_core\topology_bundle.py" "%~dp0cctl_core\qt_studio.py"
 if errorlevel 1 exit /b %ERRORLEVEL%
 "%GMP_CCTL_TEST_PYTHON%" -m unittest discover -s "%~dp0cctl_core\tests" -v
 exit /b %ERRORLEVEL%

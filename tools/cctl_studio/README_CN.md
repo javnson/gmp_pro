@@ -18,6 +18,10 @@ SysConfig 工具中值得采用的分层方式：元件属性和工程连线属�
 - 两级编辑架构：主层使用数值信号模块框图，双击复合模块进入其专用子层；
 - 主层提供电气主拓扑、数字模块、电机模型和信号适配器，所有主层端口均为
   `numeric`；
+- 主层可从“文件 -> 导入已编译拓扑”读取 `*.cctl-topology.json`；导入时校验同目录
+  HPP/archive 的大小和 SHA-256，并按 manifest 中的 C++ 接口自动建立数值端口；
+- 已导入拓扑的每个输入可在属性页选择“端口”或“常量”，每个输出可选择“端口”或
+  “隐藏”；收起端口时，与该端口相连的旧连接会同步删除；
 - 新建模拟电路子层的元件目录与 `mna_solver.py::parse_netlist()` 对齐，覆盖
   R/L/C、独立源、理想运放、IdOpamp、E/G/F/H 受控源、D/M/S 和电流表；
 - 元件库提供可按 `GND` 或 `GMD` 搜索的接地符号，两者导出时均规范化为 MNA 节点 `0`；
@@ -67,6 +71,11 @@ tools\cctl_studio\run_cctl_studio.bat tools\cctl_studio\cctl_core\examples\rc_lo
 - `Ctrl+Z/Y` 撤销/重做，`Ctrl+D` 复制实例，Delete 删除；
 - `Alt+Left` 或工具栏 Back 返回父层，面包屑按钮可直接跳回任一祖先层。
 
+MNA 代码生成后，在主层选择“文件 -> 导入已编译拓扑”，打开同名
+`*.cctl-topology.json`。Eigen 后端的可部署单元必须同时保留 manifest、HPP 和 archive；
+不要把体积可能很大的电路矩阵 JSON 当作 Studio 导入文件。选中导入模块后，可在右侧
+把输入配置为外部端口或固定值，并把不需要引出的输出隐藏，然后像其他主层模块一样连线。
+
 命令行生成器仍可独立使用：
 
 ```powershell
@@ -107,6 +116,9 @@ python tools/cctl_studio/cctl_core/cctl_studio.py run tools/cctl_studio/cctl_cor
 旧工程的 `project.instances` 自动映射为默认 `Main Topology` 的兼容电路子层，并继续走
 原有 Xyce 生成器。新建模拟电路采用显式连接，能够导出当前 MNA Solver 可解析的网表；
 数字子层和跨层系统图在 schema v2 生成器完成前不会被静默加入 CCTL 代码生成输入。
+已编译拓扑例外：其轻量 manifest 快照、源文件路径和实例级端口配置已保存在
+`editor.hierarchy`，因此工程可以稳定恢复和连接多个拓扑；把这些模块装配成最终 C++
+调度代码仍属于后续 schema-v2 无界面生成器的职责。
 
 所有 Studio Python 源码、内置元件、示例和测试集中在 `cctl_core/`；外层入口由
 `run_cctl_studio.bat` 和 `run_tests.bat` 提供。

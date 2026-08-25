@@ -18,6 +18,7 @@ from component_catalog import MNA_COMPONENTS, MnaComponentSpec, ParameterSpec
 from editor_model import DEFAULT_GRID_SIZE, EditorDocument
 from hierarchy_model import HierarchyDocument, NODE_TYPES, NodeType, PortSpec
 from mna_export import export_mna_netlist
+from topology_bundle import TOPOLOGY_NODE_TYPE, binding_key
 
 
 APP_NAME = "GMP CCTL Studio"
@@ -159,6 +160,41 @@ class LayerAdapter:
 
     def parameter_specs(self, node_id: str) -> tuple[ParameterSpec, ...]:
         node = self.node(node_id)
+        if node.type_id == TOPOLOGY_NODE_TYPE:
+            raw = self.hierarchy.node(self.layer_id, node_id)
+            manifest = raw["compiled_topology"]["manifest"]
+            specs: list[ParameterSpec] = []
+            for port in manifest["interface"]["inputs"]:
+                field, name = str(port["field"]), str(port["name"])
+                specs.append(
+                    ParameterSpec(
+                        binding_key("input", field, "mode"),
+                        f"Input {name}",
+                        "port",
+                        "Expose as a system port or use the fixed value below.",
+                        ("port", "constant"),
+                    )
+                )
+                specs.append(
+                    ParameterSpec(
+                        binding_key("input", field, "value"),
+                        f"Fixed {name}",
+                        port.get("default", 0),
+                        f"Constant {port['data_type']} value used when input mode is constant.",
+                    )
+                )
+            for port in manifest["interface"]["outputs"]:
+                field, name = str(port["field"]), str(port["name"])
+                specs.append(
+                    ParameterSpec(
+                        binding_key("output", field, "mode"),
+                        f"Output {name}",
+                        "port",
+                        "Expose as a system port or hide this output.",
+                        ("port", "hidden"),
+                    )
+                )
+            return tuple(specs)
         if node.type_id in MNA_COMPONENTS:
             return MNA_COMPONENTS[node.type_id].parameters
         if self.legacy_circuit:
@@ -177,6 +213,16 @@ class LayerAdapter:
             return self.document.add_instance(type_id, position.x(), position.y())
         return self.hierarchy.add_node(
             self.layer_id, type_id, position.x(), position.y()
+        )
+
+    def import_compiled_topology(
+        self, manifest_path: Path, position: QtCore.QPointF
+    ) -> str:
+        return self.hierarchy.import_compiled_topology(
+            self.layer_id,
+            str(manifest_path),
+            position.x(),
+            position.y(),
         )
 
     def set_position(
@@ -631,8 +677,16 @@ class NodeItem(QtWidgets.QGraphicsObject):
         if self.data.symbol == "junction":
             return QtCore.QRectF(-10, -10, 20, 20)
         if self.scene_ref.adapter.kind == "system":
-            return QtCore.QRectF(-90, -52, 180, 112)
+            half_height = self._system_half_height()
+            return QtCore.QRectF(-90, -half_height - 10, 180, 2 * half_height + 20)
         return QtCore.QRectF(-76, -55, 152, 120)
+
+    def _system_half_height(self) -> float:
+        inputs = sum(port.direction == "input" for port in self.data.ports)
+        outputs = sum(port.direction == "output" for port in self.data.ports)
+        rows = max(inputs, outputs, 1)
+        port_extent = (rows - 1) * DEFAULT_GRID_SIZE
+        return max(42.0, float(port_extent + DEFAULT_GRID_SIZE))
 
     @staticmethod
     def _port_row(index: int, count: int) -> float:
@@ -760,22 +814,38 @@ class NodeItem(QtWidgets.QGraphicsObject):
         self._paint_ports(painter)
 
     def _paint_system(self, painter: QtGui.QPainter, selected: bool) -> None:
+        half_height = self._system_half_height()
         painter.setBrush(QtGui.QColor("#172033"))
         painter.setPen(QtGui.QPen(COLOR_SELECT if selected else COLOR_BLUE, 2))
-        painter.drawRoundedRect(QtCore.QRectF(-78, -42, 156, 84), 4, 4)
-        painter.fillRect(QtCore.QRectF(-78, -42, 156, 27), COLOR_BLUE)
+        painter.drawRoundedRect(
+            QtCore.QRectF(-78, -half_height, 156, 2 * half_height), 4, 4
+        )
+        painter.fillRect(QtCore.QRectF(-78, -half_height, 156, 27), COLOR_BLUE)
         painter.setPen(COLOR_TEXT)
-        painter.drawText(QtCore.QRectF(-68, -39, 115, 22), QtCore.Qt.AlignVCenter, self.data.name)
+        painter.drawText(
+            QtCore.QRectF(-68, -half_height + 3, 115, 22),
+            QtCore.Qt.AlignVCenter,
+            self.data.name,
+        )
         painter.setPen(COLOR_MUTED)
         painter.drawText(QtCore.QRectF(-68, -10, 136, 30), QtCore.Qt.AlignLeft, self.data.display_name)
         painter.setBrush(QtGui.QColor("#0284c7"))
         painter.setPen(QtCore.Qt.NoPen)
-        painter.drawEllipse(QtCore.QPointF(61, -28), 11, 11)
+        order_y = -half_height + 14
+        painter.drawEllipse(QtCore.QPointF(61, order_y), 11, 11)
         painter.setPen(QtCore.Qt.white)
-        painter.drawText(QtCore.QRectF(50, -39, 22, 22), QtCore.Qt.AlignCenter, str(self.data.execution_order))
+        painter.drawText(
+            QtCore.QRectF(50, order_y - 11, 22, 22),
+            QtCore.Qt.AlignCenter,
+            str(self.data.execution_order),
+        )
         if self.data.child_layer:
             painter.setPen(COLOR_SELECT)
-            painter.drawText(QtCore.QRectF(-70, 21, 140, 17), QtCore.Qt.AlignRight, "Double-click to open  ↳")
+            painter.drawText(
+                QtCore.QRectF(-70, half_height - 21, 140, 17),
+                QtCore.Qt.AlignRight,
+                "Double-click to open  ↳",
+            )
 
     def _paint_digital(self, painter: QtGui.QPainter, color: QtGui.QColor) -> None:
         painter.setPen(QtGui.QPen(color, 2))
@@ -1486,7 +1556,18 @@ class PropertyInspector(QtWidgets.QWidget):
 
     def set_node(self, adapter: LayerAdapter, node: NodeData) -> None:
         self.node_id = node.node_id
-        self.summary.setText(f"{node.display_name}\n{node.type_id}")
+        summary = f"{node.display_name}\n{node.type_id}"
+        if node.type_id == TOPOLOGY_NODE_TYPE:
+            manifest = adapter.hierarchy.node(
+                adapter.layer_id, node.node_id
+            )["compiled_topology"]["manifest"]
+            archive = manifest["artifacts"].get("archive")
+            summary += (
+                f"\nClass: {manifest['topology']['class_name']}"
+                f"\nHeader: {manifest['artifacts']['header']['path']}"
+                f"\nArchive: {archive['path'] if archive else '(embedded in header)'}"
+            )
+        self.summary.setText(summary)
         self.name_edit.setText(node.name)
         system = adapter.kind == "system"
         self.order_label.setVisible(system)
@@ -1504,7 +1585,17 @@ class PropertyInspector(QtWidgets.QWidget):
             label.setFlags(label.flags() & ~QtCore.Qt.ItemIsEditable)
             value = QtWidgets.QTableWidgetItem(str(node.parameters.get(spec.parameter_id, spec.default)))
             self.parameters.setItem(row, 0, label)
-            self.parameters.setItem(row, 1, value)
+            if spec.choices:
+                choices = QtWidgets.QComboBox()
+                choices.addItems(spec.choices)
+                selected = str(
+                    node.parameters.get(spec.parameter_id, spec.default)
+                ).lower()
+                index = choices.findText(selected)
+                choices.setCurrentIndex(max(0, index))
+                self.parameters.setCellWidget(row, 1, choices)
+            else:
+                self.parameters.setItem(row, 1, value)
         self.parameters.resizeRowsToContents()
         self.ports.setText(
             "Ports\n"
@@ -1520,8 +1611,12 @@ class PropertyInspector(QtWidgets.QWidget):
             return
         values: dict[str, Any] = {}
         for row, spec in enumerate(self.specs):
-            item = self.parameters.item(row, 1)
-            values[spec.parameter_id] = item.text() if item else str(spec.default)
+            editor = self.parameters.cellWidget(row, 1)
+            if isinstance(editor, QtWidgets.QComboBox):
+                values[spec.parameter_id] = editor.currentText()
+            else:
+                item = self.parameters.item(row, 1)
+                values[spec.parameter_id] = item.text() if item else str(spec.default)
         self.apply_requested.emit(
             self.node_id,
             self.name_edit.text().strip(),
@@ -1561,6 +1656,7 @@ class StudioWindow(QtWidgets.QMainWindow):
         self.rotate_action = QtWidgets.QAction("Rotate 90° (Space)", self, shortcut="R")
         self.mirror_action = QtWidgets.QAction("Mirror", self, shortcut="M")
         self.fit_action = QtWidgets.QAction("Fit", self, shortcut="F6")
+        self.import_topology_action = QtWidgets.QAction("Import compiled topology…", self)
         self.export_action = QtWidgets.QAction("Export MNA netlist", self)
         self.new_action.triggered.connect(self.new_project)
         self.open_action.triggered.connect(self.open_project)
@@ -1574,12 +1670,14 @@ class StudioWindow(QtWidgets.QMainWindow):
         self.rotate_action.triggered.connect(lambda: self.scene and self.scene.transform_selected(90, False))
         self.mirror_action.triggered.connect(lambda: self.scene and self.scene.transform_selected(0, True))
         self.fit_action.triggered.connect(self.fit_scene)
+        self.import_topology_action.triggered.connect(self.import_compiled_topology)
         self.export_action.triggered.connect(self.export_mna)
 
     def _build_ui(self) -> None:
         file_menu = self.menuBar().addMenu("File")
         file_menu.addActions([self.new_action, self.open_action, self.save_action, self.save_as_action])
         file_menu.addSeparator()
+        file_menu.addAction(self.import_topology_action)
         file_menu.addAction(self.export_action)
         edit_menu = self.menuBar().addMenu("Edit")
         edit_menu.addActions([self.undo_action, self.redo_action, self.duplicate_action, self.delete_action, self.rotate_action, self.mirror_action])
@@ -1671,6 +1769,7 @@ class StudioWindow(QtWidgets.QMainWindow):
         self.export_action.setEnabled(
             self.adapter.kind == "circuit" and not self.adapter.legacy_circuit
         )
+        self.import_topology_action.setEnabled(self.adapter.kind == "system")
         if self.adapter.kind == "circuit":
             self.statusBar().showMessage(
                 "Click a port to route; click for corners; Space changes corner direction or rotates a selected component."
@@ -1844,6 +1943,34 @@ class StudioWindow(QtWidgets.QMainWindow):
             self.layer_stack = [self.hierarchy.root_layer_id]
             self.load_layer(self.layer_stack[-1])
             self.statusBar().showMessage(f"Opened {path}", 5000)
+        except backend.StudioError as exc:
+            QtWidgets.QMessageBox.critical(self, APP_NAME, str(exc))
+
+    def import_compiled_topology(self) -> None:
+        if self.adapter.kind != "system":
+            QtWidgets.QMessageBox.information(
+                self,
+                APP_NAME,
+                "Compiled topologies can only be imported on the system layer.",
+            )
+            return
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Import compiled CCTL topology",
+            "",
+            "Compiled Topology (*.cctl-topology.json);;JSON Files (*.json)",
+        )
+        if not filename:
+            return
+        try:
+            position = self.view.mapToScene(self.view.viewport().rect().center())
+            node_id = self.adapter.import_compiled_topology(
+                Path(filename), self.scene.snap_point(position)
+            )
+            self.document_changed(f"Imported compiled topology {node_id}", focus_canvas=True)
+            self.scene.clearSelection()
+            self.scene.node_items[node_id].setSelected(True)
+            self.scene.selection_changed()
         except backend.StudioError as exc:
             QtWidgets.QMessageBox.critical(self, APP_NAME, str(exc))
 
