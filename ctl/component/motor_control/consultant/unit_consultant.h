@@ -5,8 +5,8 @@
  * @brief Calculates permanent magnet flux linkage (Wb) from motor Kv rating.
  * @details 
  * Assumption: Kv is defined as RPM / V_peak_line_to_line.
- * Formula: Flux = 60 / (2 * pi * sqrt(3) * Kv * PolePairs)
- * Constant: 60 / (2 * pi * sqrt(3)) ¡Ö 5.51328895422
+ * Formula: @f[ Flux = 60 / (2 * pi * sqrt(3) * Kv * PolePairs) @f]
+ * Constant: @f[ 60 / (2 * pi * sqrt(3)) \apporx 5.51328895422 @f]
  * * @param kv Motor velocity constant (RPM/V)
  * @param pole_pairs Number of pole pairs
  * @return Permanent magnet flux linkage in Webers (Wb)
