@@ -116,7 +116,6 @@ interrupt void MainISR(void)
      */
 #if !defined ENABLE_GMP_DL_PIL_SIM
     gmp_base_ctl_step();
-    user_step_dl_scope();
 #endif
 
     //

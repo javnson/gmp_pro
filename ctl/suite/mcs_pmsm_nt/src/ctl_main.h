@@ -29,6 +29,7 @@
 #include <ctl/framework/cia402_state_machine.h>
 
 #include <core/dev/datalink/pil_core.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 
 #ifndef _FILE_CTL_MAIN_H_
 #define _FILE_CTL_MAIN_H_
@@ -76,6 +77,9 @@ extern ctl_mtr_protect_t protection;
 extern adc_bias_calibrator_t adc_calibrator;
 extern volatile fast_gt flag_enable_adc_calibrator;
 extern volatile fast_gt index_adc_calibrator;
+
+// GMP DL Scope
+extern ctl_dsa_dl_scope_t user_dl_scope;
 
 // User commands
 
@@ -174,6 +178,16 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_svpwm_modulator(&spwm);
 #endif // USING_NPC_MODULATOR
     }
+
+    // GMP DL Scope Module
+    ctl_step_dsa_dl_scope_4ch(
+            // Scope Objects
+            &user_dl_scope,
+            // Scope Channel 1, Channel 2
+            spwm.vabc_out.dat[phase_A], spwm.vabc_out.dat[phase_B],
+            // Scope Channel 3, Channel 4
+            spwm.vabc_out.dat[phase_C], mtr_ctrl.idq0.dat[phase_q]);
+
 }
 
 #ifdef __cplusplus

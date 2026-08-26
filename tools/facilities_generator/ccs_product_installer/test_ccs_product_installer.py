@@ -62,6 +62,28 @@ class ProductInstallerTests(unittest.TestCase):
                 self.assertEqual("../..", exports["GMP_PRO_ROOT"])
                 self.assertEqual(".", exports[product["csp_root_macro"]])
 
+    def test_ccs_projects_use_namespaced_product_exports(self):
+        repository_root = Path(__file__).resolve().parents[3]
+        project_files = list(repository_root.rglob(".cproject"))
+        project_files.extend(repository_root.rglob("*.projectspec"))
+        project_files = [
+            path for path in project_files
+            if ".git" not in path.parts and "build" not in path.parts
+        ]
+
+        legacy_macros = (
+            "${GMP_PRO_ROOT}",
+            "${GMP_C28X_CSP_ROOT}",
+            "${GMP_C29X_CSP_ROOT}",
+        )
+        offenders = []
+        for path in project_files:
+            text = path.read_text(encoding="utf-8")
+            for macro in legacy_macros:
+                if macro in text:
+                    offenders.append(f"{path.relative_to(repository_root)}: {macro}")
+        self.assertEqual([], offenders)
+
 
 if __name__ == "__main__":
     unittest.main()

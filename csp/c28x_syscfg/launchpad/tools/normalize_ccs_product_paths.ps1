@@ -95,13 +95,17 @@ foreach ($configuration in $xml.SelectNodes('/cproject/storageModule[@moduleId="
             '${PROJECT_LOC}/../../..',
             '${PROJECT_LOC}/..',
             '${GMP_PRO_ROOT}',
-            '${GMP_C28X_CSP_ROOT}'
+            '${GMP_C28X_CSP_ROOT}',
+            '${COM_TI_COM_GMP_CORE_C28X_SDK__GMP_PRO_ROOT}',
+            '${COM_TI_COM_GMP_CORE_C28X_SDK__GMP_C28X_CSP_ROOT}'
         ) -and
         $_.value -notlike '${PROJECT_LOC}/C2000Lib_*/driverlib' -and
         $_.value -notlike '${PROJECT_LOC}/C2000Lib_*/device_support/*'
     } | ForEach-Object { [string]$_.value })
     $portable = @(
         '${COM_TI_C2000WARE_INCLUDE_PATH}',
+        '${COM_TI_COM_GMP_CORE_C28X_SDK__GMP_PRO_ROOT}',
+        '${COM_TI_COM_GMP_CORE_C28X_SDK__GMP_C28X_CSP_ROOT}',
         '${COM_TI_COM_GMP_CORE_C28X_SDK_INCLUDE_PATH}',
         "`${COM_TI_C2000WARE_INSTALL_DIR}/device_support/$family/headers/include",
         "`${COM_TI_C2000WARE_INSTALL_DIR}/device_support/$family/common/include",

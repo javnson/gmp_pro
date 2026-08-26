@@ -17,7 +17,9 @@ extern "C"
 #endif
 
 /** @brief Number of channels exported by every suite hardware scope. */
+#ifndef CTL_DSA_DL_SCOPE_CHANNELS
 #define CTL_DSA_DL_SCOPE_CHANNELS 4U
+#endif // CTL_DSA_DL_SCOPE_CHANNELS
 
 /** @brief Default command allocated to the independent Scope service. */
 #define CTL_DSA_DL_SCOPE_DEFAULT_CMD 0x60U

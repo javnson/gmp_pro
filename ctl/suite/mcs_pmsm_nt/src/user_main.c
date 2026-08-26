@@ -13,10 +13,9 @@
 #include <core/dev/datalink/pil_core.h>
 #define GMP_MCS_ENABLE_PIL_FACILITY
 #endif
+
 #include <core/dev/datalink/tunable.h>
-#if !defined SPECIFY_PC_ENVIRONMENT // GMP_MCS_ENABLE_SCOPE_FACILITY
 #include <ctl/component/dsa/dsa_dl_scope.h>
-#endif
 
 /** @brief Flush received Data Link bytes from the platform transport. */
 void flush_dl_rx_buffer(void);
@@ -76,17 +75,54 @@ gmp_mem_persp_t mem_persp_server;
 //
 // Scope
 //
-#if !defined SPECIFY_PC_ENVIRONMENT // GMP_MCS_ENABLE_SCOPE_FACILITY
 #if defined GMP_DL_SCOPE_STORAGE_RAMGS2_3
 #pragma DATA_SECTION(user_dl_scope_storage, "mass_data")
 #endif
-CTL_DSA_DL_SCOPE_DEFINE_USER("Control Scope")
-#endif
+ctrl_gt user_dl_scope_storage[CTL_DSA_DL_SCOPE_STORAGE_ELEMENTS(CTL_DSA_DL_SCOPE_CHANNELS, GMP_DL_SCOPE_DEPTH)];
+ctl_dsa_dl_scope_t user_dl_scope;
 
 /** @brief Processor-in-the-Loop service enabled by the target SDPE switch. */
 #if defined GMP_MCS_ENABLE_PIL_FACILITY
 gmp_pil_sim_t pil;
 #endif
+
+// Datalink module init
+void init_dl_modules(void)
+{
+    // init datalink protocol
+    gmp_dev_dl_init(&dl);
+    dl_facility_init_errors = 0U;
+
+    gmp_dev_dl_init_echo_alias(&legacy_echo_facility, 0x99U);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &legacy_echo_facility) ? 0U : 1U;
+
+    // Band DL module with tunable and persp module.
+    gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &tunable.facility) ? 0U : 1U;
+
+    gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &mem_persp_server.facility) ? 0U : 1U;
+
+    // Band DL module with scope module
+    ctl_init_dsa_dl_scope_workspace(
+                &user_dl_scope, &dl, CTL_DSA_DL_SCOPE_DEFAULT_CMD, "GMP DL Scope",
+                user_dl_scope_storage,
+                (uint32_t)(sizeof(user_dl_scope_storage) / sizeof(user_dl_scope_storage[0])),
+                CTL_DSA_DL_SCOPE_CHANNELS, (uint32_t)(CONTROLLER_FREQUENCY));
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, ctl_dsa_dl_scope_facility(&user_dl_scope)) ? 0U : 1U;
+
+    /** Bind PIL only when the independent target SDPE switch is enabled. */
+#if defined GMP_MCS_ENABLE_PIL_FACILITY
+    gmp_pil_sim_init(&pil, &dl, GMP_PIL_DL_BASE_COMMAND);
+    gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &pil.facility) ? 0U : 1U;
+#endif
+}
 
 //
 // Datalink protocol stack task
@@ -200,36 +236,7 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
     }
 
     // init datalink protocol
-    gmp_dev_dl_init(&dl);
-    dl_facility_init_errors = 0U;
-
-    gmp_dev_dl_init_echo_alias(&legacy_echo_facility, 0x99U);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &legacy_echo_facility) ? 0U : 1U;
-
-    // Band DL module with tunable and persp module.
-    gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &tunable.facility) ? 0U : 1U;
-
-    gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &mem_persp_server.facility) ? 0U : 1U;
-
-    // Band DL module with scope module
-#if !defined SPECIFY_PC_ENVIRONMENT // GMP_MCS_ENABLE_SCOPE_FACILITY
-    user_init_dl_scope(&dl);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, user_dl_scope_facility()) ? 0U : 1U;
-#endif
-
-    /** Bind PIL only when the independent target SDPE switch is enabled. */
-#if defined GMP_MCS_ENABLE_PIL_FACILITY
-    gmp_pil_sim_init(&pil, &dl, GMP_PIL_DL_BASE_COMMAND);
-    gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &pil.facility) ? 0U : 1U;
-#endif
+    init_dl_modules();
 }
 
 // Initialization tasks after all peripherals have been initialized
