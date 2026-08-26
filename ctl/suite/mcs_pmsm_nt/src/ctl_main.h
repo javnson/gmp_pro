@@ -89,7 +89,9 @@ void clear_all_controllers(void);
 // periodic callback function things.
 GMP_STATIC_INLINE void ctl_dispatch(void)
 {
+    //
     // ADC calibrator routine
+    //
     if (flag_enable_adc_calibrator)
     {
         if (index_adc_calibrator == 7)
@@ -102,7 +104,9 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
             ctl_step_adc_calibrator(&adc_calibrator, iuvw.control_port.value.dat[index_adc_calibrator]);
     }
 
-    // normal controller routine
+    //
+    // Normal Controller Routine
+    //
     else
     {
         // ramp generator

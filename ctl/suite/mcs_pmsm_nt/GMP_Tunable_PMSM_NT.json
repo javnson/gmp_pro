@@ -1,11 +1,12 @@
 {
     "base_cmd": 48,
     "auto_refresh": true,
-    "refresh_interval": 2.0,
+    "refresh_interval": 0.5,
     "params": [
         {
             "id": 0,
             "name": "cia402_sm.current_cmd",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_U16",
             "perm": "GMP_PARAM_PERM_RW",
             "display_hex": false,
@@ -22,6 +23,7 @@
         {
             "id": 1,
             "name": "cia402_sm.current_state",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_U16",
             "perm": "GMP_PARAM_PERM_RO",
             "display_hex": false,
@@ -40,6 +42,7 @@
         {
             "id": 2,
             "name": "protection.error_code",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_U16",
             "perm": "GMP_PARAM_PERM_RW",
             "display_hex": false,
@@ -48,6 +51,7 @@
         {
             "id": 3,
             "name": "mtr_ctrl.udc",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RO",
             "display_hex": false,
@@ -56,6 +60,7 @@
         {
             "id": 4,
             "name": "mtr_ctrl.idq_ref.dat[phase_d]",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RW",
             "display_hex": false,
@@ -64,6 +69,7 @@
         {
             "id": 5,
             "name": "mtr_ctrl.idq_ref.dat[phase_q]",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RW",
             "display_hex": false,
@@ -72,6 +78,7 @@
         {
             "id": 6,
             "name": "mtr_ctrl.idq0.dat[phase_d]",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RO",
             "display_hex": false,
@@ -80,6 +87,7 @@
         {
             "id": 7,
             "name": "mtr_ctrl.idq0.dat[phase_q]",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RO",
             "display_hex": false,
@@ -88,6 +96,7 @@
         {
             "id": 8,
             "name": "mtr_ctrl.iuvw.dat[phase_U]",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RO",
             "display_hex": false,
@@ -96,6 +105,7 @@
         {
             "id": 9,
             "name": "mtr_ctrl.iuvw.dat[phase_V]",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RO",
             "display_hex": false,
@@ -104,6 +114,7 @@
         {
             "id": 10,
             "name": "mtr_ctrl.iuvw.dat[phase_W]",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RO",
             "display_hex": false,
@@ -112,6 +123,7 @@
         {
             "id": 11,
             "name": "mtr_ctrl.vdq_ref.dat[phase_d]",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RW",
             "display_hex": false,
@@ -120,6 +132,7 @@
         {
             "id": 12,
             "name": "mtr_ctrl.vdq_ref.dat[phase_q]",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RW",
             "display_hex": false,
@@ -128,6 +141,7 @@
         {
             "id": 13,
             "name": "mech_ctrl.target_velocity",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RW",
             "display_hex": false,
@@ -136,6 +150,7 @@
         {
             "id": 14,
             "name": "spd_enc.encif.speed",
+            "unit": "",
             "type": "GMP_PARAM_TYPE_F32",
             "perm": "GMP_PARAM_PERM_RO",
             "display_hex": false,

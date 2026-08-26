@@ -276,58 +276,6 @@ void ctl_mainloop(void)
     return;
 }
 
-#if defined GMP_MCS_ENABLE_PIL_FACILITY
-/** @brief Apply one standard PMSM SIL/PIL input frame to controller ports. */
-static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
-{
-    uuvw_src[phase_U] = rx->adc_result[1];
-    uuvw_src[phase_V] = rx->adc_result[2];
-    uuvw_src[phase_W] = rx->adc_result[3];
-    iuvw_src[phase_U] = rx->adc_result[4];
-    iuvw_src[phase_V] = rx->adc_result[5];
-    iuvw_src[phase_W] = rx->adc_result[6];
-    udc_src = rx->adc_result[0];
-    ctl_step_autoturn_pos_encoder(&pos_enc, rx->digital_input);
-    ctl_step_tri_ptr_adc_channel(&iuvw);
-    ctl_step_tri_ptr_adc_channel(&uuvw);
-    ctl_step_ptr_adc_channel(&idc);
-    ctl_step_ptr_adc_channel(&udc);
-}
-
-/** @brief Export one controller result using the established PMSM SIL ABI. */
-static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
-{
-    tx->pwm_cmp[0] = spwm.pwm_out[phase_U];
-    tx->pwm_cmp[1] = spwm.pwm_out[phase_V];
-    tx->pwm_cmp[2] = spwm.pwm_out[phase_W];
-    tx->monitor[0] = mtr_ctrl.iuvw.dat[phase_A];
-    tx->monitor[1] = mtr_ctrl.iuvw.dat[phase_B];
-}
-
-#endif // defined GMP_MCS_ENABLE_PIL_FACILITY
-
-/** @brief Execute one controller step requested by the Data Link PIL service. */
-void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
-{
-#if defined GMP_MCS_ENABLE_PIL_FACILITY
-    ctl_apply_pil_input(rx);
-
-    ctl_dispatch();
-
-    ctl_collect_pil_output(tx);
-#else
-    GMP_UNUSED_VAR(rx);
-    GMP_UNUSED_VAR(tx);
-#endif // defined GMP_MCS_ENABLE_PIL_FACILITY
-}
-
-#if defined ENABLE_GMP_DL_PIL_SIM
-time_gt gmp_base_get_ctrl_tick(void)
-{
-    return mtr_ctrl.isr_tick / ((uint32_t)CONTROLLER_FREQUENCY / 1000);
-}
-#endif // defined ENABLE_GMP_DL_PIL_SIM
-
 //=================================================================================================
 // Controller Tasks
 
@@ -482,7 +430,7 @@ fast_gt ctl_exec_adc_calibration(void)
     return 1;
 }
 
-#if !defined SPECIFY_PC_ENVIRONMENT
+#if !defined SPECIFY_PC_ENVIRONMENT // GMP_MCS_ENABLE_SCOPE_FACILITY
 /** @brief Provide current-loop signals to the platform Scope. */
 void user_get_scope_channels(ctrl_gt channels[4])
 {
@@ -492,3 +440,59 @@ void user_get_scope_channels(ctrl_gt channels[4])
     channels[3] = mtr_ctrl.idq0.dat[phase_q];
 }
 #endif
+
+//=================================================================================================
+// GMP DL PIL Facility
+
+#if defined GMP_MCS_ENABLE_PIL_FACILITY
+/** @brief Apply one standard PMSM SIL/PIL input frame to controller ports. */
+static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
+{
+    uuvw_src[phase_U] = rx->adc_result[1];
+    uuvw_src[phase_V] = rx->adc_result[2];
+    uuvw_src[phase_W] = rx->adc_result[3];
+    iuvw_src[phase_U] = rx->adc_result[4];
+    iuvw_src[phase_V] = rx->adc_result[5];
+    iuvw_src[phase_W] = rx->adc_result[6];
+    udc_src = rx->adc_result[0];
+    ctl_step_autoturn_pos_encoder(&pos_enc, rx->digital_input);
+    ctl_step_tri_ptr_adc_channel(&iuvw);
+    ctl_step_tri_ptr_adc_channel(&uuvw);
+    ctl_step_ptr_adc_channel(&idc);
+    ctl_step_ptr_adc_channel(&udc);
+}
+
+/** @brief Export one controller result using the established PMSM SIL ABI. */
+static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
+{
+    tx->pwm_cmp[0] = spwm.pwm_out[phase_U];
+    tx->pwm_cmp[1] = spwm.pwm_out[phase_V];
+    tx->pwm_cmp[2] = spwm.pwm_out[phase_W];
+    tx->monitor[0] = mtr_ctrl.iuvw.dat[phase_A];
+    tx->monitor[1] = mtr_ctrl.iuvw.dat[phase_B];
+}
+
+#endif // defined GMP_MCS_ENABLE_PIL_FACILITY
+
+/** @brief Execute one controller step requested by the Data Link PIL service. */
+void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+#if defined GMP_MCS_ENABLE_PIL_FACILITY
+    ctl_apply_pil_input(rx);
+
+    ctl_dispatch();
+
+    ctl_collect_pil_output(tx);
+#else
+    GMP_UNUSED_VAR(rx);
+    GMP_UNUSED_VAR(tx);
+#endif // defined GMP_MCS_ENABLE_PIL_FACILITY
+}
+
+#if defined ENABLE_GMP_DL_PIL_SIM
+time_gt gmp_base_get_ctrl_tick(void)
+{
+    return mtr_ctrl.isr_tick / ((uint32_t)CONTROLLER_FREQUENCY / 1000);
+}
+#endif // defined ENABLE_GMP_DL_PIL_SIM
+

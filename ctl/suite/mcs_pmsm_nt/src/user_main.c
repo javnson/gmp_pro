@@ -14,7 +14,7 @@
 #define GMP_MCS_ENABLE_PIL_FACILITY
 #endif
 #include <core/dev/datalink/tunable.h>
-#if !defined SPECIFY_PC_ENVIRONMENT
+#if !defined SPECIFY_PC_ENVIRONMENT // GMP_MCS_ENABLE_SCOPE_FACILITY
 #include <ctl/component/dsa/dsa_dl_scope.h>
 #endif
 
@@ -28,19 +28,9 @@ void flush_dl_tx_buffer(void);
 // Datalink protocol online Debug module
 
 gmp_datalink_t dl;
+
 gmp_dl_facility_t legacy_echo_facility;
 volatile uint32_t dl_facility_init_errors;
-#if !defined SPECIFY_PC_ENVIRONMENT
-#if defined GMP_DL_SCOPE_STORAGE_RAMGS2_3
-#pragma DATA_SECTION(user_dl_scope_storage, "mass_data")
-#endif
-CTL_DSA_DL_SCOPE_DEFINE_USER("Control Scope")
-#endif
-
-/** @brief Processor-in-the-Loop service enabled by the target SDPE switch. */
-#if defined GMP_MCS_ENABLE_PIL_FACILITY
-gmp_pil_sim_t pil;
-#endif
 
 //
 // Tunable Dictionary
@@ -84,6 +74,21 @@ const uint16_t mem_regions_count = sizeof(mem_regions) / sizeof(mem_regions[0]);
 gmp_mem_persp_t mem_persp_server;
 
 //
+// Scope
+//
+#if !defined SPECIFY_PC_ENVIRONMENT // GMP_MCS_ENABLE_SCOPE_FACILITY
+#if defined GMP_DL_SCOPE_STORAGE_RAMGS2_3
+#pragma DATA_SECTION(user_dl_scope_storage, "mass_data")
+#endif
+CTL_DSA_DL_SCOPE_DEFINE_USER("Control Scope")
+#endif
+
+/** @brief Processor-in-the-Loop service enabled by the target SDPE switch. */
+#if defined GMP_MCS_ENABLE_PIL_FACILITY
+gmp_pil_sim_t pil;
+#endif
+
+//
 // Datalink protocol stack task
 //
 gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
@@ -112,6 +117,7 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
         break;
 
     case GMP_DL_EVENT_RX_OK:
+        // call all facilities of GMP DL module
         (void)gmp_dev_dl_dispatch_rx(&dl);
         break;
     }
@@ -120,8 +126,6 @@ gmp_task_status_t tsk_dl_debug_device(gmp_task_t* tsk)
 
     return GMP_TASK_DONE;
 }
-
-gmp_scheduler_t sched;
 
 //=================================================================================================
 // task manager
@@ -198,9 +202,26 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
     // init datalink protocol
     gmp_dev_dl_init(&dl);
     dl_facility_init_errors = 0U;
+
     gmp_dev_dl_init_echo_alias(&legacy_echo_facility, 0x99U);
     dl_facility_init_errors += gmp_dev_dl_append_facility(
         &dl, &legacy_echo_facility) ? 0U : 1U;
+
+    // Band DL module with tunable and persp module.
+    gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &tunable.facility) ? 0U : 1U;
+
+    gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &mem_persp_server.facility) ? 0U : 1U;
+
+    // Band DL module with scope module
+#if !defined SPECIFY_PC_ENVIRONMENT // GMP_MCS_ENABLE_SCOPE_FACILITY
+    user_init_dl_scope(&dl);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, user_dl_scope_facility()) ? 0U : 1U;
+#endif
 
     /** Bind PIL only when the independent target SDPE switch is enabled. */
 #if defined GMP_MCS_ENABLE_PIL_FACILITY
@@ -208,19 +229,6 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
     gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
     dl_facility_init_errors += gmp_dev_dl_append_facility(
         &dl, &pil.facility) ? 0U : 1U;
-#endif
-
-    // Band DL module with tunable and persp module.
-    gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
-    gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &tunable.facility) ? 0U : 1U;
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &mem_persp_server.facility) ? 0U : 1U;
-#if !defined SPECIFY_PC_ENVIRONMENT
-    user_init_dl_scope(&dl);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, user_dl_scope_facility()) ? 0U : 1U;
 #endif
 }
 

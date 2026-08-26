@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from core_datalink import HermesDatalinkQt
 from resource_discovery import ResourceDiscovery
+from c_tunable_parser import parse_c_tunable_dictionary, strip_c_comments
 
 # Parameter types and their little-endian wire formats.
 TYPE_MAP = {
@@ -20,15 +21,6 @@ TYPE_MAP = {
     'GMP_PARAM_TYPE_I32': ('<i', 4),
     'GMP_PARAM_TYPE_F32': ('<f', 4)
 }
-
-# =========================================================
-# C source parsing helpers.
-# =========================================================
-def strip_c_comments(text: str) -> str:
-    """Remove C block and line comments before dictionary parsing."""
-    text = re.sub(r'/\*.*?\*/', '', text, flags=re.DOTALL)
-    text = re.sub(r'//.*', '', text)
-    return text
 
 # =========================================================
 # C tunable dictionary parser dialog.
@@ -46,8 +38,8 @@ class CCodeParserDialog(QDialog):
         self.txt_code = QTextEdit()
         self.txt_code.setPlaceholderText("""Example:
 const gmp_param_item_t dict_m1[] = {
-    { &m1.kp, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW },
-    { &m1.speed, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO },
+    { &m1.kp, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW, "Current Kp" },
+    { &m1.speed, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO, NULL },
 };""")
         layout.addWidget(self.txt_code)
         
@@ -59,34 +51,17 @@ const gmp_param_item_t dict_m1[] = {
         layout.addLayout(btn_layout)
 
     def parse_code(self):
-        code = self.txt_code.toPlainText()
-        code = strip_c_comments(code)
+        parsed_data = parse_c_tunable_dictionary(self.txt_code.toPlainText())
         
-        pattern = (r'\{\s*&\s*([^,]+?)\s*,\s*(GMP_PARAM_TYPE_[A-Z0-9_]+)\s*,'
-                   r'\s*(GMP_PARAM_PERM_[A-Z]+)'
-                   r'(?:\s*,\s*"([^"]*)"\s*,\s*"([^"]*)")?\s*\}')
-        matches = re.findall(pattern, code)
-        
-        if not matches:
+        if not parsed_data:
             QMessageBox.warning(self, "Parse Failed", "No supported dictionary entries were found.")
             return
             
-        self.parsed_data = []
-        for i, match in enumerate(matches):
-            var_name, var_type, var_perm, display_name, unit = match
-            if var_type not in TYPE_MAP:
-                QMessageBox.warning(self, "Unsupported Type", f"Unsupported parameter type: {var_type}")
+        for item in parsed_data:
+            if item["type"] not in TYPE_MAP:
+                QMessageBox.warning(self, "Unsupported Type", f"Unsupported parameter type: {item['type']}")
                 return
-                
-            self.parsed_data.append({
-                "id": i,
-                "name": display_name or var_name.strip(),
-                "unit": unit,
-                "type": var_type,
-                "perm": var_perm,
-                "display_hex": False, 
-                "enum_map": None      
-            })
+        self.parsed_data = parsed_data
             
         QMessageBox.information(self, "Import Complete", f"Imported {len(self.parsed_data)} parameters.")
         self.accept()

@@ -27,6 +27,13 @@ currently displayed frame. Waveform Persistence retains faded history frames
 in a separate display group. Waveform Export can save either the current frame
 or every retained persistence frame plus the current frame as CSV.
 
+The Tunable page's **Import C** action accepts the current four-field
+`gmp_param_item_t` initializer, `{address, type, permission, name}`. The name
+may be a C string, `NULL`, or an empty string; when no usable name is present,
+the address expression becomes the UI parameter name. Legacy three-field
+initializers and the earlier tool's five-field name-and-unit form remain
+supported.
+
 Configure, Arm, and chunked Read operations use bounded retries. If a response
 is lost, the page either resumes or releases its controls with an explicit
 timeout instead of remaining busy indefinitely. While the target is waiting for

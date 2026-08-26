@@ -19,6 +19,11 @@ Memory Perspective 和 Tunable 页面可以导入目标上报的具名资源。D
 当前画面。Waveform Persistence 在独立分组中显示衰减的历史波形。Waveform Export
 可以将当前帧，或仍被保留的所有余晖帧连同当前帧保存为 CSV。
 
+Tunable 页的 **Import C** 支持当前四字段 `gmp_param_item_t` 初始化器：
+`{address, type, permission, name}`。`name` 可以是 C 字符串、`NULL` 或空字符串；
+没有有效名称时，界面使用地址表达式作为参数名称。为兼容现有工程，旧三字段初始化器
+以及早期工具使用的五字段“名称、单位”格式仍可导入。
+
 System Log 为每个页面分配固定配色，并在 Log Sources 下拉列表中提供可勾选过滤项。
 
 `HermesDatalinkQt.connect_transport()` 允许宿主工具提供字节写回调，并用
