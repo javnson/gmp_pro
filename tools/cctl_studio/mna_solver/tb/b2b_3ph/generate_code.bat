@@ -4,6 +4,7 @@ setlocal EnableExtensions
 set "NETLIST_FILE=B2B_INV.CIR"
 set "MATRIX_TOLERANCE=1E-12"
 set "MATRIX_BACKEND=eigen"
+set "DISCRETIZATION_METHOD=backward_euler"
 set "MOSFET_MODEL=half_bridge_approx"
 rem The recommended B2B model keeps Vf+Rbody passive states while pruning body paths during commanded conduction.
 
@@ -38,10 +39,12 @@ if not exist "%NETLIST_PATH%" (
 )
 if not exist "%GENERATED_DIR%" mkdir "%GENERATED_DIR%"
 echo [1/2] Exporting the deadtime-aware approximate half-bridge circuit data...
-python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method backward_euler --matrix-tolerance "%MATRIX_TOLERANCE%" --mosfet-model "%MOSFET_MODEL%" --infer-half-bridges
+python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method "%DISCRETIZATION_METHOD%" --matrix-tolerance "%MATRIX_TOLERANCE%" --mosfet-model "%MOSFET_MODEL%" --infer-half-bridges
 if errorlevel 1 goto :failed
 echo [2/2] Generating the %MATRIX_BACKEND% archive-backed C++ calculation class...
-python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%GENERATED_DIR%" --backend "%MATRIX_BACKEND%"
+set "CODEGEN_SCRIPT=euler_codegen.py"
+if /I "%DISCRETIZATION_METHOD%"=="rk4" set "CODEGEN_SCRIPT=rk_codegen.py"
+python "%MNA_TOOL_DIR%\%CODEGEN_SCRIPT%" "%JSON_PATH%" "%GENERATED_DIR%" --backend "%MATRIX_BACKEND%"
 if errorlevel 1 goto :failed
 
 echo.

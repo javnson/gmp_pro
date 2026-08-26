@@ -41,11 +41,15 @@ makes that exceptional case explicit instead of silently returning an incorrect
 - SymEngine: exact symbolic MNA matrices.
 - Eigen3: default fixed-size matrix backend for generated C++ classes.
 - CCTL `fixed_vector`/`fixed_matrix`: dependency-free inline-storage backend.
+- CCTL `fixed_point32`: saturating signed 32-bit Q-format arithmetic for the
+  FPGA-oriented generated backend.
 
 Python packages are pinned in `tools/gmp_installer/requirements-gmp.txt`.
 Eigen3 is declared by this directory's `vcpkg.json` and restored into GMP's
 shared vcpkg tree by the installer. The deprecated `third_party/eigen` path is
-not used. Code generated with `--backend fixed` does not include or link Eigen.
+not used. Code generated with `--backend fixed` or `--backend fixed_point` does
+not include or link Eigen. `fixed` still means fixed-size matrices of `double`;
+`fixed_point` selects integer fixed-point arithmetic.
 
 ## Supported netlist subset
 
@@ -148,6 +152,20 @@ precomputed `Ad/Bd/bias` map, so generated runtime cost remains one affine
 matrix update. RK4 is explicit; strongly stiff parasitic networks should still
 use backward Euler. Export reports the maximum discrete spectral radius for the
 normal and short profiles and warns when any topology exceeds one.
+
+The algorithm-specific generation entry points reject mismatched input data:
+
+```bat
+python tools\cctl_studio\mna_solver\euler_codegen.py circuit.json generated
+python tools\cctl_studio\mna_solver\rk_codegen.py rk_circuit.json generated
+```
+
+Both produce the same runtime affine-map ABI. Euler or all four RK stages are
+evaluated by Python; the resulting constant `Ad/Bd/bias` matrices are stored in
+the Eigen archive. RK4 is explicit, so precomputation does not remove its
+stability limit. For example, the supplied stiff Buck parasitics are unstable
+with RK4 at the default 100 ns step and require a much smaller step; backward
+Euler remains the appropriate default for that case.
 
 ## Diode/MOSFET piecewise-linear simulation
 
@@ -359,8 +377,8 @@ under `generated`. The deployable Eigen unit is the same-stem trio
 the typed input/output ABI, C++ class and methods, solver settings, relative artifact
 paths, sizes, and SHA-256 digests. CCTL Studio imports that manifest and verifies
 the other two files. The circuit-matrix JSON remains an intermediate generator input
-and can be extremely large. Fixed embeds coefficients in the HPP, so its manifest
-sets the archive artifact to `null`. Generated JSON, archives, and local
+and can be extremely large. Fixed and fixed-point backends embed coefficients
+in the HPP, so their manifests set the archive artifact to `null`. Generated JSON, archives, and local
 CSV/build/IDE outputs remain ignored because they are reproducible.
 
 ### Generation and build
@@ -371,19 +389,48 @@ Generate a case without compiling it:
 tools\cctl_studio\mna_solver\tb\buck\generate_code.bat
 ```
 
-Each `generate_code.bat` declares `NETLIST_FILE`, `MATRIX_TOLERANCE`, and
-`MATRIX_BACKEND` near the top. The backend accepts `eigen` or `fixed`; the
-command-line equivalent is:
+Each `generate_code.bat` declares `NETLIST_FILE`, `DISCRETIZATION_METHOD`,
+`MATRIX_TOLERANCE`, and `MATRIX_BACKEND` near the top. It selects
+`euler_codegen.py` for either Euler method and `rk_codegen.py` for `rk4`.
+The backend accepts `eigen`, `fixed`, or `fixed_point`; examples are:
 
 ```bat
-python tools\cctl_studio\mna_solver\cpp_codegen.py circuit.json generated ^
+python tools\cctl_studio\mna_solver\euler_codegen.py circuit.json generated ^
   --backend fixed
+python tools\cctl_studio\mna_solver\euler_codegen.py circuit.json generated ^
+  --backend fixed_point --fixed-point-input-range VS1=8 ^
+  --fixed-point-signal-range 16 ^
+  --fixed-point-fractional-bits 24
 ```
 
 The CLI and every supplied case default to `eigen`. Select `--backend fixed`, or
 change a case's `MATRIX_BACKEND`, only when the allocation-free fixed backend is
 specifically required. Fixed generation remains supported but is not part of the
 default generation or build path.
+
+The `fixed_point` backend uses signed 32-bit fixed-point values throughout the
+circuit. Automatic per-unit analysis chooses power-of-two bases per state and
+input plus a common signal base. It samples bounded fixed-topology trajectories,
+usable equilibria, and nearby topology transitions, transforms every affine map,
+and embeds raw quantized coefficients. State/input/signal values retain the
+requested Q format, while each matrix family receives its own automatically
+selected coefficient Q format. Mixed-Q dot products use a signed 64-bit
+accumulator and saturate after the complete sum, preserving cancellation between
+large MNA coordinate terms. The value precision defaults to 24 fractional bits.
+External analog inputs are converted from `double` at entry and requested
+outputs are converted back to `double`; state iteration and topology signal
+selection remain fixed point. Use repeatable
+`--fixed-point-input-range NAME=FULL_SCALE` for the real operating envelope.
+Use `--fixed-point-signal-range FULL_SCALE` when application knowledge gives a
+tighter meaningful signal/output range than topology-independent probing (for
+example, current-source-fed open switching states can otherwise predict
+unreachable voltage excursions).
+The automatic envelope is deterministic but is not a formal overflow proof;
+production FPGA/HLS work must validate ranges and compare against Eigen.
+
+The dedicated effect regression is `tests/test_fixed_point_fp.py`. Its `_fp`
+suffix is intentional: it verifies `_fp` artifact/class naming and compares
+quantized mixed-Q affine state/output maps against their floating-point source.
 
 For example, Buck emits `buckcircuit.cctl-topology.json`, `buckcircuit.hpp`, and
 `buckcircuit.archive`. Copy, publish, and import them as one directory-local unit.
@@ -470,8 +517,22 @@ the handwritten testbench or target peripheral layer.
 The generated `BuckCircuit` exposes `step_short(PWM, VS1)`,
 `step_normal(PWM, VS1)`, `run`, and `operator()`. Probe results are available as
 `circuit.output.VF1` or `circuit["V(VF1)"]`. `FsbbCircuit` similarly exposes
-`PWM1`, `PWM2`, `PWM3`, `PWM4`, and `VS1`. Build and run the handwritten
-switching testbenches with:
+`PWM1`, `PWM2`, `PWM3`, `PWM4`, and `VS1`.
+
+`step_*`, `run`, and `operator()` retain eager-output compatibility. Performance-
+sensitive callers can separate iteration from observation:
+
+```cpp
+circuit.advance_normal(PWM, VS1);  // updates state; invalidates output cache
+const auto& output = circuit.outputs(); // computes requested rows once, lazily
+```
+
+Topology selection also reads signals row by row, so it does not materialize
+unrequested public outputs. Repeated `outputs()` calls in the same sample use
+the cache. The deduplication progress line reports completed states, unique and
+repeated calculation states, and shared matrix count while generation runs.
+
+Build and run the handwritten switching testbenches with:
 
 ```bat
 tools\gmp_installer\utilities\repair_gmp_vcpkg.bat
@@ -577,8 +638,9 @@ verify both the DC transfer and `A=-1000` state matrix.
   tests may alternatively select the body-diode-free `2^N` mode.
   Diode/VSWITCH-only networks grow as `2^N`. Mixed circuits containing both
   MOSFETs and multiple independent diodes or VSWITCH devices still need the
-  general combinational device expansion. A Verilog/fixed-point backend over
-  the same data file remains future work.
+  general combinational device expansion. Direct Verilog/RTL emission and a
+  synthesis-qualified range proof over the same data remain future work; the
+  current fixed-point C++ backend is the software/HLS-oriented reference.
 
 Run validation with:
 

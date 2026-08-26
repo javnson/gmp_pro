@@ -4,14 +4,17 @@ setlocal EnableExtensions
 set "NO_PAUSE=0"
 if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
 if /I "%~2"=="--no-pause" set "NO_PAUSE=1"
-set "BUILD_FIXED=0"
-if /I "%~1"=="--with-fixed" set "BUILD_FIXED=1"
-if /I "%~2"=="--with-fixed" set "BUILD_FIXED=1"
+set "BUILD_FP=0"
+if /I "%~1"=="--with-fp" set "BUILD_FP=1"
+if /I "%~2"=="--with-fp" set "BUILD_FP=1"
+rem Retain the previous spelling as a compatibility alias.
+if /I "%~1"=="--with-fixed" set "BUILD_FP=1"
+if /I "%~2"=="--with-fixed" set "BUILD_FP=1"
 set "MATRIX_BACKEND=eigen"
-set "CMAKE_FIXED_OPTION=OFF"
-if "%BUILD_FIXED%"=="1" (
+set "CMAKE_FP_OPTION=OFF"
+if "%BUILD_FP%"=="1" (
     set "MATRIX_BACKEND=all"
-    set "CMAKE_FIXED_OPTION=ON"
+    set "CMAKE_FP_OPTION=ON"
 )
 if not defined GMP_PRO_LOCATION (
     echo [ERROR] GMP_PRO_LOCATION is not defined. Run a GMP installer first.
@@ -56,7 +59,7 @@ if not exist "%VCPKG_INSTALLED_DIR%\x64-windows\include\eigen3\Eigen\Dense" (
     goto :failed_with_result
 )
 echo [6/8] Configuring with GMP's private vcpkg Eigen...
-cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%GMP_PRO_LOCATION%\tools\gmp_installer\gmp_vcpkg_toolchain.cmake" -DCCTL_BUILD_FIXED_BACKEND=%CMAKE_FIXED_OPTION%
+cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%GMP_PRO_LOCATION%\tools\gmp_installer\gmp_vcpkg_toolchain.cmake" -DCCTL_BUILD_FP_BACKEND=%CMAKE_FP_OPTION% -DCCTL_DEFAULT_FP_BACKEND=OFF
 if errorlevel 1 goto :failed
 goto :build
 
@@ -70,7 +73,7 @@ if errorlevel 1 (
 for /f "delims=" %%I in ('where vcpkg.exe') do if not defined SYSTEM_VCPKG_EXE set "SYSTEM_VCPKG_EXE=%%I"
 for %%I in ("%SYSTEM_VCPKG_EXE%") do set "SYSTEM_VCPKG_ROOT=%%~dpI"
 echo [6/8] Configuring with system vcpkg Eigen...
-cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%GMP_PRO_LOCATION%\tools\gmp_installer\gmp_vcpkg_toolchain.cmake" -DCCTL_BUILD_FIXED_BACKEND=%CMAKE_FIXED_OPTION%
+cmake --fresh -S "%PROJECT_DIR%" -B "%BUILD_DIR%" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="%GMP_PRO_LOCATION%\tools\gmp_installer\gmp_vcpkg_toolchain.cmake" -DCCTL_BUILD_FP_BACKEND=%CMAKE_FP_OPTION% -DCCTL_DEFAULT_FP_BACKEND=OFF
 if errorlevel 1 goto :failed
 
 :build
@@ -87,7 +90,7 @@ echo Direct CCTL PMSM test passed.
 echo Build tree: %BUILD_DIR%
 echo Eigen circuit CSV: %BUILD_DIR%\mcs_pmsm_nt_cctl_circuit.csv
 echo Eigen control CSV: %BUILD_DIR%\mcs_pmsm_nt_cctl_control.csv
-if "%BUILD_FIXED%"=="1" echo Fixed CSV files use the mcs_pmsm_nt_cctl_fixed_* prefix.
+if "%BUILD_FP%"=="1" echo Fixed-point CSV files use the mcs_pmsm_nt_cctl_fp_* prefix.
 if "%NO_PAUSE%"=="0" pause
 exit /b 0
 

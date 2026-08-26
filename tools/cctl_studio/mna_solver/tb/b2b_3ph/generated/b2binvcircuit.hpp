@@ -104,7 +104,7 @@ public:
         }
     };
 
-    Outputs output{};
+    mutable Outputs output{};
 
     explicit B2bInvCircuit(
         const std::filesystem::path& archive_path = std::filesystem::path(archive_filename))
@@ -113,15 +113,42 @@ public:
     void reset() {
         state_.setZero();
         signals_.setZero();
+        last_input_vector_.setZero();
         body_on_.fill(false);
         half_bridge_modes_.fill(HalfBridgeOperatingMode::blocked);
         last_topology_index_ = 0;
         last_calculation_state_index_ = topology_to_calculation_state()[0];
         output = Outputs{};
+        signal_valid_.fill(true);
+        outputs_valid_ = true;
     }
 
-    const Outputs& step_short(const Inputs& inputs) { return step(inputs, true); }
-    const Outputs& step_normal(const Inputs& inputs) { return step(inputs, false); }
+    void advance_short(const Inputs& inputs) { advance(inputs, true); }
+    void advance_normal(const Inputs& inputs) { advance(inputs, false); }
+
+    const Outputs& outputs() const {
+        if (!outputs_valid_)
+            update_outputs();
+        return output;
+    }
+
+    const Outputs& step_short(const Inputs& inputs) {
+        advance_short(inputs);
+        return outputs();
+    }
+
+    const Outputs& step_normal(const Inputs& inputs) {
+        advance_normal(inputs);
+        return outputs();
+    }
+
+    void advance_short(std::uint32_t PWM1, std::uint32_t PWM10, std::uint32_t PWM11, std::uint32_t PWM12, std::uint32_t PWM2, std::uint32_t PWM3, std::uint32_t PWM4, std::uint32_t PWM5, std::uint32_t PWM6, std::uint32_t PWM7, std::uint32_t PWM8, std::uint32_t PWM9, double VS4, double VS3, double VS2) {
+        advance_short(Inputs{PWM1, PWM10, PWM11, PWM12, PWM2, PWM3, PWM4, PWM5, PWM6, PWM7, PWM8, PWM9, VS4, VS3, VS2});
+    }
+
+    void advance_normal(std::uint32_t PWM1, std::uint32_t PWM10, std::uint32_t PWM11, std::uint32_t PWM12, std::uint32_t PWM2, std::uint32_t PWM3, std::uint32_t PWM4, std::uint32_t PWM5, std::uint32_t PWM6, std::uint32_t PWM7, std::uint32_t PWM8, std::uint32_t PWM9, double VS4, double VS3, double VS2) {
+        advance_normal(Inputs{PWM1, PWM10, PWM11, PWM12, PWM2, PWM3, PWM4, PWM5, PWM6, PWM7, PWM8, PWM9, VS4, VS3, VS2});
+    }
 
     const Outputs& step_short(std::uint32_t PWM1, std::uint32_t PWM10, std::uint32_t PWM11, std::uint32_t PWM12, std::uint32_t PWM2, std::uint32_t PWM3, std::uint32_t PWM4, std::uint32_t PWM5, std::uint32_t PWM6, std::uint32_t PWM7, std::uint32_t PWM8, std::uint32_t PWM9, double VS4, double VS3, double VS2) {
         return step_short(Inputs{PWM1, PWM10, PWM11, PWM12, PWM2, PWM3, PWM4, PWM5, PWM6, PWM7, PWM8, PWM9, VS4, VS3, VS2});
@@ -139,7 +166,7 @@ public:
         return run(PWM1, PWM10, PWM11, PWM12, PWM2, PWM3, PWM4, PWM5, PWM6, PWM7, PWM8, PWM9, VS4, VS3, VS2);
     }
 
-    double operator[](std::string_view name) const { return output[name]; }
+    double operator[](std::string_view name) const { return outputs()[name]; }
     const auto& state() const noexcept { return state_; }
     std::size_t last_topology_index() const noexcept { return last_topology_index_; }
     std::size_t last_calculation_state_index() const noexcept { return last_calculation_state_index_; }
@@ -393,7 +420,7 @@ private:
     }
 
     std::size_t select_topology(const Inputs& inputs) {
-        constexpr double hysteresis = 9.9999999999999995e-07;
+        const auto hysteresis = 9.9999999999999995e-07;
         std::size_t topology_index = 0U;
         topology_index *= 5U;
         if (inputs.PWM3 != 0U && inputs.PWM4 != 0U)
@@ -407,10 +434,10 @@ private:
             half_bridge_modes_[0] = HalfBridgeOperatingMode::lower_channel;
             topology_index += 1U;
         } else {
-            const double upper_reverse_voltage_0 = signals_(12) - signals_(11);
-            const double lower_reverse_voltage_1 = signals_(14) - signals_(13);
-            constexpr double upper_body_threshold_0 = 0.80000000000000004;
-            constexpr double lower_body_threshold_1 = 0.80000000000000004;
+            const auto upper_reverse_voltage_0 = signal_value(12U) - signal_value(11U);
+            const auto lower_reverse_voltage_1 = signal_value(14U) - signal_value(13U);
+            const auto upper_body_threshold_0 = 0.80000000000000004;
+            const auto lower_body_threshold_1 = 0.80000000000000004;
             body_on_[0] = upper_reverse_voltage_0 >= upper_body_threshold_0 + (body_on_[0] ? -hysteresis : hysteresis);
             body_on_[1] = lower_reverse_voltage_1 >= lower_body_threshold_1 + (body_on_[1] ? -hysteresis : hysteresis);
             if (body_on_[0] && body_on_[1])
@@ -437,10 +464,10 @@ private:
             half_bridge_modes_[1] = HalfBridgeOperatingMode::lower_channel;
             topology_index += 1U;
         } else {
-            const double upper_reverse_voltage_2 = signals_(16) - signals_(15);
-            const double lower_reverse_voltage_3 = signals_(18) - signals_(17);
-            constexpr double upper_body_threshold_2 = 0.80000000000000004;
-            constexpr double lower_body_threshold_3 = 0.80000000000000004;
+            const auto upper_reverse_voltage_2 = signal_value(16U) - signal_value(15U);
+            const auto lower_reverse_voltage_3 = signal_value(18U) - signal_value(17U);
+            const auto upper_body_threshold_2 = 0.80000000000000004;
+            const auto lower_body_threshold_3 = 0.80000000000000004;
             body_on_[2] = upper_reverse_voltage_2 >= upper_body_threshold_2 + (body_on_[2] ? -hysteresis : hysteresis);
             body_on_[3] = lower_reverse_voltage_3 >= lower_body_threshold_3 + (body_on_[3] ? -hysteresis : hysteresis);
             if (body_on_[2] && body_on_[3])
@@ -467,10 +494,10 @@ private:
             half_bridge_modes_[2] = HalfBridgeOperatingMode::lower_channel;
             topology_index += 1U;
         } else {
-            const double upper_reverse_voltage_4 = signals_(20) - signals_(19);
-            const double lower_reverse_voltage_5 = signals_(22) - signals_(21);
-            constexpr double upper_body_threshold_4 = 0.80000000000000004;
-            constexpr double lower_body_threshold_5 = 0.80000000000000004;
+            const auto upper_reverse_voltage_4 = signal_value(20U) - signal_value(19U);
+            const auto lower_reverse_voltage_5 = signal_value(22U) - signal_value(21U);
+            const auto upper_body_threshold_4 = 0.80000000000000004;
+            const auto lower_body_threshold_5 = 0.80000000000000004;
             body_on_[4] = upper_reverse_voltage_4 >= upper_body_threshold_4 + (body_on_[4] ? -hysteresis : hysteresis);
             body_on_[5] = lower_reverse_voltage_5 >= lower_body_threshold_5 + (body_on_[5] ? -hysteresis : hysteresis);
             if (body_on_[4] && body_on_[5])
@@ -497,10 +524,10 @@ private:
             half_bridge_modes_[3] = HalfBridgeOperatingMode::lower_channel;
             topology_index += 1U;
         } else {
-            const double upper_reverse_voltage_6 = signals_(24) - signals_(23);
-            const double lower_reverse_voltage_7 = signals_(26) - signals_(25);
-            constexpr double upper_body_threshold_6 = 0.80000000000000004;
-            constexpr double lower_body_threshold_7 = 0.80000000000000004;
+            const auto upper_reverse_voltage_6 = signal_value(24U) - signal_value(23U);
+            const auto lower_reverse_voltage_7 = signal_value(26U) - signal_value(25U);
+            const auto upper_body_threshold_6 = 0.80000000000000004;
+            const auto lower_body_threshold_7 = 0.80000000000000004;
             body_on_[6] = upper_reverse_voltage_6 >= upper_body_threshold_6 + (body_on_[6] ? -hysteresis : hysteresis);
             body_on_[7] = lower_reverse_voltage_7 >= lower_body_threshold_7 + (body_on_[7] ? -hysteresis : hysteresis);
             if (body_on_[6] && body_on_[7])
@@ -527,10 +554,10 @@ private:
             half_bridge_modes_[4] = HalfBridgeOperatingMode::lower_channel;
             topology_index += 1U;
         } else {
-            const double upper_reverse_voltage_8 = signals_(28) - signals_(27);
-            const double lower_reverse_voltage_9 = signals_(30) - signals_(29);
-            constexpr double upper_body_threshold_8 = 0.80000000000000004;
-            constexpr double lower_body_threshold_9 = 0.80000000000000004;
+            const auto upper_reverse_voltage_8 = signal_value(28U) - signal_value(27U);
+            const auto lower_reverse_voltage_9 = signal_value(30U) - signal_value(29U);
+            const auto upper_body_threshold_8 = 0.80000000000000004;
+            const auto lower_body_threshold_9 = 0.80000000000000004;
             body_on_[8] = upper_reverse_voltage_8 >= upper_body_threshold_8 + (body_on_[8] ? -hysteresis : hysteresis);
             body_on_[9] = lower_reverse_voltage_9 >= lower_body_threshold_9 + (body_on_[9] ? -hysteresis : hysteresis);
             if (body_on_[8] && body_on_[9])
@@ -557,10 +584,10 @@ private:
             half_bridge_modes_[5] = HalfBridgeOperatingMode::lower_channel;
             topology_index += 1U;
         } else {
-            const double upper_reverse_voltage_10 = signals_(32) - signals_(31);
-            const double lower_reverse_voltage_11 = signals_(34) - signals_(33);
-            constexpr double upper_body_threshold_10 = 0.80000000000000004;
-            constexpr double lower_body_threshold_11 = 0.80000000000000004;
+            const auto upper_reverse_voltage_10 = signal_value(32U) - signal_value(31U);
+            const auto lower_reverse_voltage_11 = signal_value(34U) - signal_value(33U);
+            const auto upper_body_threshold_10 = 0.80000000000000004;
+            const auto lower_body_threshold_11 = 0.80000000000000004;
             body_on_[10] = upper_reverse_voltage_10 >= upper_body_threshold_10 + (body_on_[10] ? -hysteresis : hysteresis);
             body_on_[11] = lower_reverse_voltage_11 >= lower_body_threshold_11 + (body_on_[11] ? -hysteresis : hysteresis);
             if (body_on_[10] && body_on_[11])
@@ -578,7 +605,36 @@ private:
         return topology_index;
     }
 
-    const Outputs& step(const Inputs& inputs, bool use_short_step) {
+    double signal_value(std::size_t index) const {
+        if (index >= signal_count)
+            throw std::out_of_range("circuit signal index is out of range");
+        if (signal_valid_[index])
+            return signals_(index);
+        const auto& calculation_state = calculation_states()[last_calculation_state_index_];
+        signals_(index) =
+            signal_matrices()[calculation_state.C].row(index).dot(state_)
+            + signal_input_matrices()[calculation_state.D].row(index).dot(last_input_vector_)
+            + signal_vectors()[calculation_state.output_bias](index);
+        signal_valid_[index] = true;
+        return signals_(index);
+    }
+
+    void update_outputs() const {
+        output.UBUS = signal_value(0U);
+        output.n_20 = signal_value(1U);
+        output.LGRID_A = signal_value(2U);
+        output.LGRID_B = signal_value(3U);
+        output.LGRID_C = signal_value(4U);
+        output.VAM3 = signal_value(5U);
+        output.VAM2 = signal_value(6U);
+        output.VAM1 = signal_value(7U);
+        output.n_32 = signal_value(8U);
+        output.n_31 = signal_value(9U);
+        output.n_30 = signal_value(10U);
+        outputs_valid_ = true;
+    }
+
+    void advance(const Inputs& inputs, bool use_short_step) {
         last_topology_index_ = select_topology(inputs);
         const auto stored_topology_index = resolve_stored_topology(last_topology_index_);
         last_calculation_state_index_ = topology_to_calculation_state()[stored_topology_index];
@@ -594,26 +650,17 @@ private:
                 + input_matrices()[calculation_state.normal_B] * input_vector
                 + state_vectors()[calculation_state.normal_bias];
         }}
-        signals_ = signal_matrices()[calculation_state.C] * state_
-            + signal_input_matrices()[calculation_state.D] * input_vector
-            + signal_vectors()[calculation_state.output_bias];
-        output.UBUS = signals_(0);
-        output.n_20 = signals_(1);
-        output.LGRID_A = signals_(2);
-        output.LGRID_B = signals_(3);
-        output.LGRID_C = signals_(4);
-        output.VAM3 = signals_(5);
-        output.VAM2 = signals_(6);
-        output.VAM1 = signals_(7);
-        output.n_32 = signals_(8);
-        output.n_31 = signals_(9);
-        output.n_30 = signals_(10);
-        return output;
+        last_input_vector_ = input_vector;
+        signal_valid_.fill(false);
+        outputs_valid_ = false;
     }
 
     std::shared_ptr<const ArchiveData> archive_;
     StateVector state_{StateVector::Zero()};
-    SignalVector signals_{SignalVector::Zero()};
+    mutable SignalVector signals_{SignalVector::Zero()};
+    InputVector last_input_vector_{};
+    mutable std::array<bool, signal_count> signal_valid_{};
+    mutable bool outputs_valid_{true};
     std::array<bool, 12> body_on_{};
     HalfBridgeOperatingModes half_bridge_modes_{};
     std::size_t last_topology_index_{0};

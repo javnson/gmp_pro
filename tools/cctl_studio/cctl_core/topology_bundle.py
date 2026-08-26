@@ -114,12 +114,16 @@ def validate_topology_manifest(
             raise StudioError(f"compiled topology cpp method {method!r} is missing")
     solver = _require_mapping(document.get("solver"), "solver")
     backend = solver.get("matrix_backend")
-    if backend not in {"eigen", "fixed"}:
-        raise StudioError("compiled topology matrix_backend must be eigen or fixed")
+    if backend not in {"eigen", "fixed", "fixed_point"}:
+        raise StudioError(
+            "compiled topology matrix_backend must be eigen, fixed, or fixed_point"
+        )
     if backend == "eigen" and archive_value is None:
         raise StudioError("Eigen compiled topology requires an archive artifact")
-    if backend == "fixed" and archive_value is not None:
-        raise StudioError("fixed compiled topology must embed matrices in its header")
+    if backend in {"fixed", "fixed_point"} and archive_value is not None:
+        raise StudioError(
+            f"{backend} compiled topology must embed matrices in its header"
+        )
     for label, artifact in (("header", header), ("archive", archive_value)):
         if artifact is None:
             continue

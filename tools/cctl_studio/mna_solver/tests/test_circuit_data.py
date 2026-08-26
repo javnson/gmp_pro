@@ -99,6 +99,9 @@ class CircuitDataTests(unittest.TestCase):
                 )
         self.assertIn("state space:         x=3, u=1, y=", output.getvalue())
         self.assertIn("external ports:      inputs=2", output.getvalue())
+        self.assertIn("Deduplicating matrices", output.getvalue())
+        self.assertIn("unique states", output.getvalue())
+        self.assertIn("shared matrices", output.getvalue())
 
     def test_vadc_outputs_are_marked_as_adc_sample_voltages(self) -> None:
         names = ["V(VADC_VDC)", "V(VADC_VA)", "V(VADC_IA)", "V(OUT)"]
@@ -162,6 +165,11 @@ class CircuitDataTests(unittest.TestCase):
         self.assertIn("class BuckCircuit", header)
         self.assertIn("step_short", header)
         self.assertIn("step_normal", header)
+        self.assertIn("advance_short", header)
+        self.assertIn("advance_normal", header)
+        self.assertIn("const Outputs& outputs() const", header)
+        self.assertIn("signal_evaluation_count", header)
+        self.assertNotIn("signals_ = signal_matrices()", header)
         self.assertIn("operator()", header)
         self.assertIn("Outputs output", header)
         self.assertIn("operator[](std::string_view", header)
@@ -192,6 +200,8 @@ class CircuitDataTests(unittest.TestCase):
             ["VAM1", "VF1"],
         )
         self.assertEqual(manifest["cpp"]["methods"]["normal_step"], "step_normal")
+        self.assertEqual(manifest["cpp"]["methods"]["normal_advance"], "advance_normal")
+        self.assertEqual(manifest["cpp"]["methods"]["outputs"], "outputs")
         self.assertEqual(imported_manifest, manifest)
 
     def test_rk4_document_preserves_method_through_compact_json_and_archive(self) -> None:
@@ -244,6 +254,82 @@ class CircuitDataTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "unsupported matrix backend"):
             codegen.render_header(self.document, "InvalidCircuit", backend="dynamic")
+
+    def test_fixed_point_backend_uses_automatic_per_unit_integer_arithmetic(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            data_path = Path(directory) / "buck.json"
+            data.write_circuit_data(data_path, self.document)
+            files = codegen.generate_cpp_project(
+                data_path,
+                Path(directory) / "cpp",
+                "BuckCircuitFp",
+                backend="fixed_point",
+                fixed_point_fractional_bits=24,
+                fixed_point_horizon_steps=128,
+                output_stem="buckcircuit_fp",
+            )
+            header = files["header"].read_text(encoding="utf-8")
+            manifest = json.loads(files["manifest"].read_text(encoding="utf-8"))
+            load_topology_manifest(files["manifest"])
+
+        self.assertEqual(set(files), {"header", "manifest"})
+        self.assertEqual(files["header"].name, "buckcircuit_fp.hpp")
+        self.assertIn("class BuckCircuitFp", header)
+        self.assertIn("cctl::fixed_point32<24>", header)
+        self.assertIn("Scalar::from_raw(", header)
+        self.assertNotIn("const auto hysteresis = Scalar::from_raw(0);", header)
+        self.assertIn("Scalar::from_double(inputs.VS1 / input_scales[0U])", header)
+        self.assertIn(".to_double() * signal_scale", header)
+        self.assertNotIn("fixed_matrix<double", header)
+        fixed = manifest["solver"]["fixed_point"]
+        self.assertEqual(fixed["storage_bits"], 32)
+        self.assertEqual(fixed["fractional_bits"], 24)
+        self.assertEqual(len(fixed["state_scales"]), 3)
+        self.assertEqual(len(fixed["input_scales"]), 1)
+        self.assertGreater(fixed["signal_scale"], 0.0)
+        self.assertLessEqual(fixed["maximum_scaled_coefficient"], 127.999999)
+        self.assertLessEqual(fixed["maximum_quantization_error"], 0.5 / (1 << 24))
+
+    def test_algorithm_specific_codegen_entry_points_reject_wrong_method(self) -> None:
+        source = BUCK_DIR / "buck.CIR"
+        rk_document = data.build_circuit_data(
+            switched.build_piecewise_model(mna.parse_netlist(source)),
+            source_path=source,
+            normal_step_s=100e-9,
+            short_step_s=1e-9,
+            method="rk4",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            rk_path = root / "rk.json"
+            euler_path = root / "euler.json"
+            data.write_circuit_data(rk_path, rk_document)
+            data.write_circuit_data(euler_path, self.document)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(
+                    codegen.main_for_methods(
+                        {"rk4"}, [str(rk_path), str(root / "rk"), "--no-progress"]
+                    ),
+                    0,
+                )
+                self.assertEqual(
+                    codegen.main_for_methods(
+                        {"forward_euler", "backward_euler"},
+                        [str(euler_path), str(root / "euler"), "--no-progress"],
+                    ),
+                    0,
+                )
+                self.assertEqual(
+                    codegen.main_for_methods(
+                        {"rk4"}, [str(euler_path), str(root / "wrong"), "--no-progress"]
+                    ),
+                    2,
+                )
+            self.assertTrue((root / "rk" / "buckcircuit.archive").is_file())
+            self.assertIn(
+                'discretization_method = "rk4"',
+                (root / "rk" / "buckcircuit.hpp").read_text(encoding="utf-8"),
+            )
 
     def test_cpp_matrix_plan_deduplicates_states_and_interns_storage(self) -> None:
         synthetic = copy.deepcopy(self.document)

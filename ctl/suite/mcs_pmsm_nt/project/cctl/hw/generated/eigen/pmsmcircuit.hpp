@@ -47,6 +47,7 @@ public:
     static constexpr const char* discretization_method = "backward_euler";
 
 
+
     struct Inputs {
         std::uint32_t PWM1{0U};
         std::uint32_t PWM2{0U};
@@ -96,7 +97,7 @@ public:
         }
     };
 
-    Outputs output{};
+    mutable Outputs output{};
 
     explicit PmsmCircuit(
         const std::filesystem::path& archive_path = std::filesystem::path(archive_filename))
@@ -105,14 +106,42 @@ public:
     void reset() {
         state_.setZero();
         signals_.setZero();
+        last_input_vector_.setZero();
         body_on_.fill(false);
         last_topology_index_ = 0;
         last_calculation_state_index_ = topology_to_calculation_state()[0];
         output = Outputs{};
+        signal_valid_.fill(true);
+        outputs_valid_ = true;
+        signal_evaluation_count_ = 0U;
     }
 
-    const Outputs& step_short(const Inputs& inputs) { return step(inputs, true); }
-    const Outputs& step_normal(const Inputs& inputs) { return step(inputs, false); }
+    void advance_short(const Inputs& inputs) { advance(inputs, true); }
+    void advance_normal(const Inputs& inputs) { advance(inputs, false); }
+
+    const Outputs& outputs() const {
+        if (!outputs_valid_)
+            update_outputs();
+        return output;
+    }
+
+    const Outputs& step_short(const Inputs& inputs) {
+        advance_short(inputs);
+        return outputs();
+    }
+
+    const Outputs& step_normal(const Inputs& inputs) {
+        advance_normal(inputs);
+        return outputs();
+    }
+
+    void advance_short(std::uint32_t PWM1, std::uint32_t PWM2, std::uint32_t PWM3, std::uint32_t PWM4, std::uint32_t PWM5, std::uint32_t PWM6, double VS4, double VS3, double VS2, double IPMSM1_C, double IPMSM1_B, double IPMSM1_A, double VS1) {
+        advance_short(Inputs{PWM1, PWM2, PWM3, PWM4, PWM5, PWM6, VS4, VS3, VS2, IPMSM1_C, IPMSM1_B, IPMSM1_A, VS1});
+    }
+
+    void advance_normal(std::uint32_t PWM1, std::uint32_t PWM2, std::uint32_t PWM3, std::uint32_t PWM4, std::uint32_t PWM5, std::uint32_t PWM6, double VS4, double VS3, double VS2, double IPMSM1_C, double IPMSM1_B, double IPMSM1_A, double VS1) {
+        advance_normal(Inputs{PWM1, PWM2, PWM3, PWM4, PWM5, PWM6, VS4, VS3, VS2, IPMSM1_C, IPMSM1_B, IPMSM1_A, VS1});
+    }
 
     const Outputs& step_short(std::uint32_t PWM1, std::uint32_t PWM2, std::uint32_t PWM3, std::uint32_t PWM4, std::uint32_t PWM5, std::uint32_t PWM6, double VS4, double VS3, double VS2, double IPMSM1_C, double IPMSM1_B, double IPMSM1_A, double VS1) {
         return step_short(Inputs{PWM1, PWM2, PWM3, PWM4, PWM5, PWM6, VS4, VS3, VS2, IPMSM1_C, IPMSM1_B, IPMSM1_A, VS1});
@@ -130,10 +159,16 @@ public:
         return run(PWM1, PWM2, PWM3, PWM4, PWM5, PWM6, VS4, VS3, VS2, IPMSM1_C, IPMSM1_B, IPMSM1_A, VS1);
     }
 
-    double operator[](std::string_view name) const { return output[name]; }
+    double operator[](std::string_view name) const { return outputs()[name]; }
     const auto& state() const noexcept { return state_; }
+    double state_physical(std::size_t index) const {
+        if (index >= state_count)
+            throw std::out_of_range("circuit state index is out of range");
+        return state_(index);
+    }
     std::size_t last_topology_index() const noexcept { return last_topology_index_; }
     std::size_t last_calculation_state_index() const noexcept { return last_calculation_state_index_; }
+    std::size_t signal_evaluation_count() const noexcept { return signal_evaluation_count_; }
 
 
 private:
@@ -381,15 +416,15 @@ private:
     }
 
     std::size_t select_topology(const Inputs& inputs) {
-        constexpr double hysteresis = 9.9999999999999995e-07;
+        const auto hysteresis = 9.9999999999999995e-07;
         std::size_t topology_index = 0U;
         topology_index *= 3U;
         if (inputs.PWM3 != 0U) {
             body_on_[0] = false;
             topology_index += 1U;
         } else {
-            const double reverse_voltage_0 = signals_(14) - signals_(13);
-            constexpr double body_threshold_0 = 0.80000000000000004;
+            const auto reverse_voltage_0 = signal_value(14U) - signal_value(13U);
+            const auto body_threshold_0 = 0.80000000000000004;
             body_on_[0] = reverse_voltage_0 >= body_threshold_0 + (body_on_[0] ? -hysteresis : hysteresis);
             topology_index += body_on_[0] ? 2U : 0U;
         }
@@ -398,8 +433,8 @@ private:
             body_on_[1] = false;
             topology_index += 1U;
         } else {
-            const double reverse_voltage_1 = signals_(16) - signals_(15);
-            constexpr double body_threshold_1 = 0.80000000000000004;
+            const auto reverse_voltage_1 = signal_value(16U) - signal_value(15U);
+            const auto body_threshold_1 = 0.80000000000000004;
             body_on_[1] = reverse_voltage_1 >= body_threshold_1 + (body_on_[1] ? -hysteresis : hysteresis);
             topology_index += body_on_[1] ? 2U : 0U;
         }
@@ -408,8 +443,8 @@ private:
             body_on_[2] = false;
             topology_index += 1U;
         } else {
-            const double reverse_voltage_2 = signals_(18) - signals_(17);
-            constexpr double body_threshold_2 = 0.80000000000000004;
+            const auto reverse_voltage_2 = signal_value(18U) - signal_value(17U);
+            const auto body_threshold_2 = 0.80000000000000004;
             body_on_[2] = reverse_voltage_2 >= body_threshold_2 + (body_on_[2] ? -hysteresis : hysteresis);
             topology_index += body_on_[2] ? 2U : 0U;
         }
@@ -418,8 +453,8 @@ private:
             body_on_[3] = false;
             topology_index += 1U;
         } else {
-            const double reverse_voltage_3 = signals_(20) - signals_(19);
-            constexpr double body_threshold_3 = 0.80000000000000004;
+            const auto reverse_voltage_3 = signal_value(20U) - signal_value(19U);
+            const auto body_threshold_3 = 0.80000000000000004;
             body_on_[3] = reverse_voltage_3 >= body_threshold_3 + (body_on_[3] ? -hysteresis : hysteresis);
             topology_index += body_on_[3] ? 2U : 0U;
         }
@@ -428,8 +463,8 @@ private:
             body_on_[4] = false;
             topology_index += 1U;
         } else {
-            const double reverse_voltage_4 = signals_(22) - signals_(21);
-            constexpr double body_threshold_4 = 0.80000000000000004;
+            const auto reverse_voltage_4 = signal_value(22U) - signal_value(21U);
+            const auto body_threshold_4 = 0.80000000000000004;
             body_on_[4] = reverse_voltage_4 >= body_threshold_4 + (body_on_[4] ? -hysteresis : hysteresis);
             topology_index += body_on_[4] ? 2U : 0U;
         }
@@ -438,15 +473,47 @@ private:
             body_on_[5] = false;
             topology_index += 1U;
         } else {
-            const double reverse_voltage_5 = signals_(24) - signals_(23);
-            constexpr double body_threshold_5 = 0.80000000000000004;
+            const auto reverse_voltage_5 = signal_value(24U) - signal_value(23U);
+            const auto body_threshold_5 = 0.80000000000000004;
             body_on_[5] = reverse_voltage_5 >= body_threshold_5 + (body_on_[5] ? -hysteresis : hysteresis);
             topology_index += body_on_[5] ? 2U : 0U;
         }
         return topology_index;
     }
 
-    const Outputs& step(const Inputs& inputs, bool use_short_step) {
+    double signal_value(std::size_t index) const {
+        if (index >= signal_count)
+            throw std::out_of_range("circuit signal index is out of range");
+        if (signal_valid_[index])
+            return signals_(index);
+        const auto& calculation_state = calculation_states()[last_calculation_state_index_];
+        signals_(index) =
+            signal_matrices()[calculation_state.C].row(index).dot(state_)
+            + signal_input_matrices()[calculation_state.D].row(index).dot(last_input_vector_)
+            + signal_vectors()[calculation_state.output_bias](index);
+        signal_valid_[index] = true;
+        ++signal_evaluation_count_;
+        return signals_(index);
+    }
+
+    void update_outputs() const {
+        output.VADC_VDC = signal_value(0U);
+        output.VADC_VC = signal_value(1U);
+        output.VADC_VB = signal_value(2U);
+        output.VADC_VA = signal_value(3U);
+        output.VADC_IC = signal_value(4U);
+        output.VADC_IB = signal_value(5U);
+        output.VADC_IA = signal_value(6U);
+        output.VAM3 = signal_value(7U);
+        output.VAM2 = signal_value(8U);
+        output.VAM1 = signal_value(9U);
+        output.VPMSM1_A = signal_value(10U);
+        output.VPMSM1_B = signal_value(11U);
+        output.VPMSM1_C = signal_value(12U);
+        outputs_valid_ = true;
+    }
+
+    void advance(const Inputs& inputs, bool use_short_step) {
         last_topology_index_ = select_topology(inputs);
         const auto stored_topology_index = resolve_stored_topology(last_topology_index_);
         last_calculation_state_index_ = topology_to_calculation_state()[stored_topology_index];
@@ -462,28 +529,18 @@ private:
                 + input_matrices()[calculation_state.normal_B] * input_vector
                 + state_vectors()[calculation_state.normal_bias];
         }}
-        signals_ = signal_matrices()[calculation_state.C] * state_
-            + signal_input_matrices()[calculation_state.D] * input_vector
-            + signal_vectors()[calculation_state.output_bias];
-        output.VADC_VDC = signals_(0);
-        output.VADC_VC = signals_(1);
-        output.VADC_VB = signals_(2);
-        output.VADC_VA = signals_(3);
-        output.VADC_IC = signals_(4);
-        output.VADC_IB = signals_(5);
-        output.VADC_IA = signals_(6);
-        output.VAM3 = signals_(7);
-        output.VAM2 = signals_(8);
-        output.VAM1 = signals_(9);
-        output.VPMSM1_A = signals_(10);
-        output.VPMSM1_B = signals_(11);
-        output.VPMSM1_C = signals_(12);
-        return output;
+        last_input_vector_ = input_vector;
+        signal_valid_.fill(false);
+        outputs_valid_ = false;
     }
 
     std::shared_ptr<const ArchiveData> archive_;
     StateVector state_{StateVector::Zero()};
-    SignalVector signals_{SignalVector::Zero()};
+    mutable SignalVector signals_{SignalVector::Zero()};
+    InputVector last_input_vector_{};
+    mutable std::array<bool, signal_count> signal_valid_{};
+    mutable bool outputs_valid_{true};
+    mutable std::size_t signal_evaluation_count_{0U};
     std::array<bool, 6> body_on_{};
     std::size_t last_topology_index_{0};
     std::size_t last_calculation_state_index_{0};

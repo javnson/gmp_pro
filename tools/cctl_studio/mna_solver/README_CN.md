@@ -35,11 +35,13 @@ $$
 - SymEngine：精确符号 MNA 矩阵；
 - Eigen3：生成 C++ 类默认使用的固定维矩阵后端；
 - CCTL `fixed_vector`/`fixed_matrix`：不依赖第三方库的内嵌存储后端。
+- CCTL `fixed_point32`：面向 FPGA 生成后端的带饱和有符号 32 位 Q 格式算术。
 
 Python 包由 `tools/gmp_installer/requirements-gmp.txt` 统一固定。Eigen3
 由本目录的 `vcpkg.json` 声明，并由 GMP 安装器恢复到共享 vcpkg 安装树；
-不再使用已经弃用的 `third_party/eigen`。使用 `--backend fixed` 生成的代码
-不会包含或链接 Eigen。
+不再使用已经弃用的 `third_party/eigen`。使用 `--backend fixed` 或
+`--backend fixed_point` 生成的代码不会包含或链接 Eigen。`fixed` 仍表示以
+`double` 计算的固定维矩阵；`fixed_point` 才表示整数定点计算。
 
 ## 支持的网表范围
 
@@ -301,7 +303,7 @@ tb\buck\
 描述输入/输出字段及类型、C++ 类和方法、求解器设置、头文件和 archive 相对路径、
 文件大小及 SHA-256；CCTL Studio 只导入该 manifest，并据此校验另外两个文件。
 矩阵 JSON 仍是生成器中间数据，不是部署接口，因其在大拓扑中可能非常庞大。
-fixed 后端把系数内嵌在 HPP 中，所以 manifest 的 archive 字段为 `null`。JSON、archive、
+fixed 和 fixed_point 后端把系数内嵌在 HPP 中，所以 manifest 的 archive 字段为 `null`。JSON、archive、
 CSV、本地构建目录和 IDE 缓存仍被忽略，因为它们均可重复生成。
 
 ### 生成和构建
@@ -312,12 +314,17 @@ CSV、本地构建目录和 IDE 缓存仍被忽略，因为它们均可重复生
 tools\cctl_studio\mna_solver\tb\buck\generate_code.bat
 ```
 
-`generate_code.bat` 开头定义 `NETLIST_FILE`、`MATRIX_TOLERANCE` 和
-`MATRIX_BACKEND`。后端可以选择 `eigen` 或 `fixed`，命令行用法为：
+`generate_code.bat` 开头定义 `NETLIST_FILE`、`DISCRETIZATION_METHOD`、
+`MATRIX_TOLERANCE` 和 `MATRIX_BACKEND`。两种欧拉法使用 `euler_codegen.py`，
+`rk4` 使用 `rk_codegen.py`。后端可选择 `eigen`、`fixed` 或 `fixed_point`：
 
 ```bat
-python tools\cctl_studio\mna_solver\cpp_codegen.py circuit.json generated ^
+python tools\cctl_studio\mna_solver\euler_codegen.py circuit.json generated ^
   --backend fixed
+python tools\cctl_studio\mna_solver\euler_codegen.py circuit.json generated ^
+  --backend fixed_point --fixed-point-input-range VS1=8 ^
+  --fixed-point-signal-range 16 ^
+  --fixed-point-fractional-bits 24
 ```
 
 CLI 和仓库内全部案例均默认使用 `eigen`。需要固定矩阵实现时，可显式传入
@@ -327,6 +334,50 @@ CIR 和 `1E-12` 精度，也可以把其他 CIR 作为第一个参数传入。�
 不会覆盖手写 testbench。生成的 `BuckCircuit` 提供
 `step_short(PWM, VS1)`、`step_normal(PWM, VS1)`、`run` 和 `operator()`；
 探针既可通过 `circuit.output.VF1`，也可通过 `circuit["V(VF1)"]` 读取。
+
+`fixed_point` 在整个电路内部使用有符号 32 位定点数。自动标幺会为每个状态、
+每个输入选择 2 的幂次基值，并为信号选择统一基值；分析过程覆盖有界的固定拓扑
+轨迹、可用稳态点和邻近拓扑切换，然后变换全部仿射矩阵并嵌入量化后的 raw 系数。
+状态、输入和信号保留请求的 Q 格式，各矩阵族则自动选择独立的系数 Q 格式。
+混合 Q 点积使用有符号 64 位累加器，只在完整求和后饱和，因此可以保留 MNA
+状态坐标中大项相消的精度。数值默认使用 24 位小数。模拟输入只在
+入口由 `double` 转为定点，公开输出只在真正读取时恢复为 `double`；状态迭代和
+选模信号均保持定点。正式工程应重复传入
+`--fixed-point-input-range NAME=FULL_SCALE` 声明实际满量程。工程已知信号范围
+还可通过 `--fixed-point-signal-range FULL_SCALE` 覆盖；这对
+电流源驱动的开路开关状态尤其重要，因为脱离真实 PWM 时序的独立拓扑探测可能
+预测出实际上不可达的高电压。
+
+专用效果回归文件为 `tests/test_fixed_point_fp.py`，文件名中的 `_fp` 是正式约定；
+它会检查 `_fp` 生成文件/类命名，并把量化后的混合 Q 状态与输出仿射映射逐项和
+浮点源矩阵比较。
+
+自动分析是可复现的工程估计，不是形式化的溢出证明；FPGA/HLS 投产前仍需做
+量程验收并与 Eigen
+参考结果对比。
+
+生成器按算法提供两个严格入口：
+
+```bat
+python tools\cctl_studio\mna_solver\euler_codegen.py circuit.json generated
+python tools\cctl_studio\mna_solver\rk_codegen.py rk_circuit.json generated
+```
+
+Python 生成阶段会完成欧拉离散或四个 RK 阶段的合并，Eigen archive 中只保存
+最终常量 `Ad/Bd/bias`，因此运行时仍是一次仿射状态更新。预计算不会改变显式
+RK4 的稳定域：仓库 Buck 的刚性寄生参数在默认 100 ns 步长下使用 RK4 会不稳定，
+必须显著减小步长；该案例仍应默认使用后向欧拉。
+
+兼容接口 `step_short`、`step_normal`、`run` 和 `operator()` 仍会立即刷新输出。
+只在需要观测时计算输出可使用：
+
+```cpp
+circuit.advance_normal(PWM, VS1); // 只更新状态并使输出缓存失效
+const auto& output = circuit.outputs(); // 首次访问时按需计算，随后复用缓存
+```
+
+拓扑选择同样只逐行计算所需内部信号，不再构造完整输出向量。矩阵去重进度会
+实时显示已处理状态、唯一/重复计算状态数，以及已发现的共享矩阵数量。
 
 例如 Buck 会同时生成 `buckcircuit.cctl-topology.json`、`buckcircuit.hpp` 和
 `buckcircuit.archive`。复制、发布或导入时应把三者作为一个目录内的完整单元；修改或
@@ -475,7 +526,8 @@ DC 传递函数和状态矩阵 `A=-1000`。
   路径，也可为同步桥压力测试显式选择忽略体二极管的 `2^N` 模式；纯二极管/
   VSWITCH 网络按 `2^N` 增长；同时含 MOSFET 与多个独立二极管或 VSWITCH
   的通用组合展开仍待实现；
-- 将同一数据文件后端扩展为 Verilog/定点矩阵实现属于下一阶段。
+- 直接生成 Verilog/RTL 以及可用于综合签核的形式化量程证明仍属于下一阶段；
+  当前定点 C++ 后端是面向软件验证/HLS 的参考实现。
 
 验证命令：
 

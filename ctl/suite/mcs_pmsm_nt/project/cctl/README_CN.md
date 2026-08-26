@@ -65,8 +65,8 @@ SDPE 形参；配置对象是只读值对象。构造函数只创建一次配置
   写入 `hw/generated`，默认生成 `hw/generated/eigen/pmsmcircuit.hpp` 和
   `pmsmcircuit.archive`。头文件保存固定维结构与加载逻辑，归档保存去重后的
   Eigen 矩阵池；CMake 会把归档复制到可执行文件目录。
-  将环境变量 `MATRIX_BACKEND` 显式设为 `fixed` 或 `all` 时，仍可生成
-  `hw/generated/fixed/pmsmcircuit.hpp`。Eigen 由 GMP 安装程序维护的 vcpkg
+  将环境变量 `MATRIX_BACKEND` 显式设为 `fp` 或 `all` 时，还会生成定点模块
+  `hw/generated/fp/pmsmcircuit_fp.hpp`，类名为 `PmsmCircuitFp`。Eigen 由 GMP 安装程序维护的 vcpkg
   环境提供，不引用已弃用的 `third_party` 副本。工程 `vcpkg.json` 同时声明
   `eigen3` 和 `nlohmann-json`；Visual Studio 文件夹模式选择
   `windows-msvc-release` 或 `windows-msvc-debug` Preset 后，会经过 GMP 的
@@ -164,10 +164,12 @@ Echo、PIL、Tunable、Memory 四个设施。该 Server 开关与硬件用
 程序会立即打印性能警告。Eigen 的小型固定维表达式在未优化构建下可能慢数十倍，
 性能回归必须通过 `build_test.bat` 或显式的 CMake Release 配置运行。
 
-Visual Studio 打开本目录时会读取 `CMakePresets.json`。配置选择器中
-`Windows MSVC Release (recommended)` 是默认推荐的性能配置，`Windows MSVC
-Debug` 保留真正的 `/Od` 调试语义；选择配置后再构建/启动
-`mcs_pmsm_nt_cctl.exe`。Visual Studio 会记住上次选择，因此已经打开过本工程的
+Visual Studio 打开本目录时会读取 `CMakePresets.json`。选择
+`Windows MSVC Release (recommended)` 使用原有浮点模块；选择
+`Windows MSVC Release - Fixed Point (_fp)` 使用 `pmsmcircuit_fp`。对应启动程序
+分别是 `mcs_pmsm_nt_cctl.exe` 和 `mcs_pmsm_nt_cctl_fp.exe`，目标选择器中也会
+同时显示两者。`Windows MSVC Debug` 保留真正的 `/Od` 调试语义。Visual Studio
+会记住上次选择，因此已经打开过本工程的
 工作区可能仍显示旧的 `x64-Debug`，此时只需在配置选择器中改选一次 Release。
 命令行可用 `mcs_pmsm_nt_cctl.exe --build-info` 瞬间确认配置，而不运行 4000 万步：
 Release 应显示 `build=Release optimized=yes`，Debug 应显示
@@ -186,11 +188,15 @@ Release 应显示 `build=Release optimized=yes`，Debug 应显示
 闭环回归全部通过。80,000 条、约 22.45 MB CSV 的文件线程忙碌时间约 0.57 s，
 且与 9.11 s 求解并行，因此不是数百秒运行时间的原因。
 
-fixed 能力没有删除：运行 `build_test.bat --with-fixed` 会额外生成 fixed 头、
-以 `CCTL_BUILD_FIXED_BACKEND=ON` 构建 `mcs_pmsm_nt_cctl_fixed`，并执行独立
-闭环测试。fixed 系数池继续使用 C++17 `constexpr` 常量初始化和可选 AVX2，
-适合作为静态存储、无 Eigen 运行依赖以及后续嵌入式/FPGA 演进的显式后端；
-本次同配置回归约为 12.6 s，因此默认仍使用 Eigen。
+命令行定点回归仍为显式选择：运行 `build_test.bat --with-fp` 会同时生成两种模块，
+以 `CCTL_BUILD_FP_BACKEND=ON` 构建 `mcs_pmsm_nt_cctl_fp`，并执行独立闭环测试。
+`_fp` 模块使用 Q8.24 状态/输入/信号、各矩阵族独立系数 Q 格式和有符号 64 位
+混合 Q 累加器；量程约定为直流母线及电机电流端口 8 V/A、调理源端口 4 V、
+物理电路信号 16。旧参数 `--with-fixed` 保留为 `--with-fp` 的兼容别名。
+
+已验证的 4 s 回归中，浮点与 `_fp` 在末 50 ms 的平均转速分别为
+269.4495 rpm 和 269.4412 rpm，差约 0.0083 rpm。`_fp` 在主机上更慢是预期行为，
+因为它是可移植的 FPGA/HLS 算术参考，而不是面向 AVX 的 Eigen 优化路径。
 
 Eigen 归档只在 `PmsmCircuit` 构造时读取和校验，仿真步进期间没有文件 I/O。
 schema v2 JSON 在写盘时已保存去重矩阵池并采用紧凑序列化；当前 23 状态、

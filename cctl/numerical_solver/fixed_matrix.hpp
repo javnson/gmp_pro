@@ -7,6 +7,7 @@
 #include <stdexcept>
 
 #include <cctl/numerical_solver/fixed_vector.hpp>
+#include <cctl/numerical_solver/fixed_point.hpp>
 
 namespace cctl
 {
@@ -250,6 +251,26 @@ affine_transform(const fixed_matrix<T, Rows, StateColumns> &state_matrix,
     for (std::size_t row = 0U; row < Rows; ++row)
         result[row] = dot(state_matrix[row], state) +
                       dot(input_matrix[row], input) + bias[row];
+    return result;
+}
+
+/** Evaluate unlike-Q A*x + B*u + bias with wide mixed dot products. */
+template <int StateCoefficientBits, int InputCoefficientBits, int ValueBits,
+          std::size_t Rows, std::size_t StateColumns,
+          std::size_t InputColumns>
+inline fixed_vector<fixed_point32<ValueBits>, Rows> mixed_affine_transform(
+    const fixed_matrix<fixed_point32<StateCoefficientBits>, Rows,
+                       StateColumns> &state_matrix,
+    const fixed_vector<fixed_point32<ValueBits>, StateColumns> &state,
+    const fixed_matrix<fixed_point32<InputCoefficientBits>, Rows,
+                       InputColumns> &input_matrix,
+    const fixed_vector<fixed_point32<ValueBits>, InputColumns> &input,
+    const fixed_vector<fixed_point32<ValueBits>, Rows> &bias)
+{
+    fixed_vector<fixed_point32<ValueBits>, Rows> result;
+    for (std::size_t row = 0U; row < Rows; ++row)
+        result[row] = mixed_dot(state_matrix[row], state) +
+                      mixed_dot(input_matrix[row], input) + bias[row];
     return result;
 }
 

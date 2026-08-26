@@ -29,6 +29,7 @@ class TimedProgressBar:
         self.last_completed = -1
         self.finished = False
         self.last_percent_bucket = -1
+        self.last_detail = ""
         self.update(0, force=True)
 
     @staticmethod
@@ -40,7 +41,14 @@ class TimedProgressBar:
         minutes, secs = divmod(remainder, 60)
         return f"{hours:d}:{minutes:02d}:{secs:02d}" if hours else f"{minutes:02d}:{secs:02d}"
 
-    def update(self, completed: int, total: int | None = None, *, force: bool = False) -> None:
+    def update(
+        self,
+        completed: int,
+        total: int | None = None,
+        *,
+        force: bool = False,
+        detail: str = "",
+    ) -> None:
         if self.finished:
             return
         if total is not None:
@@ -67,17 +75,20 @@ class TimedProgressBar:
             f"{completed:>{len(str(max(self.total, 1)))}}/{self.total} "
             f"{fraction * 100.0:6.2f}%  elapsed {self._duration(elapsed)}  ETA {self._duration(eta)}"
         )
+        if detail:
+            line += f"  {detail}"
         self.stream.write(("\r" if self.interactive else "") + line + ("" if self.interactive else "\n"))
         self.stream.flush()
         self.last_print_time = now
         self.last_completed = completed
         self.last_percent_bucket = percent_bucket
+        self.last_detail = detail
 
     def finish(self) -> None:
         if self.finished:
             return
         if self.last_completed != self.total:
-            self.update(self.total, force=True)
+            self.update(self.total, force=True, detail=self.last_detail)
         if self.interactive:
             self.stream.write("\n")
         self.stream.flush()

@@ -1,0 +1,251 @@
+{
+  "schema": {
+    "name": "gmp.cctl.compiled_topology",
+    "version": 1
+  },
+  "topology": {
+    "name": "PMSM (TINA Netlist Editor format)",
+    "class_name": "PmsmCircuit",
+    "source": {
+      "file": "PMSM.CIR",
+      "sha256": "ec6ca113ace0bf79d6e1c865dc646e5c9e246b99540361f586292679199d8d23"
+    }
+  },
+  "artifacts": {
+    "header": {
+      "path": "pmsmcircuit.hpp",
+      "size_bytes": 26174,
+      "sha256": "65f6263a4570582887c61c3415bf4dcfccbf24e529a762a469c5a993794ba7ef"
+    },
+    "archive": {
+      "path": "pmsmcircuit.archive",
+      "size_bytes": 8328564,
+      "sha256": "4a6a77a18956d6202160dad253b8c354199b2087baabe16511be18d6e1978aec"
+    }
+  },
+  "cpp": {
+    "standard": 17,
+    "include": "pmsmcircuit.hpp",
+    "class_name": "PmsmCircuit",
+    "constructor": {
+      "archive_path_argument": true,
+      "default_archive": "pmsmcircuit.archive"
+    },
+    "methods": {
+      "normal_step": "step_normal",
+      "short_step": "step_short",
+      "normal_advance": "advance_normal",
+      "short_advance": "advance_short",
+      "outputs": "outputs",
+      "reset": "reset"
+    },
+    "dependencies": [
+      "Eigen3"
+    ]
+  },
+  "interface": {
+    "inputs": [
+      {
+        "name": "PWM1",
+        "field": "PWM1",
+        "data_type": "uint32_t",
+        "role": "mosfet_gate_command",
+        "default": 0
+      },
+      {
+        "name": "PWM2",
+        "field": "PWM2",
+        "data_type": "uint32_t",
+        "role": "mosfet_gate_command",
+        "default": 0
+      },
+      {
+        "name": "PWM3",
+        "field": "PWM3",
+        "data_type": "uint32_t",
+        "role": "mosfet_gate_command",
+        "default": 0
+      },
+      {
+        "name": "PWM4",
+        "field": "PWM4",
+        "data_type": "uint32_t",
+        "role": "mosfet_gate_command",
+        "default": 0
+      },
+      {
+        "name": "PWM5",
+        "field": "PWM5",
+        "data_type": "uint32_t",
+        "role": "mosfet_gate_command",
+        "default": 0
+      },
+      {
+        "name": "PWM6",
+        "field": "PWM6",
+        "data_type": "uint32_t",
+        "role": "mosfet_gate_command",
+        "default": 0
+      },
+      {
+        "name": "VS4",
+        "field": "VS4",
+        "data_type": "double",
+        "role": "analog_input",
+        "default": 1.65
+      },
+      {
+        "name": "VS3",
+        "field": "VS3",
+        "data_type": "double",
+        "role": "analog_input",
+        "default": 1.65
+      },
+      {
+        "name": "VS2",
+        "field": "VS2",
+        "data_type": "double",
+        "role": "analog_input",
+        "default": 1.65
+      },
+      {
+        "name": "IPMSM1_C",
+        "field": "IPMSM1_C",
+        "data_type": "double",
+        "role": "pmsm_phase_current",
+        "default": 0.0
+      },
+      {
+        "name": "IPMSM1_B",
+        "field": "IPMSM1_B",
+        "data_type": "double",
+        "role": "pmsm_phase_current",
+        "default": 0.0
+      },
+      {
+        "name": "IPMSM1_A",
+        "field": "IPMSM1_A",
+        "data_type": "double",
+        "role": "pmsm_phase_current",
+        "default": 0.0
+      },
+      {
+        "name": "VS1",
+        "field": "VS1",
+        "data_type": "double",
+        "role": "analog_input",
+        "default": 5.0
+      }
+    ],
+    "outputs": [
+      {
+        "name": "V(VADC_VDC)",
+        "field": "VADC_VDC",
+        "data_type": "double",
+        "role": "adc_sample_voltage",
+        "signal_index": 0
+      },
+      {
+        "name": "V(VADC_VC)",
+        "field": "VADC_VC",
+        "data_type": "double",
+        "role": "adc_sample_voltage",
+        "signal_index": 1
+      },
+      {
+        "name": "V(VADC_VB)",
+        "field": "VADC_VB",
+        "data_type": "double",
+        "role": "adc_sample_voltage",
+        "signal_index": 2
+      },
+      {
+        "name": "V(VADC_VA)",
+        "field": "VADC_VA",
+        "data_type": "double",
+        "role": "adc_sample_voltage",
+        "signal_index": 3
+      },
+      {
+        "name": "V(VADC_IC)",
+        "field": "VADC_IC",
+        "data_type": "double",
+        "role": "adc_sample_voltage",
+        "signal_index": 4
+      },
+      {
+        "name": "V(VADC_IB)",
+        "field": "VADC_IB",
+        "data_type": "double",
+        "role": "adc_sample_voltage",
+        "signal_index": 5
+      },
+      {
+        "name": "V(VADC_IA)",
+        "field": "VADC_IA",
+        "data_type": "double",
+        "role": "adc_sample_voltage",
+        "signal_index": 6
+      },
+      {
+        "name": "I(VAM3)",
+        "field": "VAM3",
+        "data_type": "double",
+        "role": "signal_output",
+        "signal_index": 7
+      },
+      {
+        "name": "I(VAM2)",
+        "field": "VAM2",
+        "data_type": "double",
+        "role": "signal_output",
+        "signal_index": 8
+      },
+      {
+        "name": "I(VAM1)",
+        "field": "VAM1",
+        "data_type": "double",
+        "role": "signal_output",
+        "signal_index": 9
+      },
+      {
+        "name": "VPMSM1_A",
+        "field": "VPMSM1_A",
+        "data_type": "double",
+        "role": "pmsm_phase_voltage",
+        "signal_index": 10
+      },
+      {
+        "name": "VPMSM1_B",
+        "field": "VPMSM1_B",
+        "data_type": "double",
+        "role": "pmsm_phase_voltage",
+        "signal_index": 11
+      },
+      {
+        "name": "VPMSM1_C",
+        "field": "VPMSM1_C",
+        "data_type": "double",
+        "role": "pmsm_phase_voltage",
+        "signal_index": 12
+      }
+    ]
+  },
+  "solver": {
+    "method": "backward_euler",
+    "normal_step_s": 1.0000000000000001e-07,
+    "short_step_s": 1e-09,
+    "matrix_backend": "eigen",
+    "matrix_tolerance": 1e-12
+  },
+  "dimensions": {
+    "states": 23,
+    "signals": 25,
+    "analog_inputs": 7,
+    "command_inputs": 6,
+    "outputs": 13,
+    "selection_topologies": 729,
+    "stored_topologies": 729,
+    "calculation_states": 729
+  }
+}

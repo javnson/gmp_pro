@@ -67,8 +67,9 @@ mode where the header-mirror summary may be absent or stale. `hw/PMSM.CIR` is
 converted once into `hw/generated/PMSM.json`; the default calculation class is
 `hw/generated/eigen/pmsmcircuit.hpp` plus `pmsmcircuit.archive`. The header owns
 the fixed-size structure and loader, while the archive owns the deduplicated
-Eigen matrix pools; CMake copies the archive beside the executable. Setting `MATRIX_BACKEND` explicitly to
-`fixed` or `all` also generates `hw/generated/fixed/pmsmcircuit.hpp`. Eigen is
+Eigen matrix pools; CMake copies the archive beside the executable. Setting
+`MATRIX_BACKEND=fp` or `all` also generates the fixed-point module
+`hw/generated/fp/pmsmcircuit_fp.hpp`, class `PmsmCircuitFp`. Eigen is
 resolved from the GMP installer/vcpkg environment, never from the deprecated
 third-party copy. The project `vcpkg.json` declares both `eigen3` and
 `nlohmann-json`; Visual Studio folder mode selects the GMP vcpkg wrapper when
@@ -150,9 +151,12 @@ Performance regressions must use `build_test.bat` or an explicit CMake Release
 configuration.
 
 When Visual Studio opens this directory, it reads `CMakePresets.json`. Select
-`Windows MSVC Release (recommended)` for performance runs or `Windows MSVC
-Debug` for a genuine `/Od` diagnostic build, then build/start
-`mcs_pmsm_nt_cctl.exe`. Visual Studio remembers the last workspace selection,
+`Windows MSVC Release (recommended)` for the original floating-point module, or
+`Windows MSVC Release - Fixed Point (_fp)` for `pmsmcircuit_fp`. The corresponding
+startup executables are `mcs_pmsm_nt_cctl.exe` and
+`mcs_pmsm_nt_cctl_fp.exe`; both targets are also visible in the target selector.
+`Windows MSVC Debug` retains genuine `/Od` diagnostics. Visual Studio remembers
+the last workspace selection,
 so an existing workspace may remain on the legacy `x64-Debug` entry until
 Release is selected once. `mcs_pmsm_nt_cctl.exe --build-info` reports the
 configuration without running 40 million steps: Release must say
@@ -176,12 +180,19 @@ RK4 is about 0.003 rpm and the closed-loop regression passes. Formatting and
 writing 80,000 records (about 22.45 MB) keeps the asynchronous output worker busy
 for only about 0.57 s, so it cannot explain a run lasting hundreds of seconds.
 
-Fixed support remains opt-in. `build_test.bat --with-fixed` additionally
-generates the fixed header, configures `CCTL_BUILD_FIXED_BACKEND=ON`, builds
-`mcs_pmsm_nt_cctl_fixed`, and runs its independent closed-loop test. Fixed pools
-retain C++17 constant initialization and optional AVX2 for explicit static-storage,
-Eigen-free embedded/FPGA-oriented work. Its same-configuration regression is
-about 12.6 s, so Eigen remains the default.
+Fixed-point support remains opt-in for the command-line regression.
+`build_test.bat --with-fp` generates both modules, configures
+`CCTL_BUILD_FP_BACKEND=ON`, builds `mcs_pmsm_nt_cctl_fp`, and runs its independent
+closed-loop test. The generated `_fp` module uses Q8.24 state/input/signal values,
+per-matrix-family coefficient Q formats, and signed 64-bit mixed-Q accumulators;
+its declared ranges are 8 V/A for the DC-bus and motor-current ports, 4 V for
+the conditioning-source ports, and 16 for physical circuit signals. The legacy
+`--with-fixed` argument remains an alias for `--with-fp`.
+
+In the validated 4 s run, the floating-point and `_fp` final-50-ms mean speeds
+are 269.4495 and 269.4412 rpm respectively, a difference of about 0.0083 rpm.
+The `_fp` implementation is intentionally slower on this host because it is a
+portable FPGA/HLS arithmetic reference rather than an AVX Eigen optimization.
 
 The Eigen archive is read and validated only while constructing `PmsmCircuit`;
 simulation steps perform no file I/O. For the current 23-state, 729-topology

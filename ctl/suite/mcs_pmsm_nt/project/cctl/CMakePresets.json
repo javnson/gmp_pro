@@ -19,7 +19,30 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_TOOLCHAIN_FILE": "$env{GMP_PRO_LOCATION}/tools/gmp_installer/gmp_vcpkg_toolchain.cmake",
-        "CCTL_BUILD_FIXED_BACKEND": "OFF"
+        "CCTL_BUILD_FP_BACKEND": "ON",
+        "CCTL_DEFAULT_FP_BACKEND": "OFF"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "windows-msvc-release-fp",
+      "displayName": "Windows MSVC Release - Fixed Point (_fp)",
+      "description": "Optimized pmsmcircuit_fp build using automatic per-unit fixed-point arithmetic.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "$env{GMP_PRO_LOCATION}/tools/gmp_installer/gmp_vcpkg_toolchain.cmake",
+        "CCTL_BUILD_FP_BACKEND": "ON",
+        "CCTL_DEFAULT_FP_BACKEND": "ON"
       },
       "condition": {
         "type": "equals",
@@ -40,7 +63,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_TOOLCHAIN_FILE": "$env{GMP_PRO_LOCATION}/tools/gmp_installer/gmp_vcpkg_toolchain.cmake",
-        "CCTL_BUILD_FIXED_BACKEND": "OFF"
+        "CCTL_BUILD_FP_BACKEND": "ON",
+        "CCTL_DEFAULT_FP_BACKEND": "OFF"
       },
       "condition": {
         "type": "equals",
@@ -54,13 +78,22 @@
       "name": "windows-msvc-release",
       "displayName": "Build Windows MSVC Release",
       "configurePreset": "windows-msvc-release",
-      "configuration": "Release"
+      "configuration": "Release",
+      "targets": ["mcs_pmsm_nt_cctl"]
+    },
+    {
+      "name": "windows-msvc-release-fp",
+      "displayName": "Build Windows MSVC Release - Fixed Point (_fp)",
+      "configurePreset": "windows-msvc-release-fp",
+      "configuration": "Release",
+      "targets": ["mcs_pmsm_nt_cctl_fp"]
     },
     {
       "name": "windows-msvc-debug",
       "displayName": "Build Windows MSVC Debug",
       "configurePreset": "windows-msvc-debug",
-      "configuration": "Debug"
+      "configuration": "Debug",
+      "targets": ["mcs_pmsm_nt_cctl"]
     }
   ],
   "testPresets": [
@@ -69,6 +102,20 @@
       "displayName": "Test Windows MSVC Release",
       "configurePreset": "windows-msvc-release",
       "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-release-fp",
+      "displayName": "Test Windows MSVC Release - Fixed Point (_fp)",
+      "configurePreset": "windows-msvc-release-fp",
+      "configuration": "Release",
+      "filter": {
+        "include": {
+          "name": "mcs_pmsm_nt_cctl_fp_closed_loop"
+        }
+      },
       "output": {
         "outputOnFailure": true
       }

@@ -47,6 +47,7 @@ public:
     static constexpr const char* discretization_method = "backward_euler";
 
 
+
     struct Inputs {
         std::uint32_t PWM{0U};
         double VS1{5.0};
@@ -63,7 +64,7 @@ public:
         }
     };
 
-    Outputs output{};
+    mutable Outputs output{};
 
     explicit BuckCircuit(
         const std::filesystem::path& archive_path = std::filesystem::path(archive_filename))
@@ -72,15 +73,43 @@ public:
     void reset() {
         state_.setZero();
         signals_.setZero();
+        last_input_vector_.setZero();
         diode_on_ = false;
         body_on_ = false;
         last_topology_index_ = 0;
         last_calculation_state_index_ = topology_to_calculation_state()[0];
         output = Outputs{};
+        signal_valid_.fill(true);
+        outputs_valid_ = true;
+        signal_evaluation_count_ = 0U;
     }
 
-    const Outputs& step_short(const Inputs& inputs) { return step(inputs, true); }
-    const Outputs& step_normal(const Inputs& inputs) { return step(inputs, false); }
+    void advance_short(const Inputs& inputs) { advance(inputs, true); }
+    void advance_normal(const Inputs& inputs) { advance(inputs, false); }
+
+    const Outputs& outputs() const {
+        if (!outputs_valid_)
+            update_outputs();
+        return output;
+    }
+
+    const Outputs& step_short(const Inputs& inputs) {
+        advance_short(inputs);
+        return outputs();
+    }
+
+    const Outputs& step_normal(const Inputs& inputs) {
+        advance_normal(inputs);
+        return outputs();
+    }
+
+    void advance_short(std::uint32_t PWM, double VS1) {
+        advance_short(Inputs{PWM, VS1});
+    }
+
+    void advance_normal(std::uint32_t PWM, double VS1) {
+        advance_normal(Inputs{PWM, VS1});
+    }
 
     const Outputs& step_short(std::uint32_t PWM, double VS1) {
         return step_short(Inputs{PWM, VS1});
@@ -98,10 +127,16 @@ public:
         return run(PWM, VS1);
     }
 
-    double operator[](std::string_view name) const { return output[name]; }
+    double operator[](std::string_view name) const { return outputs()[name]; }
     const auto& state() const noexcept { return state_; }
+    double state_physical(std::size_t index) const {
+        if (index >= state_count)
+            throw std::out_of_range("circuit state index is out of range");
+        return state_(index);
+    }
     std::size_t last_topology_index() const noexcept { return last_topology_index_; }
     std::size_t last_calculation_state_index() const noexcept { return last_calculation_state_index_; }
+    std::size_t signal_evaluation_count() const noexcept { return signal_evaluation_count_; }
 
 
 private:
@@ -349,11 +384,11 @@ private:
     }
 
     std::size_t select_topology(const Inputs& inputs) {
-        const double diode_voltage = signals_(4) - signals_(5);
-        const double reverse_mosfet_voltage = signals_(3) - signals_(2);
-        constexpr double hysteresis = 9.9999999999999995e-07;
-        constexpr double diode_threshold = 0.55000000000000004;
-        constexpr double body_threshold = 0.80000000000000004;
+        const auto diode_voltage = signal_value(4U) - signal_value(5U);
+        const auto reverse_mosfet_voltage = signal_value(3U) - signal_value(2U);
+        const auto hysteresis = 9.9999999999999995e-07;
+        const auto diode_threshold = 0.55000000000000004;
+        const auto body_threshold = 0.80000000000000004;
         diode_on_ = diode_voltage >= diode_threshold + (diode_on_ ? -hysteresis : hysteresis);
         std::size_t path = 0;
         if (inputs.PWM != 0U) {
@@ -366,7 +401,28 @@ private:
         return (diode_on_ ? 3U : 0U) + path;
     }
 
-    const Outputs& step(const Inputs& inputs, bool use_short_step) {
+    double signal_value(std::size_t index) const {
+        if (index >= signal_count)
+            throw std::out_of_range("circuit signal index is out of range");
+        if (signal_valid_[index])
+            return signals_(index);
+        const auto& calculation_state = calculation_states()[last_calculation_state_index_];
+        signals_(index) =
+            signal_matrices()[calculation_state.C].row(index).dot(state_)
+            + signal_input_matrices()[calculation_state.D].row(index).dot(last_input_vector_)
+            + signal_vectors()[calculation_state.output_bias](index);
+        signal_valid_[index] = true;
+        ++signal_evaluation_count_;
+        return signals_(index);
+    }
+
+    void update_outputs() const {
+        output.VAM1 = signal_value(0U);
+        output.VF1 = signal_value(1U);
+        outputs_valid_ = true;
+    }
+
+    void advance(const Inputs& inputs, bool use_short_step) {
         last_topology_index_ = select_topology(inputs);
         const auto stored_topology_index = resolve_stored_topology(last_topology_index_);
         last_calculation_state_index_ = topology_to_calculation_state()[stored_topology_index];
@@ -382,17 +438,18 @@ private:
                 + input_matrices()[calculation_state.normal_B] * input_vector
                 + state_vectors()[calculation_state.normal_bias];
         }}
-        signals_ = signal_matrices()[calculation_state.C] * state_
-            + signal_input_matrices()[calculation_state.D] * input_vector
-            + signal_vectors()[calculation_state.output_bias];
-        output.VAM1 = signals_(0);
-        output.VF1 = signals_(1);
-        return output;
+        last_input_vector_ = input_vector;
+        signal_valid_.fill(false);
+        outputs_valid_ = false;
     }
 
     std::shared_ptr<const ArchiveData> archive_;
     StateVector state_{StateVector::Zero()};
-    SignalVector signals_{SignalVector::Zero()};
+    mutable SignalVector signals_{SignalVector::Zero()};
+    InputVector last_input_vector_{};
+    mutable std::array<bool, signal_count> signal_valid_{};
+    mutable bool outputs_valid_{true};
+    mutable std::size_t signal_evaluation_count_{0U};
     bool diode_on_{false};
     bool body_on_{false};
     std::size_t last_topology_index_{0};

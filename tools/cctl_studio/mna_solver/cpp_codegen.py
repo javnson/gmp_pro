@@ -21,6 +21,11 @@ from circuit_data import (
     print_circuit_dimensions,
 )
 from console_progress import TimedProgressBar
+from fixed_point_scaling import (
+    FixedPointScaling,
+    automatic_per_unit_scaling,
+    transformed_pools,
+)
 
 
 _MATRIX_SPECS = (
@@ -47,7 +52,7 @@ _POOL_COUNT_NAMES = {
     type_name: function_name.replace("matrices", "matrix_count").replace("vectors", "vector_count")
     for type_name, function_name in _POOL_NAMES.items()
 }
-_MATRIX_BACKENDS = ("eigen", "fixed")
+_MATRIX_BACKENDS = ("eigen", "fixed", "fixed_point")
 _ARCHIVE_MAGIC = b"GMPMNA1\0"
 _ARCHIVE_VERSION = 1
 _ARCHIVE_ENDIAN_MARKER = 0x01020304
@@ -125,6 +130,7 @@ def build_topology_manifest(
     header: Path,
     archive: Path | None,
     plan: "MatrixDedupPlan",
+    fixed_point_scaling: FixedPointScaling | None = None,
 ) -> dict:
     """Describe the public generated-code ABI without copying matrix data."""
     input_ports = document["ports"]["inputs"]
@@ -160,6 +166,28 @@ def build_topology_manifest(
     )
     source = document.get("circuit", {}).get("source", {})
     archive_document = _file_artifact(archive) if archive is not None else None
+    solver_document = {
+        "method": str(document["solver"]["method"]),
+        "normal_step_s": float(document["solver"]["normal_step_s"]),
+        "short_step_s": float(document["solver"]["short_step_s"]),
+        "matrix_backend": backend,
+        "matrix_tolerance": float(plan.tolerance),
+    }
+    if fixed_point_scaling is not None:
+        solver_document["fixed_point"] = {
+            "storage_bits": 32,
+            "fractional_bits": fixed_point_scaling.fractional_bits,
+            "requested_fractional_bits": fixed_point_scaling.requested_fractional_bits,
+            "coefficient_fractional_bits": dict(
+                fixed_point_scaling.coefficient_fractional_bits
+            ),
+            "state_scales": fixed_point_scaling.state_scales.tolist(),
+            "input_scales": fixed_point_scaling.input_scales.tolist(),
+            "signal_scale": fixed_point_scaling.signal_scale,
+            "horizon_steps": fixed_point_scaling.horizon_steps,
+            "maximum_scaled_coefficient": fixed_point_scaling.maximum_scaled_coefficient,
+            "maximum_quantization_error": fixed_point_scaling.maximum_quantization_error,
+        }
     return {
         "schema": {
             "name": _TOPOLOGY_MANIFEST_SCHEMA,
@@ -189,18 +217,15 @@ def build_topology_manifest(
             "methods": {
                 "normal_step": "step_normal",
                 "short_step": "step_short",
+                "normal_advance": "advance_normal",
+                "short_advance": "advance_short",
+                "outputs": "outputs",
                 "reset": "reset",
             },
             "dependencies": (["Eigen3"] if backend == "eigen" else ["cctl"]),
         },
         "interface": {"inputs": inputs, "outputs": outputs},
-        "solver": {
-            "method": str(document["solver"]["method"]),
-            "normal_step_s": float(document["solver"]["normal_step_s"]),
-            "short_step_s": float(document["solver"]["short_step_s"]),
-            "matrix_backend": backend,
-            "matrix_tolerance": float(plan.tolerance),
-        },
+        "solver": solver_document,
         "dimensions": {
             "states": len(document["state"]["names"]),
             "signals": len(document["signals"]["names"]),
@@ -305,6 +330,7 @@ def _matrix_expression(
     type_name: str,
     values: Sequence[Sequence[float]] | Sequence[float],
     backend: str = "eigen",
+    scaling: FixedPointScaling | None = None,
 ) -> str:
     flattened: list[float] = []
     for item in values:
@@ -312,6 +338,22 @@ def _matrix_expression(
             flattened.extend(float(value) for value in item)
         else:
             flattened.append(float(item))
+    if backend == "fixed_point":
+        if scaling is None:
+            raise ValueError("fixed-point matrix rendering requires scaling metadata")
+        scalar_name = {
+            "StateMatrix": "StateCoefficient",
+            "InputMatrix": "InputCoefficient",
+            "StateVector": "Scalar",
+            "SignalMatrix": "SignalCoefficient",
+            "SignalInputMatrix": "SignalInputCoefficient",
+            "SignalVector": "Scalar",
+        }[type_name]
+        assignments = ", ".join(
+            f"{scalar_name}::from_raw({int(value)})"
+            for value in scaling.quantize(flattened, type_name).tolist()
+        )
+        return f"{type_name}{{{assignments}}}"
     assignments = ", ".join(_number(value) for value in flattened)
     if backend == "fixed":
         return f"{type_name}{{{assignments}}}"
@@ -651,6 +693,7 @@ def build_matrix_dedup_plan(
     document: Mapping,
     tolerance: float = DEFAULT_MATRIX_TOLERANCE,
     progress: Callable[[int, int], None] | None = None,
+    progress_detail: Callable[[int, int, int, int], None] | None = None,
 ) -> MatrixDedupPlan:
     """Deduplicate equivalent runtime states, then intern each fixed-size matrix."""
 
@@ -691,6 +734,13 @@ def build_matrix_dedup_plan(
         }
         if progress is not None:
             progress(len(mappings), len(mappings))
+        if progress_detail is not None:
+            progress_detail(
+                len(mappings),
+                len(mappings),
+                len(calculation_states),
+                sum(pool_references.values()) - sum(len(pool) for pool in pools.values()),
+            )
         return MatrixDedupPlan(
             stored_tolerance,
             mappings,
@@ -773,6 +823,14 @@ def build_matrix_dedup_plan(
         topology_to_state.append(calculation_index)
         if progress is not None:
             progress(logical_index, logical_count)
+        if progress_detail is not None:
+            progress_detail(
+                logical_index,
+                logical_count,
+                len(calculation_states),
+                logical_index * len(_MATRIX_SPECS)
+                - sum(len(pool) for pool in pools.values()),
+            )
 
     coefficients_before = sum(matrix.size for matrices in topology_matrices for matrix in matrices)
     coefficients_after = sum(matrix.size for matrices in pools.values() for matrix in matrices)
@@ -802,6 +860,7 @@ def render_header(
     progress: Callable[[int, int], None] | None = None,
     plan: MatrixDedupPlan | None = None,
     archive_filename: str | None = None,
+    fixed_point_scaling: FixedPointScaling | None = None,
 ) -> str:
     selected_backend = backend.lower()
     if selected_backend not in _MATRIX_BACKENDS:
@@ -815,6 +874,14 @@ def render_header(
         else float(matrix_tolerance)
     )
     storage = plan or build_matrix_dedup_plan(document, selected_tolerance, progress)
+    scaling = fixed_point_scaling
+    if selected_backend == "fixed_point" and scaling is None:
+        scaling = automatic_per_unit_scaling(document, storage)
+    runtime_pools = (
+        transformed_pools(storage, scaling)
+        if selected_backend == "fixed_point" and scaling is not None
+        else storage.pools
+    )
     state_count = len(document["state"]["names"])
     signal_count = len(document["signals"]["names"])
     pwm_ports = [port for port in document["ports"]["inputs"] if port["data_type"] == "uint32_t"]
@@ -838,21 +905,35 @@ def render_header(
     input_fields = [_identifier(port["name"], "input") for port in input_ports]
     output_fields = [_identifier(port["field"], "output") for port in outputs]
     selected_archive_filename = archive_filename or f"{_identifier(class_name.lower())}.archive"
-    signal_at = (
-        (lambda index: f"signals_({index})")
-        if selected_backend == "eigen"
-        else (lambda index: f"signals_[{index}]")
-    )
+    signal_at = lambda index: f"signal_value({index}U)"
+    signal_cache_at = "signals_(index)" if selected_backend == "eigen" else "signals_[index]"
+
+    def signal_constant(value: float) -> str:
+        if selected_backend == "fixed_point":
+            if scaling is None:
+                raise ValueError("fixed-point signal constants require scaling metadata")
+            raw = int(scaling.quantize(float(value) / scaling.signal_scale))
+            # A non-zero switching threshold must not disappear when the common
+            # physical signal base makes it smaller than one fixed-point LSB.
+            if raw == 0 and value != 0.0:
+                raw = 1 if value > 0.0 else -1
+            return f"Scalar::from_raw({raw})"
+        return _number(value)
     pool_count_constants = "\n".join(
         f"    static constexpr std::size_t {_POOL_COUNT_NAMES[type_name]} = {len(storage.pools[type_name])};"
         for type_name in _POOL_NAMES
     )
     pool_functions = []
-    if selected_backend == "fixed":
+    if selected_backend in {"fixed", "fixed_point"}:
         for type_name, function_name in _POOL_NAMES.items():
             values = ",\n            ".join(
-                _matrix_expression(type_name, matrix.tolist(), selected_backend)
-                for matrix in storage.pools[type_name]
+                _matrix_expression(
+                    type_name,
+                    matrix.tolist(),
+                    selected_backend,
+                    scaling,
+                )
+                for matrix in runtime_pools[type_name]
             )
             count_name = _POOL_COUNT_NAMES[type_name]
             pool_functions.append(
@@ -913,7 +994,12 @@ def render_header(
     )
     function_arguments = ", ".join([*pwm_fields, *input_fields])
     output_updates = "\n".join(
-        f"        output.{field} = {signal_at(port['signal_index'])};"
+        (
+            f"        output.{field} = "
+            f"{signal_at(port['signal_index'])}.to_double() * signal_scale;"
+            if selected_backend == "fixed_point"
+            else f"        output.{field} = {signal_at(port['signal_index'])};"
+        )
         for field, port in zip(output_fields, outputs)
     )
     output_members = "\n".join(f"        double {field}{{0.0}};" for field in output_fields)
@@ -935,8 +1021,8 @@ def render_header(
         selection_lines: list[str] = []
         for index, diode in enumerate(switching["diodes"]):
             selection_lines.append(
-                f'''        const double diode_voltage_{index} = {signal_at(diode['anode_signal_index'])} - {signal_at(diode['cathode_signal_index'])};
-        constexpr double diode_threshold_{index} = {_number(diode['forward_threshold_V'])};
+                f'''        const auto diode_voltage_{index} = {signal_at(diode['anode_signal_index'])} - {signal_at(diode['cathode_signal_index'])};
+        const auto diode_threshold_{index} = {signal_constant(diode['forward_threshold_V'])};
         diode_on_[{index}] = diode_voltage_{index} >= diode_threshold_{index} + (diode_on_[{index}] ? -hysteresis : hysteresis);
         topology_index = topology_index * 2U + (diode_on_[{index}] ? 1U : 0U);'''
             )
@@ -948,7 +1034,7 @@ def render_header(
         reset_switch_state = "        diode_on_.fill(false);"
         selection_body = "\n".join(
             [
-                f"        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};",
+                f"        const auto hysteresis = {signal_constant(switching['voltage_hysteresis_V'])};",
                 "        std::size_t topology_index = 0U;",
                 *selection_lines,
                 "        return topology_index;",
@@ -970,7 +1056,7 @@ def render_header(
             body_on_[{index}] = false;
             topology_index += 1U;
         }} else {{
-            const double reverse_voltage_{index} = {signal_at(switch['source_signal_index'])} - {signal_at(switch['drain_signal_index'])};
+            const auto reverse_voltage_{index} = {signal_at(switch['source_signal_index'])} - {signal_at(switch['drain_signal_index'])};
             body_on_[{index}] = reverse_voltage_{index} >= (body_on_[{index}] ? -hysteresis : hysteresis);
             topology_index += body_on_[{index}] ? 1U : 0U;
         }}'''
@@ -978,7 +1064,7 @@ def render_header(
         reset_switch_state = "        body_on_.fill(false);"
         selection_body = "\n".join(
             [
-                f"        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};",
+                f"        const auto hysteresis = {signal_constant(switching['voltage_hysteresis_V'])};",
                 "        std::size_t topology_index = 0U;",
                 *switch_lines,
                 "        return topology_index;",
@@ -996,8 +1082,8 @@ def render_header(
                 f'''        if (inputs.{field} != 0U) {{
             body_on_[{index}] = false;
         }} else {{
-            const double reverse_voltage_{index} = {signal_at(switch['source_signal_index'])} - {signal_at(switch['drain_signal_index'])};
-            constexpr double body_threshold_{index} = {_number(switch['body_forward_threshold_V'])};
+            const auto reverse_voltage_{index} = {signal_at(switch['source_signal_index'])} - {signal_at(switch['drain_signal_index'])};
+            const auto body_threshold_{index} = {signal_constant(switch['body_forward_threshold_V'])};
             body_on_[{index}] = reverse_voltage_{index} >= body_threshold_{index} + (body_on_[{index}] ? -hysteresis : hysteresis);
         }}'''
             )
@@ -1024,7 +1110,7 @@ def render_header(
         reset_switch_state = "        body_on_.fill(false);"
         selection_body = "\n".join(
             [
-                f"        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};",
+                f"        const auto hysteresis = {signal_constant(switching['voltage_hysteresis_V'])};",
                 "        std::size_t topology_index = 0U;",
                 *switch_lines,
                 "        return topology_index;",
@@ -1056,10 +1142,10 @@ def render_header(
             half_bridge_modes_[{pair_index}] = HalfBridgeOperatingMode::lower_channel;
             topology_index += 1U;
         }} else {{
-            const double upper_reverse_voltage_{upper_index} = {signal_at(upper['source_signal_index'])} - {signal_at(upper['drain_signal_index'])};
-            const double lower_reverse_voltage_{lower_index} = {signal_at(lower['source_signal_index'])} - {signal_at(lower['drain_signal_index'])};
-            constexpr double upper_body_threshold_{upper_index} = {_number(upper['body_forward_threshold_V'])};
-            constexpr double lower_body_threshold_{lower_index} = {_number(lower['body_forward_threshold_V'])};
+            const auto upper_reverse_voltage_{upper_index} = {signal_at(upper['source_signal_index'])} - {signal_at(upper['drain_signal_index'])};
+            const auto lower_reverse_voltage_{lower_index} = {signal_at(lower['source_signal_index'])} - {signal_at(lower['drain_signal_index'])};
+            const auto upper_body_threshold_{upper_index} = {signal_constant(upper['body_forward_threshold_V'])};
+            const auto lower_body_threshold_{lower_index} = {signal_constant(lower['body_forward_threshold_V'])};
             body_on_[{upper_index}] = upper_reverse_voltage_{upper_index} >= upper_body_threshold_{upper_index} + (body_on_[{upper_index}] ? -hysteresis : hysteresis);
             body_on_[{lower_index}] = lower_reverse_voltage_{lower_index} >= lower_body_threshold_{lower_index} + (body_on_[{lower_index}] ? -hysteresis : hysteresis);
             if (body_on_[{upper_index}] && body_on_[{lower_index}])
@@ -1081,7 +1167,7 @@ def render_header(
         )
         selection_body = "\n".join(
             [
-                f"        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};",
+                f"        const auto hysteresis = {signal_constant(switching['voltage_hysteresis_V'])};",
                 "        std::size_t topology_index = 0U;",
                 *switch_lines,
                 "        return topology_index;",
@@ -1120,8 +1206,8 @@ def render_header(
             body_on_[{index}] = false;
             topology_index += 1U;
         }} else {{
-            const double reverse_voltage_{index} = {signal_at(switch['source_signal_index'])} - {signal_at(switch['drain_signal_index'])};
-            constexpr double body_threshold_{index} = {_number(switch['body_forward_threshold_V'])};
+            const auto reverse_voltage_{index} = {signal_at(switch['source_signal_index'])} - {signal_at(switch['drain_signal_index'])};
+            const auto body_threshold_{index} = {signal_constant(switch['body_forward_threshold_V'])};
             body_on_[{index}] = reverse_voltage_{index} >= body_threshold_{index} + (body_on_[{index}] ? -hysteresis : hysteresis);
             topology_index += body_on_[{index}] ? 2U : 0U;
         }}'''
@@ -1141,8 +1227,8 @@ def render_header(
         if mixed_mosfet_diode:
             for index, diode in enumerate(switching["diodes"]):
                 switch_lines.append(
-                    f'''        const double diode_voltage_{index} = {signal_at(diode['anode_signal_index'])} - {signal_at(diode['cathode_signal_index'])};
-        constexpr double diode_threshold_{index} = {_number(diode['forward_threshold_V'])};
+                    f'''        const auto diode_voltage_{index} = {signal_at(diode['anode_signal_index'])} - {signal_at(diode['cathode_signal_index'])};
+        const auto diode_threshold_{index} = {signal_constant(diode['forward_threshold_V'])};
         diode_on_[{index}] = diode_voltage_{index} >= diode_threshold_{index} + (diode_on_[{index}] ? -hysteresis : hysteresis);
         topology_index = topology_index * 2U + (diode_on_[{index}] ? 1U : 0U);'''
                 )
@@ -1151,7 +1237,7 @@ def render_header(
             reset_switch_state += "\n        diode_on_.fill(false);"
         selection_body = "\n".join(
             [
-                f"        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};",
+                f"        const auto hysteresis = {signal_constant(switching['voltage_hysteresis_V'])};",
                 "        std::size_t topology_index = 0U;",
                 *switch_lines,
                 "        return topology_index;",
@@ -1166,11 +1252,11 @@ def render_header(
         terminal = document["signals"]["switch_terminal_indices"]
         pwm_field = pwm_fields[0]
         reset_switch_state = "        diode_on_ = false;\n        body_on_ = false;"
-        selection_body = f'''        const double diode_voltage = {signal_at(terminal['diode_anode'])} - {signal_at(terminal['diode_cathode'])};
-        const double reverse_mosfet_voltage = {signal_at(terminal['mosfet_source'])} - {signal_at(terminal['mosfet_drain'])};
-        constexpr double hysteresis = {_number(switching['voltage_hysteresis_V'])};
-        constexpr double diode_threshold = {_number(switching['diode_forward_threshold_V'])};
-        constexpr double body_threshold = {_number(switching['body_forward_threshold_V'])};
+        selection_body = f'''        const auto diode_voltage = {signal_at(terminal['diode_anode'])} - {signal_at(terminal['diode_cathode'])};
+        const auto reverse_mosfet_voltage = {signal_at(terminal['mosfet_source'])} - {signal_at(terminal['mosfet_drain'])};
+        const auto hysteresis = {signal_constant(switching['voltage_hysteresis_V'])};
+        const auto diode_threshold = {signal_constant(switching['diode_forward_threshold_V'])};
+        const auto body_threshold = {signal_constant(switching['body_forward_threshold_V'])};
         diode_on_ = diode_voltage >= diode_threshold + (diode_on_ ? -hysteresis : hysteresis);
         std::size_t path = 0;
         if (inputs.{pwm_field} != 0U) {{
@@ -1193,7 +1279,11 @@ def render_header(
     using SignalInputMatrix = Eigen::Matrix<double, {signal_count}, {input_count}>;
     using SignalVector = Eigen::Matrix<double, {signal_count}, 1>;
     using InputVector = Eigen::Matrix<double, {input_count}, 1>;'''
-        reset_vectors = "        state_.setZero();\n        signals_.setZero();"
+        reset_vectors = (
+            "        state_.setZero();\n"
+            "        signals_.setZero();\n"
+            "        last_input_vector_.setZero();"
+        )
         input_vector_definition = f"        InputVector input_vector;\n        input_vector << {input_vector};"
         state_member_initializer = "StateVector::Zero()"
         signal_member_initializer = "SignalVector::Zero()"
@@ -1205,10 +1295,11 @@ def render_header(
             state_ = state_matrices()[calculation_state.normal_A] * state_
                 + input_matrices()[calculation_state.normal_B] * input_vector
                 + state_vectors()[calculation_state.normal_bias];
-        }}
-        signals_ = signal_matrices()[calculation_state.C] * state_
-            + signal_input_matrices()[calculation_state.D] * input_vector
-            + signal_vectors()[calculation_state.output_bias];'''
+        }}'''
+        signal_value_body = '''        signals_(index) =
+            signal_matrices()[calculation_state.C].row(index).dot(state_)
+            + signal_input_matrices()[calculation_state.D].row(index).dot(last_input_vector_)
+            + signal_vectors()[calculation_state.output_bias](index);'''
         constructor_text = f'''    explicit {class_name}(
         const std::filesystem::path& archive_path = std::filesystem::path(archive_filename))
         : archive_(load_archive(archive_path)) {{ reset(); }}'''
@@ -1222,35 +1313,90 @@ def render_header(
 #include <limits>
 #include <memory>
 #include <vector>"""
+        signal_value_type = "double"
+        scaling_constants = ""
+        state_physical_value = "state_(index)"
     else:
-        matrix_include = """#include <cctl/numerical_solver/fixed_matrix.hpp>
+        scalar_type = "double"
+        fixed_point_include = ""
+        scaling_constants = ""
+        signal_value_type = "double"
+        state_physical_value = "state_[index]"
+        fixed_input_vector = input_vector
+        if selected_backend == "fixed_point":
+            if scaling is None:
+                raise ValueError("fixed-point backend requires scaling metadata")
+            scalar_type = "Scalar"
+            fixed_point_include = "#include <cctl/numerical_solver/fixed_point.hpp>\n"
+            state_scale_values = ", ".join(_number(value) for value in scaling.state_scales)
+            input_scale_values = ", ".join(_number(value) for value in scaling.input_scales)
+            scaling_constants = f'''    static constexpr int fixed_point_fractional_bits = {scaling.fractional_bits};
+    static constexpr int state_coefficient_fractional_bits = {scaling.coefficient_fractional_bits["StateMatrix"]};
+    static constexpr int input_coefficient_fractional_bits = {scaling.coefficient_fractional_bits["InputMatrix"]};
+    static constexpr int signal_coefficient_fractional_bits = {scaling.coefficient_fractional_bits["SignalMatrix"]};
+    static constexpr int signal_input_coefficient_fractional_bits = {scaling.coefficient_fractional_bits["SignalInputMatrix"]};
+    static constexpr double signal_scale = {_number(scaling.signal_scale)};
+    static constexpr std::array<double, state_count> state_scales{{{{{state_scale_values}}}}};
+    static constexpr std::array<double, analog_input_count> input_scales{{{{{input_scale_values}}}}};
+'''
+            fixed_input_vector = ", ".join(
+                f"Scalar::from_double(inputs.{field} / input_scales[{index}U])"
+                for index, field in enumerate(input_fields)
+            )
+            signal_value_type = "Scalar"
+            state_physical_value = "state_[index].to_double() * state_scales[index]"
+        matrix_include = f"""{fixed_point_include}#include <cctl/numerical_solver/fixed_matrix.hpp>
 #include <cctl/numerical_solver/fixed_vector.hpp>"""
-        matrix_aliases = f'''    using StateMatrix = cctl::fixed_matrix<double, {state_count}, {state_count}>;
-    using InputMatrix = cctl::fixed_matrix<double, {state_count}, {input_count}>;
-    using StateVector = cctl::fixed_vector<double, {state_count}>;
-    using SignalMatrix = cctl::fixed_matrix<double, {signal_count}, {state_count}>;
-    using SignalInputMatrix = cctl::fixed_matrix<double, {signal_count}, {input_count}>;
-    using SignalVector = cctl::fixed_vector<double, {signal_count}>;
-    using InputVector = cctl::fixed_vector<double, {input_count}>;'''
-        reset_vectors = "        state_ = StateVector{};\n        signals_ = SignalVector{};"
-        input_vector_definition = f"        const InputVector input_vector{{{input_vector}}};"
+        scalar_alias = (
+            f'''    using Scalar = cctl::fixed_point32<{scaling.fractional_bits}>;
+    using StateCoefficient = cctl::fixed_point32<{scaling.coefficient_fractional_bits["StateMatrix"]}>;
+    using InputCoefficient = cctl::fixed_point32<{scaling.coefficient_fractional_bits["InputMatrix"]}>;
+    using SignalCoefficient = cctl::fixed_point32<{scaling.coefficient_fractional_bits["SignalMatrix"]}>;
+    using SignalInputCoefficient = cctl::fixed_point32<{scaling.coefficient_fractional_bits["SignalInputMatrix"]}>;
+'''
+            if selected_backend == "fixed_point" and scaling is not None
+            else ""
+        )
+        state_coefficient_type = "StateCoefficient" if selected_backend == "fixed_point" else scalar_type
+        input_coefficient_type = "InputCoefficient" if selected_backend == "fixed_point" else scalar_type
+        signal_coefficient_type = "SignalCoefficient" if selected_backend == "fixed_point" else scalar_type
+        signal_input_coefficient_type = "SignalInputCoefficient" if selected_backend == "fixed_point" else scalar_type
+        matrix_aliases = f'''{scalar_alias}    using StateMatrix = cctl::fixed_matrix<{state_coefficient_type}, {state_count}, {state_count}>;
+    using InputMatrix = cctl::fixed_matrix<{input_coefficient_type}, {state_count}, {input_count}>;
+    using StateVector = cctl::fixed_vector<{scalar_type}, {state_count}>;
+    using SignalMatrix = cctl::fixed_matrix<{signal_coefficient_type}, {signal_count}, {state_count}>;
+    using SignalInputMatrix = cctl::fixed_matrix<{signal_input_coefficient_type}, {signal_count}, {input_count}>;
+    using SignalVector = cctl::fixed_vector<{scalar_type}, {signal_count}>;
+    using InputVector = cctl::fixed_vector<{scalar_type}, {input_count}>;'''
+        reset_vectors = (
+            "        state_ = StateVector{};\n"
+            "        signals_ = SignalVector{};\n"
+            "        last_input_vector_ = InputVector{};"
+        )
+        input_vector_definition = f"        const InputVector input_vector{{{fixed_input_vector}}};"
         state_member_initializer = ""
         signal_member_initializer = ""
-        state_step_body = '''        if (use_short_step) {{
-            state_ = cctl::affine_transform(
+        affine_function = (
+            "cctl::mixed_affine_transform"
+            if selected_backend == "fixed_point"
+            else "cctl::affine_transform"
+        )
+        state_step_body = f'''        if (use_short_step) {{{{
+            state_ = {affine_function}(
                 state_matrices()[calculation_state.short_A], state_,
                 input_matrices()[calculation_state.short_B], input_vector,
                 state_vectors()[calculation_state.short_bias]);
-        }} else {{
-            state_ = cctl::affine_transform(
+        }}}} else {{{{
+            state_ = {affine_function}(
                 state_matrices()[calculation_state.normal_A], state_,
                 input_matrices()[calculation_state.normal_B], input_vector,
                 state_vectors()[calculation_state.normal_bias]);
-        }}
-        signals_ = cctl::affine_transform(
-            signal_matrices()[calculation_state.C], state_,
-            signal_input_matrices()[calculation_state.D], input_vector,
-            signal_vectors()[calculation_state.output_bias]);'''
+        }}}}'''
+        dot_function = "cctl::mixed_dot" if selected_backend == "fixed_point" else "cctl::dot"
+        signal_value_body = f'''        signals_[index] =
+            {dot_function}(signal_matrices()[calculation_state.C][index], state_)
+            + {dot_function}(signal_input_matrices()[calculation_state.D][index], last_input_vector_)
+            + signal_vectors()[calculation_state.output_bias][index];'''
         constructor_text = f"    {class_name}() {{ reset(); }}"
         matrix_storage = "embedded"
         archive_name_literal = '""'
@@ -1308,6 +1454,7 @@ public:
     static constexpr double short_step_s = {_number(document['solver']['short_step_s'])};
     static constexpr double matrix_tolerance = {_number(storage.tolerance)};
     static constexpr const char* discretization_method = "{document['solver']['method']}";
+{scaling_constants}
 {half_bridge_public_declarations}
 
     struct Inputs {{
@@ -1324,7 +1471,7 @@ public:
         }}
     }};
 
-    Outputs output{{}};
+    mutable Outputs output{{}};
 
 {constructor_text}
 
@@ -1334,10 +1481,37 @@ public:
         last_topology_index_ = {selection_indices[0]};
         last_calculation_state_index_ = topology_to_calculation_state()[0];
         output = Outputs{{}};
+        signal_valid_.fill(true);
+        outputs_valid_ = true;
+        signal_evaluation_count_ = 0U;
     }}
 
-    const Outputs& step_short(const Inputs& inputs) {{ return step(inputs, true); }}
-    const Outputs& step_normal(const Inputs& inputs) {{ return step(inputs, false); }}
+    void advance_short(const Inputs& inputs) {{ advance(inputs, true); }}
+    void advance_normal(const Inputs& inputs) {{ advance(inputs, false); }}
+
+    const Outputs& outputs() const {{
+        if (!outputs_valid_)
+            update_outputs();
+        return output;
+    }}
+
+    const Outputs& step_short(const Inputs& inputs) {{
+        advance_short(inputs);
+        return outputs();
+    }}
+
+    const Outputs& step_normal(const Inputs& inputs) {{
+        advance_normal(inputs);
+        return outputs();
+    }}
+
+    void advance_short({function_parameters}) {{
+        advance_short(Inputs{{{function_arguments}}});
+    }}
+
+    void advance_normal({function_parameters}) {{
+        advance_normal(Inputs{{{function_arguments}}});
+    }}
 
     const Outputs& step_short({function_parameters}) {{
         return step_short(Inputs{{{function_arguments}}});
@@ -1355,10 +1529,16 @@ public:
         return run({function_arguments});
     }}
 
-    double operator[](std::string_view name) const {{ return output[name]; }}
+    double operator[](std::string_view name) const {{ return outputs()[name]; }}
     const auto& state() const noexcept {{ return state_; }}
+    double state_physical(std::size_t index) const {{
+        if (index >= state_count)
+            throw std::out_of_range("circuit state index is out of range");
+        return {state_physical_value};
+    }}
     std::size_t last_topology_index() const noexcept {{ return last_topology_index_; }}
     std::size_t last_calculation_state_index() const noexcept {{ return last_calculation_state_index_; }}
+    std::size_t signal_evaluation_count() const noexcept {{ return signal_evaluation_count_; }}
 {half_bridge_public_accessors}
 
 private:
@@ -1378,20 +1558,42 @@ private:
 {selection_body}
     }}
 
-    const Outputs& step(const Inputs& inputs, bool use_short_step) {{
+    {signal_value_type} signal_value(std::size_t index) const {{
+        if (index >= signal_count)
+            throw std::out_of_range("circuit signal index is out of range");
+        if (signal_valid_[index])
+            return {signal_cache_at};
+        const auto& calculation_state = calculation_states()[last_calculation_state_index_];
+{signal_value_body}
+        signal_valid_[index] = true;
+        ++signal_evaluation_count_;
+        return {signal_cache_at};
+    }}
+
+    void update_outputs() const {{
+{output_updates}
+        outputs_valid_ = true;
+    }}
+
+    void advance(const Inputs& inputs, bool use_short_step) {{
         last_topology_index_ = select_topology(inputs);
         const auto stored_topology_index = resolve_stored_topology(last_topology_index_);
         last_calculation_state_index_ = topology_to_calculation_state()[stored_topology_index];
         const auto& calculation_state = calculation_states()[last_calculation_state_index_];
 {input_vector_definition}
 {state_step_body}
-{output_updates}
-        return output;
+        last_input_vector_ = input_vector;
+        signal_valid_.fill(false);
+        outputs_valid_ = false;
     }}
 
 {archive_member}
     StateVector state_{{{state_member_initializer}}};
-    SignalVector signals_{{{signal_member_initializer}}};
+    mutable SignalVector signals_{{{signal_member_initializer}}};
+    InputVector last_input_vector_{{}};
+    mutable std::array<bool, signal_count> signal_valid_{{}};
+    mutable bool outputs_valid_{{true}};
+    mutable std::size_t signal_evaluation_count_{{0U}};
 {switch_state_members}
     std::size_t last_topology_index_{{0}};
     std::size_t last_calculation_state_index_{{0}};
@@ -1406,6 +1608,11 @@ def generate_cpp_project(
     matrix_tolerance: float | None = None,
     backend: str = "eigen",
     show_progress: bool = False,
+    fixed_point_fractional_bits: int = 24,
+    fixed_point_horizon_steps: int = 256,
+    fixed_point_input_ranges: Mapping[str, float] | None = None,
+    output_stem: str | None = None,
+    fixed_point_signal_range: float | None = None,
 ) -> dict[str, Path]:
     document = load_circuit_data(data_path)
     selected_tolerance = (
@@ -1434,11 +1641,41 @@ def generate_cpp_project(
         print(f"short step:          {float(document['solver']['short_step_s']):.12g} s")
         print(f"matrix tolerance:    {selected_tolerance:.12g}")
         print(f"matrix backend:      {selected_backend}")
-    bar = TimedProgressBar("Deduplicating states", logical_count) if show_progress else None
+    bar = TimedProgressBar("Deduplicating matrices", logical_count) if show_progress else None
+
+    def report_dedup(
+        completed: int,
+        total: int,
+        unique_states: int,
+        shared_matrices: int,
+    ) -> None:
+        if bar is None:
+            return
+        bar.update(
+            completed,
+            total,
+            detail=(
+                f"unique states {unique_states}, repeated {completed - unique_states}, "
+                f"shared matrices {shared_matrices}"
+            ),
+        )
+
     plan = build_matrix_dedup_plan(
         document,
         selected_tolerance,
-        None if bar is None else bar.update,
+        progress_detail=None if bar is None else report_dedup,
+    )
+    fixed_scaling = (
+        automatic_per_unit_scaling(
+            document,
+            plan,
+            requested_fractional_bits=fixed_point_fractional_bits,
+            horizon_steps=fixed_point_horizon_steps,
+            input_full_scales=fixed_point_input_ranges,
+            signal_full_scale=fixed_point_signal_range,
+        )
+        if selected_backend == "fixed_point"
+        else None
     )
     if bar is not None:
         bar.finish()
@@ -1456,8 +1693,24 @@ def generate_cpp_project(
                 f"  {type_name:<23} {len(plan.pools[type_name])}/"
                 f"{plan.pool_references[type_name]} unique copies"
             )
+        if fixed_scaling is not None:
+            print(
+                f"fixed-point format:  Q{32 - fixed_scaling.fractional_bits}."
+                f"{fixed_scaling.fractional_bits} signed"
+            )
+            print(
+                "coefficient Q bits:   "
+                + ", ".join(
+                    f"{name}={bits}"
+                    for name, bits in fixed_scaling.coefficient_fractional_bits.items()
+                )
+            )
+            print(f"signal base:         {fixed_scaling.signal_scale:.12g}")
+            print(
+                f"quantization error:  {fixed_scaling.maximum_quantization_error:.12g}"
+            )
     selected_class = _identifier(class_name) if class_name else _default_class_name(data_path, document)
-    stem = _identifier(selected_class.lower())
+    stem = _identifier(output_stem) if output_stem else _identifier(selected_class.lower())
     output = Path(output_directory)
     output.mkdir(parents=True, exist_ok=True)
     header = output / f"{stem}.hpp"
@@ -1475,6 +1728,7 @@ def generate_cpp_project(
             selected_backend,
             plan=plan,
             archive_filename=archive.name,
+            fixed_point_scaling=fixed_scaling,
         ),
         encoding="utf-8",
     )
@@ -1487,6 +1741,7 @@ def generate_cpp_project(
                 header,
                 archive if selected_backend == "eigen" else None,
                 plan,
+                fixed_scaling,
             ),
             ensure_ascii=False,
             indent=2,
@@ -1501,20 +1756,78 @@ def generate_cpp_project(
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Generate a fixed-size C++ circuit class and Eigen matrix archive"
+        description="Generate a fixed-size C++ circuit class and its deployment manifest"
     )
     parser.add_argument("data")
     parser.add_argument("output_directory")
     parser.add_argument("--class-name")
+    parser.add_argument(
+        "--output-stem",
+        help="artifact basename; for example pmsmcircuit_fp",
+    )
     parser.add_argument("--matrix-tolerance", type=float)
     parser.add_argument("--backend", choices=_MATRIX_BACKENDS, default="eigen")
+    parser.add_argument(
+        "--fixed-point-fractional-bits",
+        type=int,
+        default=24,
+        help="requested fractional bits for the signed 32-bit fixed-point backend",
+    )
+    parser.add_argument(
+        "--fixed-point-horizon-steps",
+        type=int,
+        default=256,
+        help="representative transition horizon used by automatic per-unit scaling",
+    )
+    parser.add_argument(
+        "--fixed-point-input-range",
+        action="append",
+        default=[],
+        metavar="NAME=FULL_SCALE",
+        help="override an analog input full scale used by automatic per-unit scaling",
+    )
+    parser.add_argument(
+        "--fixed-point-signal-range",
+        type=float,
+        help="override the common physical full scale for signals and outputs",
+    )
     parser.add_argument("--no-progress", action="store_true")
     return parser
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def _named_positive_values(values: Sequence[str], label: str) -> dict[str, float]:
+    result: dict[str, float] = {}
+    for item in values:
+        name, separator, raw = item.partition("=")
+        if not separator or not name.strip():
+            raise ValueError(f"{label} must use NAME=VALUE syntax: {item!r}")
+        try:
+            value = float(raw)
+        except ValueError as exc:
+            raise ValueError(f"{label} has invalid value: {item!r}") from exc
+        if not math.isfinite(value) or value <= 0.0:
+            raise ValueError(f"{label} must be finite and positive: {item!r}")
+        key = name.strip()
+        if key.upper() in {existing.upper() for existing in result}:
+            raise ValueError(f"duplicate {label} name: {key!r}")
+        result[key] = value
+    return result
+
+
+def main_for_methods(
+    allowed_methods: set[str] | None,
+    argv: Sequence[str] | None = None,
+) -> int:
     args = _parser().parse_args(argv)
     try:
+        if allowed_methods is not None:
+            document = load_circuit_data(args.data)
+            method = str(document["solver"]["method"])
+            if method not in allowed_methods:
+                expected = ", ".join(sorted(allowed_methods))
+                raise ValueError(
+                    f"circuit data uses {method!r}; this generator accepts: {expected}"
+                )
         generated = generate_cpp_project(
             args.data,
             args.output_directory,
@@ -1522,6 +1835,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.matrix_tolerance,
             args.backend,
             not args.no_progress,
+            args.fixed_point_fractional_bits,
+            args.fixed_point_horizon_steps,
+            _named_positive_values(
+                args.fixed_point_input_range,
+                "fixed-point input range",
+            ),
+            args.output_stem,
+            args.fixed_point_signal_range,
         )
         for kind, path in generated.items():
             print(f"{kind}: {path}")
@@ -1529,6 +1850,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"error: {error}")
         return 2
     return 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    return main_for_methods(None, argv)
 
 
 if __name__ == "__main__":

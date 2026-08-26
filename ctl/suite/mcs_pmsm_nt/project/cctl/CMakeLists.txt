@@ -27,8 +27,10 @@ find_package(Threads REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
-option(CCTL_BUILD_FIXED_BACKEND
-       "Build the optional fixed-matrix main-circuit backend" OFF)
+option(CCTL_BUILD_FP_BACKEND
+       "Build the pmsmcircuit_fp fixed-point main-circuit backend" OFF)
+option(CCTL_DEFAULT_FP_BACKEND
+       "Use the _fp executable as the Visual Studio startup project" OFF)
 
 if(CMAKE_CONFIGURATION_TYPES)
     message(STATUS
@@ -71,18 +73,15 @@ function(add_cctl_pmsm_simulator target_name backend_name)
     if(MSVC)
         target_compile_options(${target_name} PRIVATE
             /utf-8 /bigobj /arch:AVX2 /wd4828)
-        if(backend_name STREQUAL "fixed")
-            # Large generated fixed pools are constant-initialized so they do
-            # not create multi-megabyte startup temporaries on the thread stack.
+        if(backend_name STREQUAL "fp")
             target_compile_definitions(${target_name} PRIVATE
-                CCTL_FIXED_MATH_USE_AVX=1)
+                CCTL_SIM_USE_FIXED_POINT=1)
             target_compile_options(${target_name} PRIVATE /constexpr:steps16777216)
         endif()
     else()
-        if(backend_name STREQUAL "fixed")
+        if(backend_name STREQUAL "fp")
             target_compile_definitions(${target_name} PRIVATE
-                CCTL_FIXED_MATH_USE_AVX=1)
-            target_compile_options(${target_name} PRIVATE -mavx2)
+                CCTL_SIM_USE_FIXED_POINT=1)
         endif()
     endif()
 endfunction()
@@ -98,10 +97,6 @@ add_custom_command(TARGET mcs_pmsm_nt_cctl POST_BUILD
     COMMENT "Deploying the Eigen matrix archive for $<CONFIG>"
     VERBATIM)
 
-# Generated Visual Studio solutions start the simulator target, not ALL_BUILD.
-set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-             PROPERTY VS_STARTUP_PROJECT mcs_pmsm_nt_cctl)
-
 enable_testing()
 add_test(NAME mcs_pmsm_nt_cctl_closed_loop
          COMMAND mcs_pmsm_nt_cctl --no-pause --normal-priority
@@ -109,15 +104,25 @@ add_test(NAME mcs_pmsm_nt_cctl_closed_loop
 set_tests_properties(mcs_pmsm_nt_cctl_closed_loop PROPERTIES
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:mcs_pmsm_nt_cctl>")
 
-if(CCTL_BUILD_FIXED_BACKEND)
-    add_cctl_pmsm_simulator(mcs_pmsm_nt_cctl_fixed fixed)
-    add_test(NAME mcs_pmsm_nt_cctl_fixed_closed_loop
-             COMMAND mcs_pmsm_nt_cctl_fixed --no-pause --normal-priority
-                     --output mcs_pmsm_nt_cctl_fixed.csv)
+if(CCTL_BUILD_FP_BACKEND)
+    add_cctl_pmsm_simulator(mcs_pmsm_nt_cctl_fp fp)
+    add_test(NAME mcs_pmsm_nt_cctl_fp_closed_loop
+             COMMAND mcs_pmsm_nt_cctl_fp --no-pause --normal-priority
+                     --output mcs_pmsm_nt_cctl_fp.csv)
     set_tests_properties(
         mcs_pmsm_nt_cctl_closed_loop
-        mcs_pmsm_nt_cctl_fixed_closed_loop
+        mcs_pmsm_nt_cctl_fp_closed_loop
         PROPERTIES RUN_SERIAL TRUE)
-    set_tests_properties(mcs_pmsm_nt_cctl_fixed_closed_loop PROPERTIES
-        WORKING_DIRECTORY "$<TARGET_FILE_DIR:mcs_pmsm_nt_cctl_fixed>")
+    set_tests_properties(mcs_pmsm_nt_cctl_fp_closed_loop PROPERTIES
+        WORKING_DIRECTORY "$<TARGET_FILE_DIR:mcs_pmsm_nt_cctl_fp>")
 endif()
+
+# Generated Visual Studio solutions expose both modules when requested. The
+# selected preset controls which executable starts when F5 is pressed.
+if(CCTL_BUILD_FP_BACKEND AND CCTL_DEFAULT_FP_BACKEND)
+    set(CCTL_STARTUP_TARGET mcs_pmsm_nt_cctl_fp)
+else()
+    set(CCTL_STARTUP_TARGET mcs_pmsm_nt_cctl)
+endif()
+set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+             PROPERTY VS_STARTUP_PROJECT ${CCTL_STARTUP_TARGET})

@@ -3,7 +3,13 @@
  * @brief PMSM plant composition and project entry for the hosted CCTL CSP.
  */
 
+#if defined(CCTL_SIM_USE_FIXED_POINT)
+#include "pmsmcircuit_fp.hpp"
+using ActivePmsmCircuit = PmsmCircuitFp;
+#else
 #include "pmsmcircuit.hpp"
+using ActivePmsmCircuit = PmsmCircuit;
+#endif
 
 #include <cctl/component/circuit_model/pmsm_cs.hpp>
 #include <csp.general.hpp>
@@ -53,8 +59,8 @@ constexpr sim_real_gt kTbclkCountsPerPlantStepExact =
 constexpr std::uint64_t kTbclkCountsPerPlantStep =
     static_cast<std::uint64_t>(kTbclkCountsPerPlantStepExact + 0.5);
 
-static_assert(PmsmCircuit::normal_step_s > kPlantStepS * 0.999999999 &&
-                  PmsmCircuit::normal_step_s < kPlantStepS * 1.000000001,
+static_assert(ActivePmsmCircuit::normal_step_s > kPlantStepS * 0.999999999 &&
+                  ActivePmsmCircuit::normal_step_s < kPlantStepS * 1.000000001,
               "SDPE plant step does not match the generated main circuit");
 static_assert(CTRL_PWM_CMP_MAX == CCTL_SIM_EPWM_PERIOD_COUNT,
               "controller and ePWM compare ranges must match");
@@ -124,7 +130,7 @@ cctl::pmsm_cs_parameters<sim_real_gt> motor_parameters()
 }
 
 /** Map the three simulated half bridges to the generated netlist ports. */
-void set_gate_inputs(PmsmCircuit::Inputs &input,
+void set_gate_inputs(ActivePmsmCircuit::Inputs &input,
                      const mcs::cctl_xplt::epwm_outputs &output)
 {
     /* Project-local PMSM.CIR maps A->PWM1/2, B->PWM3/4, C->PWM5/6. */
@@ -140,7 +146,7 @@ void set_gate_inputs(PmsmCircuit::Inputs &input,
 bool verify_gate_phase_mapping() noexcept
 {
     mcs::cctl_xplt::epwm_outputs output{};
-    PmsmCircuit::Inputs input;
+    ActivePmsmCircuit::Inputs input;
     output[0] = {1U, 0U, false};
     output[1] = {0U, 1U, false};
     output[2] = {0U, 1U, false};
@@ -201,7 +207,7 @@ class pmsm_drive_topology final
 
         for (std::size_t index = 0U; index < CCTL_SIM_STARTUP_SHORT_STEPS; ++index)
         {
-            PmsmCircuit::Inputs startup_input;
+            ActivePmsmCircuit::Inputs startup_input;
             startup_input.VS1 = CCTL_SIM_DC_BUS_V;
             inverter_output_ = inverter_.step_short(startup_input);
         }
@@ -368,8 +374,8 @@ class pmsm_drive_topology final
     {
         stream << std::setprecision(10)
                << "PMSM drive topology:\n"
-               << "  main circuit backend=" << PmsmCircuit::matrix_backend
-               << '/' << PmsmCircuit::matrix_storage
+               << "  main circuit backend=" << ActivePmsmCircuit::matrix_backend
+               << '/' << ActivePmsmCircuit::matrix_storage
                << ", DC bus=" << CCTL_SIM_DC_BUS_V << " V\n"
                << "  motor integration order="
                << CCTL_SIM_PMSM_INTEGRATION_ORDER << " at plant step\n"
@@ -467,7 +473,7 @@ class pmsm_drive_topology final
         return record;
     }
 
-    PmsmCircuit inverter_;
+    ActivePmsmCircuit inverter_;
     cctl::pmsm_cs<sim_real_gt> motor_;
     mcs::cctl_xplt::mcu_simulation mcu_;
     gmp::csp::cctl::compute_budget_scheduler user_code_scheduler_{
@@ -475,8 +481,8 @@ class pmsm_drive_topology final
     gmp::csp::cctl::compute_budget_scheduler circuit_record_scheduler_{
         kPlantStepS, CCTL_SIM_CIRCUIT_RECORD_FREQUENCY_HZ};
     mcs::cctl_xplt::epwm_outputs pwm_output_{};
-    PmsmCircuit::Inputs inverter_input_{};
-    PmsmCircuit::Outputs inverter_output_{};
+    ActivePmsmCircuit::Inputs inverter_input_{};
+    ActivePmsmCircuit::Outputs inverter_output_{};
     double maximum_current_a_{};
     double final_window_speed_sum_{};
     double mean_final_speed_rpm_{};
@@ -574,7 +580,7 @@ void csp_cctl_project_configure(void)
 
     gmp::csp::cctl::build_information build;
     build.backend = CCTL_SIM_MATRIX_BACKEND_NAME;
-    build.storage = PmsmCircuit::matrix_storage;
+    build.storage = ActivePmsmCircuit::matrix_storage;
     build.configuration = CCTL_SIM_BUILD_CONFIGURATION;
     build.optimized = CCTL_SIM_OPTIMIZED_BUILD != 0;
     gmp::csp::cctl::configure_build_information(std::move(build));
@@ -624,7 +630,7 @@ void csp_cctl_project_configure(void)
             " build. Use build_test.bat or configure CMake with Release.";
     config.execution_label =
         std::string(CCTL_SIM_MATRIX_BACKEND_NAME) + "/" +
-        PmsmCircuit::matrix_storage + "  build=" +
+        ActivePmsmCircuit::matrix_storage + "  build=" +
         CCTL_SIM_BUILD_CONFIGURATION + "  optimized=" +
         (CCTL_SIM_OPTIMIZED_BUILD != 0 ? "yes" : "no");
     config.console_bar_width = 64U;

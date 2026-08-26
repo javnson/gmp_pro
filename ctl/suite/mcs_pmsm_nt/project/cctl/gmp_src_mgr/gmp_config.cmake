@@ -13,6 +13,10 @@ if(NOT TARGET ${GMP_CMAKE_TARGET})
 endif()
 
 set(GMP_GENERATED_SOURCES
+    "${CMAKE_CURRENT_LIST_DIR}/gmp_src/cctl_circuit.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gmp_src/cctl_datalink.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gmp_src/cctl_mcu.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/gmp_src/cctl_simulation.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/crc16.c"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/csp_cctl.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/gmp_src/csp_cctl_main.cpp"

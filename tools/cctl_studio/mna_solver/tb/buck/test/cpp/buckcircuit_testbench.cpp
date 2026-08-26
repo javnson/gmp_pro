@@ -11,6 +11,21 @@
 #include <limits>
 
 int main() {
+    {
+        BuckCircuit lazy_circuit;
+        lazy_circuit.advance_normal(0U, 5.0);
+        if (lazy_circuit.signal_evaluation_count() != 0U) {
+            std::cerr << "advance_normal evaluated observable signals eagerly\n";
+            return 1;
+        }
+        const auto &lazy_output = lazy_circuit.outputs();
+        if (lazy_circuit.signal_evaluation_count() == 0U ||
+            !std::isfinite(lazy_output.VF1)) {
+            std::cerr << "lazy output evaluation did not populate the output cache\n";
+            return 1;
+        }
+    }
+
     BuckCircuit circuit;
     constexpr double supply = 5.0;
     constexpr double pwm_frequency = 10000.0;

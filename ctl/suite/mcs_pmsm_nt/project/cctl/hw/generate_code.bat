@@ -5,7 +5,7 @@ set "NETLIST_FILE=PMSM.CIR"
 set "MATRIX_TOLERANCE=1E-12"
 if not defined MATRIX_BACKEND set "MATRIX_BACKEND=eigen"
 if not defined DISCRETIZATION_METHOD set "DISCRETIZATION_METHOD=backward_euler"
-rem MATRIX_BACKEND accepts eigen (default), fixed, or all.
+rem MATRIX_BACKEND accepts eigen (default), fp, or all.
 
 set "NO_PAUSE=0"
 if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
@@ -23,8 +23,8 @@ if not exist "%MNA_TOOL_DIR%\circuit_data.py" (
     set "RESULT=1"
     goto :failed_with_result
 )
-if /I not "%MATRIX_BACKEND%"=="eigen" if /I not "%MATRIX_BACKEND%"=="fixed" if /I not "%MATRIX_BACKEND%"=="all" (
-    echo [ERROR] MATRIX_BACKEND must be eigen, fixed, or all: %MATRIX_BACKEND%
+if /I not "%MATRIX_BACKEND%"=="eigen" if /I not "%MATRIX_BACKEND%"=="fp" if /I not "%MATRIX_BACKEND%"=="all" (
+    echo [ERROR] MATRIX_BACKEND must be eigen, fp, or all: %MATRIX_BACKEND%
     set "RESULT=1"
     goto :failed_with_result
 )
@@ -42,7 +42,7 @@ set "CASE_DIR=%~dp0"
 for %%I in ("%NETLIST_FILE%") do set "NETLIST_STEM=%%~nI"
 set "NETLIST_PATH=%CASE_DIR%%NETLIST_FILE%"
 set "GENERATED_DIR=%CASE_DIR%generated"
-set "FIXED_DIR=%GENERATED_DIR%\fixed"
+set "FP_DIR=%GENERATED_DIR%\fp"
 set "EIGEN_DIR=%GENERATED_DIR%\eigen"
 set "JSON_PATH=%GENERATED_DIR%\%NETLIST_STEM%.json"
 if not exist "%NETLIST_PATH%" (
@@ -51,22 +51,24 @@ if not exist "%NETLIST_PATH%" (
     goto :failed_with_result
 )
 if not exist "%GENERATED_DIR%" mkdir "%GENERATED_DIR%"
+set "CODEGEN_SCRIPT=euler_codegen.py"
+if /I "%DISCRETIZATION_METHOD%"=="rk4" set "CODEGEN_SCRIPT=rk_codegen.py"
 
 echo [1/%TOTAL_STAGES%] Exporting portable PMSM-inverter circuit data...
 python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method "%DISCRETIZATION_METHOD%" --matrix-tolerance "%MATRIX_TOLERANCE%"
 if errorlevel 1 goto :failed
 
 if /I "%MATRIX_BACKEND%"=="all" goto :generate_all
-if /I "%MATRIX_BACKEND%"=="fixed" (
-    if not exist "%FIXED_DIR%" mkdir "%FIXED_DIR%"
-    echo [2/2] Generating the optional fixed-matrix C++ calculation class...
-    python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%FIXED_DIR%" --backend fixed
+if /I "%MATRIX_BACKEND%"=="fp" (
+    if not exist "%FP_DIR%" mkdir "%FP_DIR%"
+    echo [2/2] Generating the fixed-point pmsmcircuit_fp C++ calculation class...
+    python "%MNA_TOOL_DIR%\%CODEGEN_SCRIPT%" "%JSON_PATH%" "%FP_DIR%" --backend fixed_point --class-name PmsmCircuitFp --output-stem pmsmcircuit_fp --fixed-point-signal-range 16 --fixed-point-input-range VS1=8 --fixed-point-input-range VS2=4 --fixed-point-input-range VS3=4 --fixed-point-input-range VS4=4 --fixed-point-input-range IPMSM1_A=8 --fixed-point-input-range IPMSM1_B=8 --fixed-point-input-range IPMSM1_C=8
     if errorlevel 1 goto :failed
-    set "GENERATED_SOLVER=%FIXED_DIR%"
+    set "GENERATED_SOLVER=%FP_DIR%"
 ) else (
     if not exist "%EIGEN_DIR%" mkdir "%EIGEN_DIR%"
     echo [2/2] Generating the Eigen C++ calculation class...
-    python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%EIGEN_DIR%" --backend eigen
+    python "%MNA_TOOL_DIR%\%CODEGEN_SCRIPT%" "%JSON_PATH%" "%EIGEN_DIR%" --backend eigen
     if errorlevel 1 goto :failed
     set "GENERATED_SOLVER=%EIGEN_DIR%"
 )
@@ -74,14 +76,14 @@ goto :generated
 
 :generate_all
 if not exist "%EIGEN_DIR%" mkdir "%EIGEN_DIR%"
-if not exist "%FIXED_DIR%" mkdir "%FIXED_DIR%"
+if not exist "%FP_DIR%" mkdir "%FP_DIR%"
 echo [2/3] Generating the Eigen C++ calculation class...
-python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%EIGEN_DIR%" --backend eigen
+python "%MNA_TOOL_DIR%\%CODEGEN_SCRIPT%" "%JSON_PATH%" "%EIGEN_DIR%" --backend eigen
 if errorlevel 1 goto :failed
-echo [3/3] Generating the optional fixed-matrix C++ calculation class...
-python "%MNA_TOOL_DIR%\cpp_codegen.py" "%JSON_PATH%" "%FIXED_DIR%" --backend fixed
+echo [3/3] Generating the fixed-point pmsmcircuit_fp C++ calculation class...
+python "%MNA_TOOL_DIR%\%CODEGEN_SCRIPT%" "%JSON_PATH%" "%FP_DIR%" --backend fixed_point --class-name PmsmCircuitFp --output-stem pmsmcircuit_fp --fixed-point-signal-range 16 --fixed-point-input-range VS1=8 --fixed-point-input-range VS2=4 --fixed-point-input-range VS3=4 --fixed-point-input-range VS4=4 --fixed-point-input-range IPMSM1_A=8 --fixed-point-input-range IPMSM1_B=8 --fixed-point-input-range IPMSM1_C=8
 if errorlevel 1 goto :failed
-set "GENERATED_SOLVER=%EIGEN_DIR% and %FIXED_DIR%"
+set "GENERATED_SOLVER=%EIGEN_DIR% and %FP_DIR%"
 
 :generated
 echo.

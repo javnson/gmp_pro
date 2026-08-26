@@ -34,7 +34,7 @@ set "BUCK_NPC_JSON=%VALIDATION_DIR%\buck_npc.json"
 set "PMSM_JSON=%VALIDATION_DIR%\pmsm.json"
 
 echo [1/13] Compiling Python sources...
-python -m py_compile "%SOLVER_DIR%\mna_solver.py" "%SOLVER_DIR%\switched_solver.py" "%SOLVER_DIR%\circuit_data.py" "%SOLVER_DIR%\cpp_codegen.py"
+python -m py_compile "%SOLVER_DIR%\mna_solver.py" "%SOLVER_DIR%\switched_solver.py" "%SOLVER_DIR%\circuit_data.py" "%SOLVER_DIR%\cpp_codegen.py" "%SOLVER_DIR%\fixed_point_scaling.py" "%SOLVER_DIR%\euler_codegen.py" "%SOLVER_DIR%\rk_codegen.py" "%SOLVER_DIR%\tests\test_fixed_point_fp.py"
 if errorlevel 1 goto :failed
 
 echo [2/13] Running Python unit tests...
