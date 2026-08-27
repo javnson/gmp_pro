@@ -77,7 +77,3 @@ __pycache__/
 .DS_Store
 *~
 # END GMP MANAGED PROJECT IGNORE RULES
-
-# Project-specific ignore rules
-/*_Debug/
-/*_Release/

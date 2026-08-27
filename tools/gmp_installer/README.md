@@ -639,10 +639,13 @@ Fleet discovery applies the repository's real `.gitignore` rules through
 other ignored build tree is not a deploy/generation target. Do not replace this
 with a hard-coded build-directory list; adding a repository ignore rule must be
 enough to exclude future generated trees. After copying the canonical scripts,
-the distributor runs `gmp_generate_inc.bat` and then
-`gmp_generate_src.bat` for every valid target. A copy or generation failure
-returns a non-zero status, which prevents the installer completion marker from
-being created.
+the distributor normally runs `gmp_generate_inc.bat` and then
+`gmp_generate_src.bat` for every valid target. Environment installation uses
+`--deploy-only`, so it refreshes the launchers without creating every
+project's generated source/header mirror. Generate those files from the
+selected project's `gmp_src_mgr` when that project is ready to build. A copy
+or requested generation failure returns a non-zero status, which prevents the
+installer completion marker from being created.
 
 SDPE project launchers follow the same release model. The canonical
 `sdpe_edit.bat`, `sdpe_generate.bat`, `sdpe_settings.bat`, and

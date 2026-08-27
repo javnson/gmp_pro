@@ -592,7 +592,11 @@ def configure_repository() -> None:
         cwd=source_manager,
         env=env,
     )
-    run([python, source_manager / "framework_distribute_tools_v3.py"], cwd=source_manager, env=env)
+    run(
+        [python, source_manager / "framework_distribute_tools_v3.py", "--deploy-only"],
+        cwd=source_manager,
+        env=env,
+    )
     sdpe = GMP_ROOT / "tools" / "SDPE_v2"
     run([python, sdpe / "distribute_sdpe_mgr.py"], cwd=sdpe, env=env)
     run([python, INSTALLER_DIR / "distribute_project_gitignores.py"], cwd=INSTALLER_DIR, env=env)

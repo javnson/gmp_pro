@@ -18,7 +18,9 @@ project source-management tools.
 - `src_mgr/facility_dependency_audit.py` validates registered module
   dependencies against their repository-local `#include` directives.
 - `src_mgr/framework_distribute_tools_v3.py` distributes current source-manager
-  launchers and regenerates project headers and sources.
+  launchers. Its default mode also regenerates project headers and sources;
+  installation uses `--deploy-only` and leaves generation to the selected
+  project.
 
 `gmp_fac_generate_cfg_json.py` is retired and must not be called by current
 installation or upgrade workflows.

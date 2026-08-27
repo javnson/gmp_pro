@@ -461,14 +461,30 @@ csp/**/gmp_src/**
 csp/**/gmp_generate_inc.bat
 csp/**/gmp_generate_src.bat
 csp/**/gmp_config.bat
+csp/**/gmp_generate_inc.sh
+csp/**/gmp_generate_src.sh
+csp/**/gmp_config.sh
 
 ctl/**/gmp_generate_inc.bat
 ctl/**/gmp_generate_src.bat
 ctl/**/gmp_config.bat
+ctl/**/gmp_generate_inc.sh
+ctl/**/gmp_generate_src.sh
+ctl/**/gmp_config.sh
 
 core/**/gmp_generate_inc.bat
 core/**/gmp_generate_src.bat
 core/**/gmp_config.bat
+core/**/gmp_generate_inc.sh
+core/**/gmp_generate_src.sh
+core/**/gmp_config.sh
+
+cctl/**/gmp_generate_inc.bat
+cctl/**/gmp_generate_src.bat
+cctl/**/gmp_config.bat
+cctl/**/gmp_generate_inc.sh
+cctl/**/gmp_generate_src.sh
+cctl/**/gmp_config.sh
 
 # disable all the CCS temporary files
 # ctl/suite/**/*.launch

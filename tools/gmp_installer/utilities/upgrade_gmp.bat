@@ -118,7 +118,7 @@ if errorlevel 1 (
     goto :FINISH
 )
 
-python .\framework_distribute_tools_v3.py
+python .\framework_distribute_tools_v3.py --deploy-only
 set "RESULT=!ERRORLEVEL!"
 
 :FINISH

@@ -14,7 +14,8 @@
 - `src_mgr/gmp_framework_dic.json`：当前 facilities/module 的唯一注册表。
 - `src_mgr/facility_dependency_audit.py`：根据仓库内的 `#include` 指令校验已注册模块的
   依赖关系。
-- `src_mgr/framework_distribute_tools_v3.py`：分发最新版源码管理脚本，并重新生成工程头文件和源码。
+- `src_mgr/framework_distribute_tools_v3.py`：分发最新版源码管理脚本。默认模式会重新生成
+  工程头文件和源码；安装阶段使用 `--deploy-only`，在实际使用工程时再按需生成。
 
 `gmp_fac_generate_cfg_json.py` 已废弃，新的安装和升级流程不得再调用它。
 

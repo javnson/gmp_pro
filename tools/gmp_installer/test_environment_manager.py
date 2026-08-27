@@ -73,6 +73,10 @@ class RepositoryConfigurationTests(unittest.TestCase):
             [python, source_manager / "facility_dependency_audit.py", "--repo", root],
             commands,
         )
+        self.assertIn(
+            [python, source_manager / "framework_distribute_tools_v3.py", "--deploy-only"],
+            commands,
+        )
         self.assertFalse(
             any("gmp_fac_generate_cfg_json.py" in str(argument) for command in commands for argument in command)
         )
