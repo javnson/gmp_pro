@@ -54,5 +54,29 @@ class AggregateVcpkgManifestTests(unittest.TestCase):
             manager.build_aggregate_vcpkg_manifest([first, second])
 
 
+class RepositoryConfigurationTests(unittest.TestCase):
+    def test_configuration_audits_the_current_registry_without_the_retired_generator(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            python = root / "bin" / "python" / "python.exe"
+            source_manager = root / "tools" / "facilities_generator" / "src_mgr"
+            with (
+                mock.patch.object(manager, "GMP_ROOT", root),
+                mock.patch.object(manager, "BIN_DIR", root / "bin"),
+                mock.patch.object(manager, "private_environment", return_value={}),
+                mock.patch.object(manager, "run") as run,
+            ):
+                manager.configure_repository()
+
+        commands = [list(call.args[0]) for call in run.call_args_list]
+        self.assertIn(
+            [python, source_manager / "facility_dependency_audit.py", "--repo", root],
+            commands,
+        )
+        self.assertFalse(
+            any("gmp_fac_generate_cfg_json.py" in str(argument) for command in commands for argument in command)
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

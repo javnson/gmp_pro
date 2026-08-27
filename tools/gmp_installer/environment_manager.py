@@ -586,8 +586,12 @@ def configure_repository() -> None:
         cwd=facilities,
         env=env,
     )
-    run([python, facilities / "gmp_fac_generate_cfg_json.py"], cwd=facilities, env=env)
     source_manager = facilities / "src_mgr"
+    run(
+        [python, source_manager / "facility_dependency_audit.py", "--repo", GMP_ROOT],
+        cwd=source_manager,
+        env=env,
+    )
     run([python, source_manager / "framework_distribute_tools_v3.py"], cwd=source_manager, env=env)
     sdpe = GMP_ROOT / "tools" / "SDPE_v2"
     run([python, sdpe / "distribute_sdpe_mgr.py"], cwd=sdpe, env=env)

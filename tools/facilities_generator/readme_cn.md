@@ -11,8 +11,12 @@
 - `ccs_product_installer/install_ccs_products.bat`：校验注册表，并为每个器件系列生成
   `.metadata/product.json` 和 `.metadata/.tirex` 元数据。
 - `gmp_fac_install_ccs_product.py/.bat`：兼容旧调用方的转发入口。
-- `gmp_fac_generate_cfg_json.py`：生成 facilities 配置元数据。
+- `src_mgr/gmp_framework_dic.json`：当前 facilities/module 的唯一注册表。
+- `src_mgr/facility_dependency_audit.py`：根据仓库内的 `#include` 指令校验已注册模块的
+  依赖关系。
 - `src_mgr/framework_distribute_tools_v3.py`：分发最新版源码管理脚本，并重新生成工程头文件和源码。
+
+`gmp_fac_generate_cfg_json.py` 已废弃，新的安装和升级流程不得再调用它。
 
 根目录安装程序会自动执行这些任务。所有程序必须通过 `GMP_PRO_LOCATION` 定位仓库，不能写入绝对路径。
 

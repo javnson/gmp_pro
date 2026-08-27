@@ -14,9 +14,14 @@ project source-management tools.
   files.
 - `gmp_fac_install_ccs_product.py/.bat` are compatibility forwarding entry
   points for older callers.
-- `gmp_fac_generate_cfg_json.py` generates facility configuration metadata.
+- `src_mgr/gmp_framework_dic.json` is the canonical facility/module registry.
+- `src_mgr/facility_dependency_audit.py` validates registered module
+  dependencies against their repository-local `#include` directives.
 - `src_mgr/framework_distribute_tools_v3.py` distributes current source-manager
   launchers and regenerates project headers and sources.
+
+`gmp_fac_generate_cfg_json.py` is retired and must not be called by current
+installation or upgrade workflows.
 
 The root installers run these tasks automatically. They resolve the repository
 through `GMP_PRO_LOCATION`; do not invoke them with embedded absolute paths.

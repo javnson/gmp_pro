@@ -105,8 +105,8 @@ if errorlevel 1 (
     goto :FINISH
 )
 
-:: generate facility_cfg.json
-python ./gmp_fac_generate_cfg_json.py
+:: Validate the source-manager registry and its direct include dependencies.
+python .\src_mgr\facility_dependency_audit.py --repo "%GMP_PRO_LOCATION%"
 if errorlevel 1 (
     set "RESULT=!ERRORLEVEL!"
     goto :FINISH
