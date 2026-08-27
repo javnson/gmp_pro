@@ -9,9 +9,7 @@
 #include <core/dev/datalink/mem_presp.h>
 #include <core/dev/datalink/pil_core.h>
 #include <core/dev/datalink/tunable.h>
-#if !defined SPECIFY_PC_ENVIRONMENT
 #include <ctl/component/dsa/dsa_dl_scope.h>
-#endif
 
 /** @brief Flush received Data Link bytes from the platform transport. */
 void flush_dl_rx_buffer(void);
@@ -25,16 +23,6 @@ void flush_dl_tx_buffer(void);
 gmp_datalink_t dl;
 gmp_dl_facility_t legacy_echo_facility;
 volatile uint32_t dl_facility_init_errors;
-#if !defined SPECIFY_PC_ENVIRONMENT
-CTL_DSA_DL_SCOPE_DEFINE_USER("Control Scope")
-#endif
-
-//
-// PIL (processor in loop module)
-//
-#if defined ENABLE_GMP_DL_PIL_SIM
-gmp_pil_sim_t pil;
-#endif
 
 //
 // Tunable Dictionary
@@ -63,6 +51,40 @@ const gmp_mem_region_t mem_regions[] = {
 };
 const uint16_t mem_regions_count = sizeof(mem_regions) / sizeof(mem_regions[0]);
 gmp_mem_persp_t mem_persp_server;
+
+// Scope
+ctrl_gt user_dl_scope_storage[
+    CTL_DSA_DL_SCOPE_STORAGE_ELEMENTS(CTL_DSA_DL_SCOPE_CHANNELS, GMP_DL_SCOPE_DEPTH)];
+ctl_dsa_dl_scope_t user_dl_scope;
+
+// PIL
+#if defined ENABLE_GMP_DL_PIL_SIM
+gmp_pil_sim_t pil;
+#endif
+
+void init_dl_modules(void)
+{
+    gmp_dev_dl_init(&dl);
+    dl_facility_init_errors = 0U;
+    gmp_dev_dl_init_echo_alias(&legacy_echo_facility, 0x99U);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(&dl, &legacy_echo_facility) ? 0U : 1U;
+    gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(&dl, &tunable.facility) ? 0U : 1U;
+    gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(&dl, &mem_persp_server.facility) ? 0U : 1U;
+    ctl_init_dsa_dl_scope_workspace(
+        &user_dl_scope, &dl, CTL_DSA_DL_SCOPE_DEFAULT_CMD, "Control Scope",
+        user_dl_scope_storage,
+        (uint32_t)(sizeof(user_dl_scope_storage) / sizeof(user_dl_scope_storage[0])),
+        CTL_DSA_DL_SCOPE_CHANNELS, (uint32_t)(CONTROLLER_FREQUENCY));
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, ctl_dsa_dl_scope_facility(&user_dl_scope)) ? 0U : 1U;
+#if defined ENABLE_GMP_DL_PIL_SIM
+    gmp_pil_sim_init(&pil, &dl, GMP_PIL_DL_BASE_COMMAND);
+    gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(&dl, &pil.facility) ? 0U : 1U;
+#endif
+}
 
 //
 // Datalink protocol stack task
@@ -174,32 +196,7 @@ void init(void) GMP_NO_OPT_SUFFIX
         gmp_scheduler_add_task(&sched, &tasks[i]);
     }
 
-    // init datalink protocol
-    gmp_dev_dl_init(&dl);
-    dl_facility_init_errors = 0U;
-    gmp_dev_dl_init_echo_alias(&legacy_echo_facility, 0x99U);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &legacy_echo_facility) ? 0U : 1U;
-
-#if defined ENABLE_GMP_DL_PIL_SIM
-    gmp_pil_sim_init(&pil, &dl, GMP_PIL_DL_BASE_COMMAND);
-    gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &pil.facility) ? 0U : 1U;
-#endif
-
-    // Band DL module with tunable and persp module.
-    gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
-    gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &tunable.facility) ? 0U : 1U;
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &mem_persp_server.facility) ? 0U : 1U;
-#if !defined SPECIFY_PC_ENVIRONMENT
-    user_init_dl_scope(&dl);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, user_dl_scope_facility()) ? 0U : 1U;
-#endif
+    init_dl_modules();
 }
 
 // Initialization tasks after all peripherals have been initialized

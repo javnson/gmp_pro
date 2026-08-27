@@ -134,7 +134,6 @@ interrupt void MainISR(void)
     // call GMP ISR  Controller operation callback function
     //
     gmp_base_ctl_step();
-    user_step_dl_scope();
 #endif // !defined ENABLE_GMP_DL_PIL_SIM
 
     //

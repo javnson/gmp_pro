@@ -19,6 +19,7 @@
 #include <core/dev/datalink/pil_core.h>
 
 #include <ctl/component/interface/adc_channel.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 #include <ctl/framework/cia402_state_machine.h>
 
 // SINV Control Modules
@@ -41,6 +42,7 @@ extern "C"
 
 // System framework
 extern cia402_sm_t cia402_sm;
+extern ctl_dsa_dl_scope_t user_dl_scope;
 
 // Control Law Core
 extern spll_sogi_t pll;
@@ -205,6 +207,11 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         }
 
     }
+
+    ctl_step_dsa_dl_scope_4ch(
+        &user_dl_scope,
+        pll.v_mag, pll.frequency,
+        pq_meter.active_power_p, adc_v_bus.control_port.value);
 }
 
 #ifdef __cplusplus

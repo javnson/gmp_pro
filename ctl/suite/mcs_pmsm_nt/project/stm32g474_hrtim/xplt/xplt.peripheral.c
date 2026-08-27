@@ -281,7 +281,6 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc)
 	if (hadc == &hadc1)
     {
     gmp_base_ctl_step();
-    user_step_dl_scope();
         counter++;
     }
 }

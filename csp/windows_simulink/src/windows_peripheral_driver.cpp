@@ -10,6 +10,22 @@
  */
 
 #include <gmp_core.h>
+#include <mutex>
+
+namespace
+{
+std::recursive_mutex g_gmp_critical_mutex;
+}
+
+void gmp_base_enter_critical(void)
+{
+    g_gmp_critical_mutex.lock();
+}
+
+void gmp_base_leave_critical(void)
+{
+    g_gmp_critical_mutex.unlock();
+}
 
 ec_gt gmp_hal_gpio_set_dir(gpio_halt hgpio, gpio_dir_et dir)
 {

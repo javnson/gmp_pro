@@ -47,6 +47,21 @@
 #include <unistd.h>
 #endif
 
+namespace
+{
+std::recursive_mutex g_gmp_critical_mutex;
+}
+
+extern "C" void gmp_base_enter_critical(void)
+{
+    g_gmp_critical_mutex.lock();
+}
+
+extern "C" void gmp_base_leave_critical(void)
+{
+    g_gmp_critical_mutex.unlock();
+}
+
 namespace gmp::csp::cctl
 {
 namespace

@@ -21,6 +21,7 @@
 #include <xplt.peripheral.h>
 
 #include <core/pm/function_scheduler/function_scheduler.h>
+#include <core/dev/datalink/pil_core.h>
 
 #if defined SPECIFY_PC_ENVIRONMENT
 #include <stdio.h>
@@ -609,6 +610,9 @@ fast_gt ctl_exec_adc_calibration(void)
     return 1;
 }
 
+//=================================================================================================
+// GMP DL PIL Facility
+
 #if defined ENABLE_GMP_DL_PIL_SIM
 /** @brief Apply one standard PMSM SIL/PIL input frame to controller ports. */
 static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
@@ -636,23 +640,17 @@ static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
     tx->monitor[0] = mtr_ctrl.iuvw.dat[phase_A];
     tx->monitor[1] = mtr_ctrl.iuvw.dat[phase_B];
 }
+#endif
 
 /** @brief Execute one controller step requested by the Data Link PIL service. */
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
+#if defined ENABLE_GMP_DL_PIL_SIM
     ctl_apply_pil_input(rx);
     ctl_dispatch();
     ctl_collect_pil_output(tx);
-}
-#endif // defined ENABLE_GMP_DL_PIL_SIM
-
-#if !defined SPECIFY_PC_ENVIRONMENT
-/** @brief Provide current-loop signals to the platform Scope. */
-void user_get_scope_channels(ctrl_gt channels[4])
-{
-    channels[0] = spwm.vabc_out.dat[phase_A];
-    channels[1] = spwm.vabc_out.dat[phase_B];
-    channels[2] = spwm.vabc_out.dat[phase_C];
-    channels[3] = mtr_ctrl.idq0.dat[phase_q];
-}
+#else
+    GMP_UNUSED_VAR(rx);
+    GMP_UNUSED_VAR(tx);
 #endif
+}

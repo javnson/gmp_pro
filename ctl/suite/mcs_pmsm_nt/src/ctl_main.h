@@ -186,7 +186,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
             // Scope Channel 1, Channel 2
             spwm.vabc_out.dat[phase_A], spwm.vabc_out.dat[phase_B],
             // Scope Channel 3, Channel 4
-            spwm.vabc_out.dat[phase_C], mtr_ctrl.idq0.dat[phase_q]);
+            spwm.vabc_out.dat[phase_C], spwm.vab0_out.dat[phase_alpha]);
 
 }
 

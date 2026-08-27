@@ -192,7 +192,7 @@ void ctl_disable_pwm(void) { ctl_fast_disable_output(); }
 fast_gt ctl_exec_adc_calibration(void) { return 1; }
 
 //=================================================================================================
-// PIL transport hook
+// GMP DL PIL Facility
 
 #if defined ENABLE_GMP_DL_PIL_SIM
 /** @brief Apply one SDPE-mapped ACIM PIL sample to the controller ports. */
@@ -244,16 +244,5 @@ void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 time_gt gmp_base_get_ctrl_tick(void)
 {
     return mtr_ctrl.isr_tick / ((uint32_t)CONTROLLER_FREQUENCY / 1000U);
-}
-#endif
-
-#if !defined SPECIFY_PC_ENVIRONMENT
-/** @brief Expose field-oriented ACIM commissioning signals to Data Link Scope. */
-void user_get_scope_channels(ctrl_gt channels[4])
-{
-    channels[0] = mtr_ctrl.idq_ref.dat[phase_d];
-    channels[1] = mtr_ctrl.idq0.dat[phase_d];
-    channels[2] = mtr_ctrl.idq_ref.dat[phase_q];
-    channels[3] = mtr_ctrl.idq0.dat[phase_q];
 }
 #endif

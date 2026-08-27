@@ -118,6 +118,9 @@ gmp_task_status_t tsk_protect(gmp_task_t* tsk)
     return GMP_TASK_DONE;
 }
 
+//=================================================================================================
+// GMP DL PIL Facility
+
 #if defined ENABLE_GMP_DL_PIL_SIM
 /** @brief Apply one CLLLC SIL/PIL input frame to the measurement ports. */
 static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
@@ -160,14 +163,3 @@ void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
     GMP_UNUSED_VAR(rx); GMP_UNUSED_VAR(tx);
 #endif
 }
-
-#if !defined SPECIFY_PC_ENVIRONMENT
-/** @brief Provide four power-stage measurements to the platform Scope. */
-void user_get_scope_channels(ctrl_gt channels[4])
-{
-    channels[0] = adc_v_primary.control_port.value;
-    channels[1] = adc_i_primary.control_port.value;
-    channels[2] = adc_v_secondary.control_port.value;
-    channels[3] = adc_i_secondary.control_port.value;
-}
-#endif

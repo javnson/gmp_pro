@@ -185,7 +185,6 @@ void setup_peripheral(void)
 interrupt void MainISR(void)
 {
     gmp_base_ctl_step();
-    user_step_dl_scope();
     ADC_clearInterruptStatus(ADCA_BASE, ADC_INT_NUMBER1);
     if (ADC_getInterruptOverflowStatus(ADCA_BASE, ADC_INT_NUMBER1))
     {

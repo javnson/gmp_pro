@@ -41,18 +41,20 @@ Data Link task calls `gmp_dev_dl_dispatch_rx()`; it does not call a private
 Scope dispatcher. The desktop configures and arms acquisitions over command
 `0x60`.
 
-Suite applications may use `CTL_DSA_DL_SCOPE_DEFINE_USER()`. It provides
-`user_init_dl_scope()`, `user_dl_scope_facility()`, and
-`user_step_dl_scope()` so the application can explicitly append the facility
-without accessing adapter internals. `user_dispatch_dl_scope()` remains only
-as a compatibility entry point for older applications.
+Suite applications define their Scope object and workspace explicitly in the
+Data Link section of `user_main.c`, initialize it with
+`ctl_init_dsa_dl_scope_workspace()`, and append
+`ctl_dsa_dl_scope_facility()` to the Data Link. The final operation in the
+deterministic `ctl_dispatch()` path calls `ctl_step_dsa_dl_scope_4ch()` with
+the four suite-specific signals. Scope availability is independent of
+`SPECIFY_PC_ENVIRONMENT`.
 
 ## Ownership and debugging
 
 `ctl_dsa_dl_scope_t` is deliberately non-opaque so CCS Expressions can inspect
 capture state when diagnosing a target. This visibility does not transfer
 configuration ownership to `user_main`: normal configuration is performed by
-the host. The standard macro leaves `user_dl_scope` and
+the host. Suite definitions leave `user_dl_scope` and
 `user_dl_scope_storage` as global debugger-visible symbols. The enclosing
 `gmp_datalink_t.service_run_count` reports execution of
 the whole Data Link service task; no separate user-level

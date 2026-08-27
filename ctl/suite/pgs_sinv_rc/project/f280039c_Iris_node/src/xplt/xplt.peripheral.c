@@ -95,7 +95,6 @@ interrupt void MainISR(void)
 {
     // Call GMP ISR Controller operation callback function (invokes ctl_dispatch)
     gmp_base_ctl_step();
-    user_step_dl_scope();
 
     // Call GMP Timer
     gmp_step_system_tick();

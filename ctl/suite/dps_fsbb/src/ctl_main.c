@@ -146,55 +146,6 @@ void ctl_mainloop(void)
     return;
 }
 
-#if defined ENABLE_GMP_DL_PIL_SIM
-/** @brief Apply one FSBB SIL/PIL input frame to the measurement ports. */
-static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
-{
-    ctl_step_adc_channel(&adc_v_in, rx->adc_result[0]);
-    ctl_step_adc_channel(&adc_v_out, rx->adc_result[1]);
-    ctl_step_adc_channel(&adc_i_L, rx->adc_result[2]);
-    ctl_step_adc_channel(&adc_i_load, rx->adc_result[3]);
-}
-
-/** @brief Export one FSBB controller result using the established SIL ABI. */
-static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
-{
-    tx->pwm_cmp[0] = ctl_get_fsbb_buck_cmp(&fsbb_mod);
-    tx->pwm_cmp[1] = CTRL_PWM_CMP_MAX - ctl_get_fsbb_boost_cmp(&fsbb_mod);
-    tx->monitor[0] = ctrl2param(adc_v_in.control_port.value) * CTRL_VOLTAGE_BASE;
-    tx->monitor[1] = ctrl2param(adc_v_out.control_port.value) * CTRL_VOLTAGE_BASE;
-    tx->monitor[2] = ctrl2param(adc_i_L.control_port.value) * CTRL_CURRENT_BASE;
-    tx->monitor[3] = ctrl2param(adc_i_load.control_port.value) * CTRL_CURRENT_BASE;
-    tx->monitor[4] = ctrl2param(dcdc_core.v_out_formal) * CTRL_VOLTAGE_BASE;
-    tx->monitor[5] = ctrl2param(v_req) * CTRL_VOLTAGE_BASE;
-    tx->monitor[6] = (double)cia402_sm.current_state;
-    tx->monitor[7] = (double)cia402_sm.current_cmd;
-}
-
-#endif // defined ENABLE_GMP_DL_PIL_SIM
-
-/** @brief Execute one controller step requested by the Data Link PIL service. */
-void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
-{
-#if defined ENABLE_GMP_DL_PIL_SIM
-    ctl_apply_pil_input(rx);
-
-    ctl_dispatch();
-
-    ctl_collect_pil_output(tx);
-#else
-    GMP_UNUSED_VAR(rx);
-    GMP_UNUSED_VAR(tx);
-#endif // defined ENABLE_GMP_DL_PIL_SIM
-}
-
-#if defined ENABLE_GMP_DL_PIL_SIM
-time_gt gmp_base_get_ctrl_tick(void)
-{
-    return gmp_base_get_system_tick();
-}
-#endif // defined ENABLE_GMP_DL_PIL_SIM
-
 //=================================================================================================
 // Controller Tasks
 
@@ -285,13 +236,47 @@ void ctl_disable_pwm(void)
     g_fsbb_output_enabled = 0;
 }
 
-#if !defined SPECIFY_PC_ENVIRONMENT
-/** @brief Provide four converter measurements to the platform Scope. */
-void user_get_scope_channels(ctrl_gt channels[4])
+//=================================================================================================
+// GMP DL PIL Facility
+
+#if defined ENABLE_GMP_DL_PIL_SIM
+/** @brief Apply one FSBB SIL/PIL input frame to the measurement ports. */
+static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
 {
-    channels[0] = adc_v_in.control_port.value;
-    channels[1] = adc_v_out.control_port.value;
-    channels[2] = adc_i_L.control_port.value;
-    channels[3] = adc_i_load.control_port.value;
+    ctl_step_adc_channel(&adc_v_in, rx->adc_result[0]);
+    ctl_step_adc_channel(&adc_v_out, rx->adc_result[1]);
+    ctl_step_adc_channel(&adc_i_L, rx->adc_result[2]);
+    ctl_step_adc_channel(&adc_i_load, rx->adc_result[3]);
 }
+
+/** @brief Export one FSBB controller result using the established SIL ABI. */
+static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
+{
+    tx->pwm_cmp[0] = ctl_get_fsbb_buck_cmp(&fsbb_mod);
+    tx->pwm_cmp[1] = CTRL_PWM_CMP_MAX - ctl_get_fsbb_boost_cmp(&fsbb_mod);
+    tx->monitor[0] = ctrl2param(adc_v_in.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[1] = ctrl2param(adc_v_out.control_port.value) * CTRL_VOLTAGE_BASE;
+    tx->monitor[2] = ctrl2param(adc_i_L.control_port.value) * CTRL_CURRENT_BASE;
+    tx->monitor[3] = ctrl2param(adc_i_load.control_port.value) * CTRL_CURRENT_BASE;
+    tx->monitor[4] = ctrl2param(dcdc_core.v_out_formal) * CTRL_VOLTAGE_BASE;
+    tx->monitor[5] = ctrl2param(v_req) * CTRL_VOLTAGE_BASE;
+    tx->monitor[6] = (double)cia402_sm.current_state;
+    tx->monitor[7] = (double)cia402_sm.current_cmd;
+}
+#endif
+
+void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
+{
+#if defined ENABLE_GMP_DL_PIL_SIM
+    ctl_apply_pil_input(rx);
+    ctl_dispatch();
+    ctl_collect_pil_output(tx);
+#else
+    GMP_UNUSED_VAR(rx);
+    GMP_UNUSED_VAR(tx);
+#endif
+}
+
+#if defined ENABLE_GMP_DL_PIL_SIM
+time_gt gmp_base_get_ctrl_tick(void) { return gmp_base_get_system_tick(); }
 #endif

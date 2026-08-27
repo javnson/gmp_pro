@@ -17,6 +17,7 @@
 #include <ctl/component/interface/adc_channel.h>
 #include <ctl/component/interface/pwm_channel.h>
 #include <ctl/component/interface/spwm_modulator.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 
 #include <ctl/component/motor_control/basic/mtr_protection.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
@@ -43,6 +44,7 @@ extern "C"
 
 extern volatile fast_gt flag_system_running;
 extern volatile fast_gt flag_oid_pwm_inhibit;
+extern ctl_dsa_dl_scope_t user_dl_scope;
 
 extern adc_bias_calibrator_t adc_calibrator;
 extern volatile fast_gt flag_enable_adc_calibrator;
@@ -178,6 +180,11 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_svpwm_modulator(&spwm);
 #endif // USING_NPC_MODULATOR
     }
+
+    ctl_step_dsa_dl_scope_4ch(
+        &user_dl_scope,
+        spwm.vabc_out.dat[phase_A], spwm.vabc_out.dat[phase_B],
+        spwm.vabc_out.dat[phase_C], mtr_ctrl.idq0.dat[phase_q]);
 }
 
 #ifdef __cplusplus

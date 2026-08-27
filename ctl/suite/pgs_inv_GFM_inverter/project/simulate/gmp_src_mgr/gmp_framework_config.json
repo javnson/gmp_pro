@@ -195,6 +195,10 @@
         },
         {
             "root": "ctl",
+            "module": "component|dsa|dsa_dl_scope"
+        },
+        {
+            "root": "ctl",
             "module": "component|dsa|dsa_trigger"
         },
         {

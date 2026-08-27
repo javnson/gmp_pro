@@ -26,6 +26,7 @@
 #include <ctl/component/digital_power/inv/inv_zero_ctrl.h>
 
 #include <ctl/component/interface/spwm_modulator.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 #include <ctl/math_block/coordinate/svpwm_3d.h>
 
 #include <ctl/framework/cia402_state_machine.h>
@@ -43,6 +44,7 @@ extern "C"
 
 // System framework
 extern cia402_sm_t cia402_sm;
+extern ctl_dsa_dl_scope_t user_dl_scope;
 
 // Control Law Core
 extern gfl_inv_ctrl_init_t gfl_init;
@@ -197,6 +199,11 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
         ctl_step_svpwm_modulator(&spwm);
 #endif
     }
+
+    ctl_step_dsa_dl_scope_4ch(
+        &user_dl_scope,
+        inv_ctrl.idq_set.dat[phase_d], inv_ctrl.idq_set.dat[phase_q],
+        inv_ctrl.idq.dat[phase_d], inv_ctrl.idq.dat[phase_q]);
 }
 
 #ifdef __cplusplus

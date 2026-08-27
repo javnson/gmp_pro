@@ -14,6 +14,7 @@
 #include <core/dev/datalink/pil_core.h>
 #include <ctl/framework/cia402_state_machine.h>
 #include <ctl/component/interface/adc_channel.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 #include <ctl/component/digital_power/dcdc/dcdc_core.h>
 #include <ctl/component/digital_power/dcdc/fsbb.h>
 
@@ -38,6 +39,7 @@ extern volatile fast_gt index_adc_calibrator;
 extern ctrl_gt g_v_out_ref_user;
 extern ctrl_gt g_i_limit_user;
 extern ctrl_gt v_req;
+extern ctl_dsa_dl_scope_t user_dl_scope;
 
 typedef enum _tag_fsbb_fault
 {
@@ -105,6 +107,11 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 #endif
 
     ctl_step_fsbb_modulator(&fsbb_mod, v_req, adc_v_in.control_port.value);
+
+    ctl_step_dsa_dl_scope_4ch(
+        &user_dl_scope,
+        adc_v_in.control_port.value, adc_v_out.control_port.value,
+        adc_i_L.control_port.value, adc_i_load.control_port.value);
 }
 
 #ifdef __cplusplus

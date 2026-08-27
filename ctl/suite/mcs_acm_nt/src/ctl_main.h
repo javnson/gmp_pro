@@ -12,6 +12,7 @@
 
 #include <xplt.peripheral.h>
 #include <ctl/component/interface/spwm_modulator.h>
+#include <ctl/component/dsa/dsa_dl_scope.h>
 #include <ctl/component/motor_control/basic/mtr_protection.h>
 #include <ctl/component/motor_control/basic/vf_generator.h>
 #include <ctl/component/motor_control/current_loop/imfoc_core.h>
@@ -38,6 +39,7 @@ extern pos_autoturn_encoder_t pos_enc;
 extern spd_calculator_t spd_enc;
 extern spwm_modulator_t spwm;
 extern ctl_mtr_protect_t protection;
+extern ctl_dsa_dl_scope_t user_dl_scope;
 extern ctrl_gt acim_sync_speed_pu;
 extern ctrl_gt acim_magnetizing_current_pu;
 extern ctrl_gt acim_open_loop_vq_per_freq_pu;
@@ -254,6 +256,11 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
     ctl_vector3_copy(&spwm.vab0_out, &mtr_ctrl.vab0);
     ctl_step_svpwm_modulator(&spwm);
+
+    ctl_step_dsa_dl_scope_4ch(
+        &user_dl_scope,
+        mtr_ctrl.idq_ref.dat[phase_d], mtr_ctrl.idq0.dat[phase_d],
+        mtr_ctrl.idq_ref.dat[phase_q], mtr_ctrl.idq0.dat[phase_q]);
 }
 
 #ifdef __cplusplus

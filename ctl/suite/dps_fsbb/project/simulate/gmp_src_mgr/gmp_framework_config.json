@@ -19,6 +19,7 @@
         {"root": "core", "module": "std"},
         {"root": "csp", "module": "windows_simulink"},
         {"root": "ctl", "module": "component|_internal"},
+        {"root": "ctl", "module": "component|dsa|dsa_dl_scope"},
         {"root": "ctl", "module": "component|digital_power|_internal"},
         {"root": "ctl", "module": "component|digital_power|dcdc"},
         {"root": "ctl", "module": "component|digital_power|mppt|_internal"},

@@ -70,7 +70,6 @@ void setup_peripheral(void)
 void motor1CtrlISR(void)
 {
     gmp_base_ctl_step();
-    user_step_dl_scope();
     gmp_step_system_tick();
 
     ADC_clearInterruptStatus(CONTROL_ISR_ADC_BASE, ADC_INT_NUMBER1);

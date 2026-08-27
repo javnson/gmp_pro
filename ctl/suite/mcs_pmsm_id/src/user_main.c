@@ -11,9 +11,7 @@
 #include <core/dev/datalink/mem_presp.h>
 #include <core/dev/datalink/pil_core.h>
 #include <core/dev/datalink/tunable.h>
-#if !defined SPECIFY_PC_ENVIRONMENT
 #include <ctl/component/dsa/dsa_dl_scope.h>
-#endif
 
 //=================================================================================================
 // global variables
@@ -27,10 +25,13 @@ gpio_halt gpio_led;
 /** @brief Drain platform UART data into the legacy receive ring buffer. */
 void at_device_flush_rx_buffer(void);
 
-#if defined ENABLE_GMP_DL_PIL_SIM
+//=================================================================================================
+// Datalink protocol online Debug module
+
 gmp_datalink_t dl;
 volatile uint32_t dl_facility_init_errors;
 
+#if defined ENABLE_GMP_DL_PIL_SIM
 /** @brief Move bytes collected by the legacy UART ISR into the Data Link parser. */
 void flush_dl_rx_buffer(void)
 {
@@ -51,8 +52,7 @@ void flush_dl_tx_buffer(void)
                            gmp_dev_dl_get_tx_hw_pld_size(&dl), 10);
     }
 }
-
-gmp_pil_sim_t pil;
+#endif
 
 const gmp_param_item_t dict_m1[] = {
     // address, data type, permission
@@ -71,10 +71,44 @@ const gmp_mem_region_t mem_regions[] = {
 const uint16_t mem_regions_count = sizeof(mem_regions) / sizeof(mem_regions[0]);
 gmp_mem_persp_t mem_persp_server;
 
-#if !defined SPECIFY_PC_ENVIRONMENT
-CTL_DSA_DL_SCOPE_DEFINE_USER("Control Scope")
+// Scope
+ctrl_gt user_dl_scope_storage[
+    CTL_DSA_DL_SCOPE_STORAGE_ELEMENTS(CTL_DSA_DL_SCOPE_CHANNELS, GMP_DL_SCOPE_DEPTH)];
+ctl_dsa_dl_scope_t user_dl_scope;
+
+// PIL
+#if defined ENABLE_GMP_DL_PIL_SIM
+gmp_pil_sim_t pil;
 #endif
-#endif // defined ENABLE_GMP_DL_PIL_SIM
+
+void init_dl_modules(void)
+{
+    gmp_dev_dl_init(&dl);
+    dl_facility_init_errors = 0U;
+
+    gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &tunable.facility) ? 0U : 1U;
+
+    gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &mem_persp_server.facility) ? 0U : 1U;
+
+    ctl_init_dsa_dl_scope_workspace(
+        &user_dl_scope, &dl, CTL_DSA_DL_SCOPE_DEFAULT_CMD, "Control Scope",
+        user_dl_scope_storage,
+        (uint32_t)(sizeof(user_dl_scope_storage) / sizeof(user_dl_scope_storage[0])),
+        CTL_DSA_DL_SCOPE_CHANNELS, (uint32_t)(CONTROLLER_FREQUENCY));
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, ctl_dsa_dl_scope_facility(&user_dl_scope)) ? 0U : 1U;
+
+#if defined ENABLE_GMP_DL_PIL_SIM
+    gmp_pil_sim_init(&pil, &dl, GMP_PIL_DL_BASE_COMMAND);
+    gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
+    dl_facility_init_errors += gmp_dev_dl_append_facility(
+        &dl, &pil.facility) ? 0U : 1U;
+#endif
+}
 
 //=================================================================================================
 // AT command
@@ -247,25 +281,7 @@ void init(void) GMP_NO_OPT_SUFFIX
 
     at_device_init(&at_dev, at_cmds, sizeof(at_cmds) / sizeof(at_device_cmd_t), at_device_error_handler);
 
-#if defined ENABLE_GMP_DL_PIL_SIM
-    gmp_dev_dl_init(&dl);
-    dl_facility_init_errors = 0U;
-    gmp_pil_sim_init(&pil, &dl, GMP_PIL_DL_BASE_COMMAND);
-    gmp_pil_sim_set_masks(&pil, GMP_PIL_TX_MASK, GMP_PIL_RX_MASK);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &pil.facility) ? 0U : 1U;
-    gmp_param_tunable_init(&tunable, &dl, 0x30, dict_m1, var_tunable_count);
-    gmp_mem_persp_init(&mem_persp_server, &dl, 0x50, mem_regions, mem_regions_count);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &tunable.facility) ? 0U : 1U;
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, &mem_persp_server.facility) ? 0U : 1U;
-#if !defined SPECIFY_PC_ENVIRONMENT
-    user_init_dl_scope(&dl);
-    dl_facility_init_errors += gmp_dev_dl_append_facility(
-        &dl, user_dl_scope_facility()) ? 0U : 1U;
-#endif
-#endif
+    init_dl_modules();
 
     gmp_scheduler_init(&sched);
 
