@@ -1,0 +1,81 @@
+INV_WEAK (TINA Netlist Editor format)
+**************************************
+**  This file was created by TINA   **
+**         www.tina.com             ** 
+**      (c) DesignSoft, Inc.        **          
+**     www.designsoftware.com       **
+**************************************
+.LIB "<TINADIR>\EXAMPLES\SPICE\TSPICE.LIB"
+.LIB "<TINADIR>\SPICELIB\Operational Amplifiers.LIB"
+.TEMP 27
+.AC DEC 20 10 1MEG
+.TRAN 2N 1U
+.DC LIN VGridC 0 1 10M
+
+.PROBE I(VAM6) I(VAM5) I(VAM4) I(VAM3) I(VAM2)
+.PROBE I(VAM1) V(3,1) V(5,1) V(7,1)
+
+VAM6        2 3 ; Current Arrow
+VAM5        4 5 ; Current Arrow
+VAM4        6 7 ; Current Arrow
+VGridC      8 9 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VGridB      10 9 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VGridA      11 9 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VAM3        16 17 ; Current Arrow
+VAM2        18 19 ; Current Arrow
+VAM1        20 21 ; Current Arrow
+VPWM3       25 18 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM4       27 0 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM1       28 20 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM2       29 0 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM5       30 16 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM6       32 0 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VS1         31 0 5
+R5          1 0 1MEG 
+L6          12 8 1M IC=0 
+R15         3 12 50M 
+L5          13 10 1M IC=0 
+R14         5 13 50M 
+L4          14 11 1M IC=0 
+R13         7 14 50M 
+R12         9 0 1MEG 
+R11         15 0 1MEG 
+R10         6 15 1MEG 
+R9          4 15 1MEG 
+R8          2 15 1MEG 
+C5          2 15 5U 
+C4          4 15 5U 
+C3          6 15 5U 
+L3          22 2 1M IC=0 
+R4          17 22 50M 
+L2          23 4 1M IC=0 
+R2          19 23 50M 
+L1          24 6 1M IC=0 
+R1          21 24 50M 
+MT6         26 25 18 18  ME_2N6755_N_1 NRD=0 NRS=0 
+MT5         18 27 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
+MT4         26 28 20 20  ME_2N6755_N_1 NRD=0 NRS=0 
+MT3         20 29 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
+MT2         26 30 16 16  ME_2N6755_N_1 NRD=0 NRS=0 
+R3          31 26 50M 
+C2          26 0 100U 
+MT1         16 32 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
+C1          26 0 100U 
+
+.MODEL ME_2N6755_N_1 NMOS( LEVEL=3 VTO=3.128 KP=21.14U PHI=600M GAMMA=0 TOX=100N 
++      UO=600 VMAX=0 DELTA=0 THETA=0 ETA=0 
++      L=2U W=1.1 RD=64.68M RS=120.7M RG=5.839 
++      RB=0 RDS=600K IS=44.14F N=1 PB=800M 
++      CBD=1.261N CBS=0 MJ=500M TT=370N CGSO=725.6P 
++      CGDO=310.6P CGBO=0 KF=0 AF=1 )
+
+.END
