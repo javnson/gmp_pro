@@ -39,12 +39,12 @@
 #include <core/std/cc/cc.gnuc.inl>
 
 // ....................................................................//
-#elif defined __CC_ARM // ARM compiler
+#elif defined(__CC_ARM) || (defined(__TI_COMPILER_VERSION__) && defined(__TI_ARM__)) // ARM compiler
 
 #include <core/std/cc/cc.armcc.inl>
 
 // ....................................................................//
-#elif defined __TI_COMPILER_VERSION__ // TI DSP C2000 Compiler
+#elif defined(__TI_COMPILER_VERSION__) && defined(__TMS320C28XX__) // TI DSP C2000 Compiler
 
 #include <core/std/cc/cc.c2000.inl>
 
