@@ -51,6 +51,18 @@ def load_ioc(path: Path) -> dict[str, str]:
     return settings
 
 
+def pin_signal(ioc: dict[str, str], pin: str) -> str | None:
+    """Return a pin signal while ignoring CubeMX package-function suffixes."""
+    for key, value in ioc.items():
+        if not key.endswith(".Signal"):
+            continue
+        key_pin = key.removesuffix(".Signal").split("-", 1)[0]
+        key_pin = key_pin.replace("\\ ", " ").split("(", 1)[0].strip()
+        if key_pin == pin:
+            return value
+    return None
+
+
 def selected_option(requirement: dict, macro: str) -> str:
     for option in requirement.get("option_macros", []):
         if option.get("macro") == macro:
@@ -107,12 +119,27 @@ def check_adc_feedback(
             continue
         rank = match.group(1)
         signal = ioc.get(f"{pin}.Signal", "")
-        signal_match = re.fullmatch(rf"{adc}_IN(\d+)", signal)
+        if signal.startswith("ADCx_INP"):
+            shared_prefix = f"SH.{signal}."
+            signal = next(
+                (
+                    value
+                    for key, value in ioc.items()
+                    if key.startswith(shared_prefix) and value.startswith(f"{adc}_INP")
+                ),
+                signal,
+            )
+            signal = signal.split(",", 1)[0]
+        signal_match = re.fullmatch(rf"{adc}_INP?(\d+)", signal)
         report.require(signal_match is not None, f"FB{index} {pin} is not routed to {adc}")
         if signal_match:
-            report.require(
+            selected_channel = (
                 ioc.get(f"{adc}.Rank{rank}_Channel")
-                == f"ADC_CHANNEL_{signal_match.group(1)}",
+                or ioc.get(f"{adc}.InjectedChannel-{rank}#ChannelInjectedConversion")
+                or ioc.get(f"{adc}.InjectedChannel-{rank}\\#ChannelInjectedConversion")
+            )
+            report.require(
+                selected_channel == f"ADC_CHANNEL_{signal_match.group(1)}",
                 f"FB{index} {adc} injected rank {rank} does not select {signal}",
             )
         report.require(pin not in seen_pins, f"ADC feedback pin {pin} is duplicated")
@@ -159,7 +186,8 @@ def check_target(repo: Path, board_dir: Path) -> Report:
     report.require(ioc.get("ProjectManager.LastFirmware") == "false", "LastFirmware must be false")
 
     ips = ioc_ips(ioc)
-    required_ips = {"ADC1", "ADC2", "DMA", "GPIO", "I2C1", "NVIC", "RCC", "SYS", "USART2"}
+    dma_ip = "GPDMA1" if ioc.get("Mcu.Family") == "STM32H5" else "DMA"
+    required_ips = {"ADC1", "ADC2", dma_ip, "GPIO", "I2C1", "NVIC", "RCC", "SYS", "USART2"}
     # GPIO is represented by pin settings rather than an Mcu.IP entry in CubeMX.
     required_ips.remove("GPIO")
     report.require(required_ips <= ips, f"missing IOC peripherals: {sorted(required_ips - ips)}")
@@ -169,9 +197,12 @@ def check_target(repo: Path, board_dir: Path) -> Report:
     report.require(pwm_selection in {"1", "8"}, "PWM timer selection must be 1 or 8")
     report.require(qep_selection in {"3", "4"}, "QEP timer selection must be 3 or 4")
     check_pwm(report, ioc, f"TIM{pwm_selection}")
-    # Both alternatives must remain complete so changing SDPE needs no IOC edit.
-    check_pwm(report, ioc, "TIM1")
-    check_pwm(report, ioc, "TIM8")
+    # Validate every timer that the board entity advertises as switchable. Some
+    # LQFP64 families cannot route both complete advanced timers concurrently.
+    for timer_option in entity.get("option_sets", {}).get(
+        "PWM_TIMER_SELECTION", [pwm_selection]
+    ):
+        check_pwm(report, ioc, f"TIM{timer_option}")
 
     for channel in (1, 2):
         report.require(
@@ -219,34 +250,66 @@ def check_target(repo: Path, board_dir: Path) -> Report:
             report.warnings.append(
                 f"{adc} IOC defaults to {configured_trigger}; shared xplt rebinds it to {expected_trigger}"
             )
-    report.require("ADC1_2_IRQn" in " ".join(ioc), "ADC1/2 interrupt is not enabled")
-
+    if ioc.get("Mcu.Family") == "STM32H5":
+        report.require(
+            any(key.startswith("NVIC.ADC1_IRQn") for key in ioc),
+            "ADC1 interrupt is not enabled",
+        )
+        report.require(
+            ioc.get("GPDMA1.REQUEST_GPDMACH1") == "GPDMA1_REQUEST_USART2_RX"
+            and ioc.get("GPDMA1.CIRCULARMODE_GPDMACH1") == "ENABLE"
+            and ioc.get("GPDMA1.DESTINC_GPDMACH1") == "DMA_DINC_INCREMENTED",
+            "USART2 RX GPDMA is not circular",
+        )
+        report.require(
+            ioc.get("GPDMA1.REQUEST_GPDMACH0") == "GPDMA1_REQUEST_USART2_TX"
+            and ioc.get("GPDMA1.DIRECTION_GPDMACH0") == "DMA_MEMORY_TO_PERIPH"
+            and ioc.get("GPDMA1.SRCINC_GPDMACH0") == "DMA_SINC_INCREMENTED",
+            "USART2 TX GPDMA is missing or invalid",
+        )
+    else:
+        report.require("ADC1_2_IRQn" in " ".join(ioc), "ADC1/2 interrupt is not enabled")
+        report.require(
+            ioc.get("Dma.USART2_RX.1.Mode") == "DMA_CIRCULAR",
+            "USART2 RX DMA is not circular",
+        )
+        report.require(
+            ioc.get("Dma.USART2_TX.2.Direction") == "DMA_MEMORY_TO_PERIPH"
+            and ioc.get("Dma.USART2_TX.2.Mode") == "DMA_NORMAL",
+            "USART2 TX DMA is missing or invalid",
+        )
+    report.require(pin_signal(ioc, "PA2") == "USART2_TX", "VCP TX is not PA2/USART2_TX")
+    report.require(pin_signal(ioc, "PA3") == "USART2_RX", "VCP RX is not PA3/USART2_RX")
+    i2c_scl_pin = parameters["i2c_scl_pin"]
+    i2c_sda_pin = parameters["i2c_sda_pin"]
     report.require(
-        ioc.get("Dma.USART2_RX.1.Mode") == "DMA_CIRCULAR",
-        "USART2 RX DMA is not circular",
+        pin_signal(ioc, i2c_scl_pin) == "I2C1_SCL",
+        f"I2C SCL is not {i2c_scl_pin}",
     )
     report.require(
-        ioc.get("Dma.USART2_TX.2.Direction") == "DMA_MEMORY_TO_PERIPH"
-        and ioc.get("Dma.USART2_TX.2.Mode") == "DMA_NORMAL",
-        "USART2 TX DMA is missing or invalid",
+        pin_signal(ioc, i2c_sda_pin) == "I2C1_SDA",
+        f"I2C SDA is not {i2c_sda_pin}",
     )
-    report.require(ioc.get("PA2.Signal") == "USART2_TX", "VCP TX is not PA2/USART2_TX")
-    report.require(ioc.get("PA3.Signal") == "USART2_RX", "VCP RX is not PA3/USART2_RX")
-    report.require(ioc.get("PB8.Signal") == "I2C1_SCL", "I2C SCL is not PB8")
-    report.require(ioc.get("PB9.Signal") == "I2C1_SDA", "I2C SDA is not PB9")
-    report.require(ioc.get("PA5.Signal") == "GPIO_Output", "status LED is not on PA5")
+    report.require(pin_signal(ioc, "PA5") == "GPIO_Output", "status LED is not on PA5")
 
     if int(parameters["has_dac"]):
-        report.require("DAC1" in ips and ioc.get("PA4.Signal") == "COMP_DAC11_group", "DAC capability mismatch")
+        report.require("DAC1" in ips and pin_signal(ioc, "PA4") == "COMP_DAC11_group", "DAC capability mismatch")
     if int(parameters["has_can"]):
         report.require(
             "FDCAN1" in ips
-            and ioc.get("PA11.Signal") == "FDCAN1_RX"
-            and ioc.get("PA12.Signal") == "FDCAN1_TX",
+            and pin_signal(ioc, "PA11") == "FDCAN1_RX"
+            and pin_signal(ioc, "PA12") == "FDCAN1_TX",
             "FDCAN capability mismatch",
         )
 
-    for pin in ("PA2", "PA3", "PA4", "PA5", "PA11", "PA12", "PB8", "PB9"):
+    documented_pins = {
+        "PA2", "PA3", "PA5", i2c_scl_pin, i2c_sda_pin,
+    }
+    if int(parameters["has_dac"]):
+        documented_pins.add(parameters["dac_pin"])
+    if int(parameters["has_can"]):
+        documented_pins.update((parameters["can_rx_pin"], parameters["can_tx_pin"]))
+    for pin in sorted(documented_pins):
         report.require(pin in pin_doc, f"{pin} is absent from pin_assign.md")
 
     serialized = json.dumps(requirement) + json.dumps(entity) + "\n".join(ioc.values())

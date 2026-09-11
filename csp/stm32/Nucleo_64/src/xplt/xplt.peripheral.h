@@ -5,6 +5,8 @@
 
 #include <core/dev/datalink/datalink.h>
 
+extern volatile uint32_t gmp_nucleo_platform_diag[7];
+
 void xplt_dl_bind(gmp_datalink_t* datalink);
 void xplt_dl_start_tx(gmp_datalink_t* datalink);
 void xplt_toggle_status_led(void);

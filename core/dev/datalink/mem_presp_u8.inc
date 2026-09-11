@@ -247,19 +247,19 @@ fast_gt gmp_mem_persp_rx_cb(gmp_mem_persp_t* ctx)
                 uintptr_t item_address = address + (uintptr_t)item * item_size;
                 if (item_size == 1U)
                 {
-                    uint8_t value;
+                    uint8_t value = 0U;
                     mem_u8_read(payload, dl->expected_payload_len, &index, &value);
                     memcpy((void*)item_address, &value, sizeof(value));
                 }
                 else if (item_size == 2U)
                 {
-                    uint16_t value;
+                    uint16_t value = 0U;
                     mem_u8_read_u16(payload, dl->expected_payload_len, &index, &value);
                     memcpy((void*)item_address, &value, sizeof(value));
                 }
                 else
                 {
-                    uint32_t value;
+                    uint32_t value = 0U;
                     mem_u8_read_u32(payload, dl->expected_payload_len, &index, &value);
                     memcpy((void*)item_address, &value, sizeof(value));
                 }

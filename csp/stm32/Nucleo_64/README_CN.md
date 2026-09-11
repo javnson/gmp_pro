@@ -2,9 +2,9 @@
 
 [English](README.md) | **简体中文**
 
-状态：G431 基线实施中 v0.2
+状态：G431 配置基线、G474RE、G491RE 与 H533RE 实板基线 v0.5
 
-日期：2026-09-10
+日期：2026-09-11
 
 本文规定 `csp/stm32/Nucleo_64` 的目录结构、硬件资源合同、SDPE 板卡元件、公共
 `user`/`xplt` 代码边界、生成流程和验证标准。目标是让一个控制应用只通过切换
@@ -17,6 +17,28 @@ SDPE 板卡元件，就能在不同 Nucleo-64 板卡之间迁移，而不修改�
 source-manager 配置和 IOC 静态校验器。该目标当前状态为 `configured`；SDPE 校验、
 目标生成、IOC 校验和共享源语法检查已通过，但尚未执行 CubeMX 再生成、完整链接或
 实板测试，详见 `stm32g431rb_nucleo/validation.md`。
+
+NUCLEO-G474RE 现已成为首个完成实板验收的目标。可复现流程覆盖 CubeMX 生成、
+SDPE/source-manager 生成、GCC/CMake 完整链接、ST-Link 烧录与回读校验，以及
+GMP Data Link 的帧/CRC 恢复、DMA 传输、PIL、参数整定、内存观察和 DSA Scope。
+TIM1 触发的 ADC 控制回调实测为 20 kHz，用户 LED 心跳持续运行，同时三对互补
+PWM 始终保持禁用。PWM 波形、校准 ADC 输入、QEP、DAC、I2C 和 FDCAN 所需的外部
+仪器或节点测试仍明确标记为待完成，详见
+`stm32g474re_nucleo/validation.md`。
+
+NUCLEO-G491RE 现已成为第二个完成实板验收的目标。该工程继续复用同一套公共源，
+并通过生成、GCC/CMake 链接、SWD 烧录回读校验、921600 波特率下连续五轮完整 GMP
+Data Link 验收，以及额外 100/100 次满 MTU Echo 压力测试。TIM1 触发 ADC 的控制
+回调保持在 20 kHz，UART 错误计数没有增长，PWM 输出始终关闭。921600 默认值与独立
+STM32 Data Link 验证工程一致，并在本次实板上比 115200 更稳定；精确范围和仍待完成
+的电气测试见 `stm32g491re_nucleo/validation.md`。
+
+NUCLEO-H533RE 现已成为首个跨系列实板基线。它补齐 Cortex-M33/STM32H5
+构建、关闭 TrustZone 的启动流程、USART2 环形 RX 与独立 TX GPDMA、六路由 TIM1
+触发的注入 ADC、TIM3 ABZ、I2C1 和可选 FDCAN1，并继续复用同一套公共 user/xplt
+代码。CubeMX 生成、Cortex-M33 GCC 链接、SWD 烧录回读校验、921600 波特率下五轮
+完整 GMP Data Link 验收，以及 100/100 次满 MTU Echo 压力测试均已通过；控制 ISR
+保持 20 kHz，PWM 输出始终关闭，详见 `stm32h533re_nucleo/validation.md`。
 
 ## 1. 范围和设计原则
 
@@ -484,7 +506,7 @@ C2000 遗留代码。
 
 1. NUCLEO-F302R8，验证旧系列高级定时器和 ADC 差异；
 2. NUCLEO-C092RC、NUCLEO-U083RC，评估低资源器件是否满足完整 `control`；
-3. NUCLEO-H533RE，处理 M33、安全域和新 HAL 差异；
+3. NUCLEO-H533RE（已完成），作为 STM32H5/M33 黄金板；
 4. 根据实际板卡库存继续扩展。
 
 每进入一个新的 STM32 系列，先完成一块黄金板和实板验证，再批量扩展同系列。
@@ -503,12 +525,12 @@ C2000 遗留代码。
 
 - 本规格的审核版本；
 - 一个新的 Nucleo-64 SDPE schema；
-- G431RB、G474RE、G491RE 三个板卡实体；
-- 三个主 IOC 和三个板卡 SDPE 工程；
+- G431RB、G474RE、G491RE、H533RE 四个板卡实体；
+- 四个主 IOC 和四个板卡 SDPE 工程；
 - 一套公共 `user`、`xplt` 和 `gmp_src_mgr`；
 - IOC/SDPE 静态校验工具；
 - CubeMX 无界面生成和 GCC/CMake 批量构建脚本；
-- 三份引脚表和三份验证记录；
+- 四份引脚表和四份验证记录；
 - 至少 G431RB 完整实板验证，其他板卡按实际硬件状态准确标注。
 
 ## 13. 非目标

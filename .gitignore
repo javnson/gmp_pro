@@ -526,6 +526,9 @@ tools/facilities_generator/gmp_make_tool.cmake
 
 # Nucleo-64 SDPE entity headers are regenerated from sdpe_src JSON.
 ctl/hardware_preset/mcu_board/nucleo_g431rb.h
+ctl/hardware_preset/mcu_board/nucleo_g474re.h
+ctl/hardware_preset/mcu_board/nucleo_g491re.h
+ctl/hardware_preset/mcu_board/nucleo_h533re.h
 
 # ignore meta folder
 **/.meta

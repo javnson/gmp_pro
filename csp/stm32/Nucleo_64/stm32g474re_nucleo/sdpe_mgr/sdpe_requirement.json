@@ -1,0 +1,75 @@
+{
+  "id": "nucleo_64_stm32g474re",
+  "macro_prefix": "GMP_NUCLEO_G474RE_TARGET",
+  "display_name": "GMP Nucleo-64 STM32G474RE Target",
+  "description": "Generic Nucleo-64 control-resource aliases for the NUCLEO-G474RE.",
+  "suite": "stm32_nucleo_64",
+  "version": "0.1.0",
+  "updated_at": "2026-09-10",
+  "output_header": "ctrl_settings.h",
+  "hardware": [
+    {"entity": "nucleo_g474re"}
+  ],
+  "code_sections": {
+    "after_extern_open": "/* CubeMX handle declarations are emitted by the shared xplt after HAL types are available. */",
+    "before_footer": "/* Stable aliases consumed by the shared Nucleo-64 user/xplt sources. */\n#define GMP_NUCLEO_BOARD_ID NUCLEO_G474RE_BOARD\n#define GMP_NUCLEO_MCU_ID NUCLEO_G474RE_CHIP\n#define GMP_NUCLEO_SYSTEM_CLOCK_HZ NUCLEO_G474RE_SYSTEM_CLOCK_HZ\n#define GMP_NUCLEO_SYSTEM_TICK_HZ NUCLEO_G474RE_SYSTEM_TICK_HZ\n#if GMP_NUCLEO_PWM_TIMER_SELECTION == 1\n#define GMP_NUCLEO_PWM_TIMER_HANDLE NUCLEO_G474RE_PWM_TIM1_HANDLE\n#define GMP_NUCLEO_PWM_TIMER_SYMBOL NUCLEO_G474RE_PWM_TIM1_SYMBOL\n#define GMP_NUCLEO_PWM_TIMER_INSTANCE NUCLEO_G474RE_PWM_TIM1_INSTANCE\n#define GMP_NUCLEO_PWM_ADC_TRIGGER NUCLEO_G474RE_PWM_TIM1_ADC_TRIGGER\n#elif GMP_NUCLEO_PWM_TIMER_SELECTION == 8\n#define GMP_NUCLEO_PWM_TIMER_HANDLE NUCLEO_G474RE_PWM_TIM8_HANDLE\n#define GMP_NUCLEO_PWM_TIMER_SYMBOL NUCLEO_G474RE_PWM_TIM8_SYMBOL\n#define GMP_NUCLEO_PWM_TIMER_INSTANCE NUCLEO_G474RE_PWM_TIM8_INSTANCE\n#define GMP_NUCLEO_PWM_ADC_TRIGGER NUCLEO_G474RE_PWM_TIM8_ADC_TRIGGER\n#else\n#error \"GMP_NUCLEO_PWM_TIMER_SELECTION must be 1 or 8\"\n#endif\n#if GMP_NUCLEO_QEP_TIMER_SELECTION == 3\n#define GMP_NUCLEO_QEP_TIMER_HANDLE NUCLEO_G474RE_QEP_TIM3_HANDLE\n#define GMP_NUCLEO_QEP_TIMER_SYMBOL NUCLEO_G474RE_QEP_TIM3_SYMBOL\n#define GMP_NUCLEO_QEP_TIMER_INSTANCE NUCLEO_G474RE_QEP_TIM3_INSTANCE\n#define GMP_NUCLEO_QEP_Z_PORT NUCLEO_G474RE_QEP_TIM3_Z_PORT\n#define GMP_NUCLEO_QEP_Z_PIN NUCLEO_G474RE_QEP_TIM3_Z_PIN\n#elif GMP_NUCLEO_QEP_TIMER_SELECTION == 4\n#define GMP_NUCLEO_QEP_TIMER_HANDLE NUCLEO_G474RE_QEP_TIM4_HANDLE\n#define GMP_NUCLEO_QEP_TIMER_SYMBOL NUCLEO_G474RE_QEP_TIM4_SYMBOL\n#define GMP_NUCLEO_QEP_TIMER_INSTANCE NUCLEO_G474RE_QEP_TIM4_INSTANCE\n#define GMP_NUCLEO_QEP_Z_PORT NUCLEO_G474RE_QEP_TIM4_Z_PORT\n#define GMP_NUCLEO_QEP_Z_PIN NUCLEO_G474RE_QEP_TIM4_Z_PIN\n#else\n#error \"GMP_NUCLEO_QEP_TIMER_SELECTION must be 3 or 4\"\n#endif\n#define GMP_NUCLEO_HAS_PWM_BREAK NUCLEO_G474RE_PWM_HAS_BREAK\n#define GMP_NUCLEO_ADC_PRIMARY_HANDLE NUCLEO_G474RE_ADC_PRIMARY_HANDLE\n#define GMP_NUCLEO_ADC_PRIMARY_SYMBOL NUCLEO_G474RE_ADC_PRIMARY_SYMBOL\n#define GMP_NUCLEO_ADC_SECONDARY_HANDLE NUCLEO_G474RE_ADC_SECONDARY_HANDLE\n#define GMP_NUCLEO_ADC_SECONDARY_SYMBOL NUCLEO_G474RE_ADC_SECONDARY_SYMBOL\n#define GMP_NUCLEO_ADC_TRIGGER_MASK NUCLEO_G474RE_ADC_TRIGGER_MASK\n#define GMP_NUCLEO_ADC_TRIGGER_EDGE NUCLEO_G474RE_ADC_TRIGGER_EDGE\n#define GMP_NUCLEO_ADC_FB_COUNT NUCLEO_G474RE_ADC_FB_COUNT\n#define GMP_NUCLEO_ADC_FB0_HANDLE NUCLEO_G474RE_ADC_FB0_HANDLE\n#define GMP_NUCLEO_ADC_FB0_RANK NUCLEO_G474RE_ADC_FB0_RANK\n#define GMP_NUCLEO_ADC_FB1_HANDLE NUCLEO_G474RE_ADC_FB1_HANDLE\n#define GMP_NUCLEO_ADC_FB1_RANK NUCLEO_G474RE_ADC_FB1_RANK\n#define GMP_NUCLEO_ADC_FB2_HANDLE NUCLEO_G474RE_ADC_FB2_HANDLE\n#define GMP_NUCLEO_ADC_FB2_RANK NUCLEO_G474RE_ADC_FB2_RANK\n#define GMP_NUCLEO_ADC_FB3_HANDLE NUCLEO_G474RE_ADC_FB3_HANDLE\n#define GMP_NUCLEO_ADC_FB3_RANK NUCLEO_G474RE_ADC_FB3_RANK\n#define GMP_NUCLEO_ADC_FB4_HANDLE NUCLEO_G474RE_ADC_FB4_HANDLE\n#define GMP_NUCLEO_ADC_FB4_RANK NUCLEO_G474RE_ADC_FB4_RANK\n#define GMP_NUCLEO_ADC_FB5_HANDLE NUCLEO_G474RE_ADC_FB5_HANDLE\n#define GMP_NUCLEO_ADC_FB5_RANK NUCLEO_G474RE_ADC_FB5_RANK\n#define GMP_NUCLEO_DL_UART_HANDLE NUCLEO_G474RE_DL_UART_HANDLE\n#define GMP_NUCLEO_DL_UART_SYMBOL NUCLEO_G474RE_DL_UART_SYMBOL\n#define GMP_NUCLEO_DL_UART_INSTANCE NUCLEO_G474RE_DL_UART_INSTANCE\n#define GMP_NUCLEO_DL_RX_DMA_HANDLE NUCLEO_G474RE_DL_RX_DMA_HANDLE\n#define GMP_NUCLEO_STATUS_LED_PORT NUCLEO_G474RE_STATUS_LED_PORT\n#define GMP_NUCLEO_STATUS_LED_PIN NUCLEO_G474RE_STATUS_LED_PIN\n#define GMP_NUCLEO_STATUS_LED_ON NUCLEO_G474RE_STATUS_LED_ON\n#define GMP_NUCLEO_STATUS_LED_OFF NUCLEO_G474RE_STATUS_LED_OFF\n#define GMP_NUCLEO_I2C_HANDLE NUCLEO_G474RE_I2C_HANDLE\n#define GMP_NUCLEO_I2C_INSTANCE NUCLEO_G474RE_I2C_INSTANCE\n#define GMP_NUCLEO_HAS_DAC NUCLEO_G474RE_HAS_DAC\n#define GMP_NUCLEO_DAC_HANDLE NUCLEO_G474RE_DAC_HANDLE\n#define GMP_NUCLEO_DAC_SYMBOL NUCLEO_G474RE_DAC_SYMBOL\n#define GMP_NUCLEO_DAC_CHANNEL NUCLEO_G474RE_DAC_CHANNEL\n#define GMP_NUCLEO_HAS_CAN NUCLEO_G474RE_HAS_CAN\n#define GMP_NUCLEO_CAN_HANDLE NUCLEO_G474RE_CAN_HANDLE\n#define GMP_NUCLEO_CAN_INSTANCE NUCLEO_G474RE_CAN_INSTANCE"
+  },
+  "feature_macros": [],
+  "option_macros": [
+    {
+      "group": "Board",
+      "macro": "GMP_NUCLEO_PWM_TIMER_SELECTION",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "nucleo_g474re.PWM_TIMER_SELECTION",
+      "options": [],
+      "description": "Advanced timer used for three-phase PWM and ADC triggering."
+    },
+    {
+      "group": "Board",
+      "macro": "GMP_NUCLEO_QEP_TIMER_SELECTION",
+      "enabled": true,
+      "value": "3",
+      "options_preset": "nucleo_g474re.QEP_TIMER_SELECTION",
+      "options": [],
+      "description": "General-purpose timer used for ABZ position capture."
+    },
+    {
+      "group": "Datalink",
+      "macro": "GMP_NUCLEO_DL_BAUD_RATE",
+      "enabled": true,
+      "value": "115200",
+      "options_preset": "nucleo_g474re.DL_BAUD_RATE",
+      "options": [],
+      "description": "ST-Link VCP baud rate; 921600 requires board validation."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "PWM Period",
+      "macro": "GMP_NUCLEO_PWM_PERIOD",
+      "binding": {"number": "4249"},
+      "description": "PWM auto-reload value for the 20 kHz center-aligned baseline."
+    },
+    {
+      "role": "PWM Deadtime",
+      "macro": "GMP_NUCLEO_PWM_DEADTIME",
+      "binding": {"number": "100"},
+      "description": "Advanced-timer dead-time register value for this target."
+    },
+    {
+      "role": "UART RX Buffer Size",
+      "macro": "GMP_NUCLEO_DL_RX_BUFFER_SIZE",
+      "binding": {"number": "256"},
+      "description": "Circular UART receive DMA buffer size."
+    }
+  ],
+  "requirement_groups": [
+    {"name": "Control Timing", "requirements": ["PWM Period", "PWM Deadtime"]},
+    {"name": "Datalink", "requirements": ["UART RX Buffer Size"]}
+  ],
+  "common_requirements": [],
+  "feature_macro_groups": [],
+  "option_macro_groups": ["Board", "Datalink"]
+}
+

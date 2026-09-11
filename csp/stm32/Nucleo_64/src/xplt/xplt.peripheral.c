@@ -6,6 +6,7 @@
 #include <gmp_core.h>
 
 #include "main.h"
+#include "user_dl.h"
 #include <xplt.peripheral.h>
 
 extern ADC_HandleTypeDef GMP_NUCLEO_ADC_PRIMARY_SYMBOL;
@@ -25,6 +26,7 @@ static gmp_datalink_t* bound_datalink;
 static byte_gt uart_rx_dma_buffer[GMP_NUCLEO_DL_RX_BUFFER_SIZE];
 static volatile uint16_t uart_rx_dma_position;
 static volatile fast_gt status_led_on;
+volatile uint32_t gmp_nucleo_platform_diag[7];
 
 typedef enum
 {
@@ -52,6 +54,13 @@ static void xplt_select_adc_trigger(ADC_HandleTypeDef* adc)
 
 void setup_peripheral(void)
 {
+    size_gt index;
+
+    for (index = 0U;
+         index < sizeof(gmp_nucleo_platform_diag) /
+                     sizeof(gmp_nucleo_platform_diag[0]);
+         ++index)
+        gmp_nucleo_platform_diag[index] = 0U;
     debug_uart = GMP_NUCLEO_DL_UART_HANDLE;
     debug_uart->Init.BaudRate = GMP_NUCLEO_DL_BAUD_RATE;
     if (HAL_UART_Init(debug_uart) != HAL_OK)
@@ -69,6 +78,7 @@ void setup_peripheral(void)
                              GMP_NUCLEO_PWM_PERIOD);
     __HAL_TIM_SET_COMPARE(GMP_NUCLEO_PWM_TIMER_HANDLE, TIM_CHANNEL_4,
                           GMP_NUCLEO_PWM_PERIOD / 2U);
+    SET_BIT(GMP_NUCLEO_PWM_TIMER_HANDLE->Instance->CCER, TIM_CCER_CC4E);
     if (HAL_TIM_Base_Start(GMP_NUCLEO_PWM_TIMER_HANDLE) != HAL_OK)
         Error_Handler();
 
@@ -103,6 +113,10 @@ void xplt_pwm_enable(void)
     gmp_base_enter_critical();
     SET_BIT(timer->Instance->CCER, XPLT_PWM_CCER_MASK);
     SET_BIT(timer->Instance->BDTR, TIM_BDTR_MOE);
+    gmp_nucleo_platform_diag[1] =
+        timer->Instance->CCER & XPLT_PWM_CCER_MASK;
+    if ((timer->Instance->BDTR & TIM_BDTR_MOE) != 0U)
+        gmp_nucleo_platform_diag[1] |= 0x80000000UL;
     gmp_base_leave_critical();
 }
 
@@ -113,12 +127,15 @@ void xplt_pwm_disable(void)
     gmp_base_enter_critical();
     CLEAR_BIT(timer->Instance->BDTR, TIM_BDTR_MOE);
     CLEAR_BIT(timer->Instance->CCER, XPLT_PWM_CCER_MASK);
+    gmp_nucleo_platform_diag[1] = 0U;
     gmp_base_leave_critical();
 }
 
 void xplt_toggle_status_led(void)
 {
     status_led_on = !status_led_on;
+    gmp_nucleo_platform_diag[5] = (uint32_t)status_led_on;
+    gmp_nucleo_platform_diag[6]++;
     HAL_GPIO_WritePin(GMP_NUCLEO_STATUS_LED_PORT, GMP_NUCLEO_STATUS_LED_PIN,
                       status_led_on ? GMP_NUCLEO_STATUS_LED_ON
                                     : GMP_NUCLEO_STATUS_LED_OFF);
@@ -191,13 +208,18 @@ void xplt_dac_write(uint32_t value)
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* adc)
 {
     if (adc == GMP_NUCLEO_ADC_PRIMARY_HANDLE)
+    {
+        gmp_nucleo_platform_diag[0]++;
         gmp_base_ctl_step();
+        user_dl_control_step();
+    }
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* uart, uint16_t size)
 {
     if (uart == GMP_NUCLEO_DL_UART_HANDLE && bound_datalink != NULL)
     {
+        gmp_nucleo_platform_diag[2]++;
         uint16_t previous = uart_rx_dma_position;
         if (size > previous)
         {
@@ -222,6 +244,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef* uart)
     if (uart != GMP_NUCLEO_DL_UART_HANDLE || bound_datalink == NULL)
         return;
 
+    gmp_nucleo_platform_diag[3]++;
     if (uart_tx_phase == XPLT_DL_UART_TX_HEADER &&
         gmp_dev_dl_get_tx_hw_pld_size(bound_datalink) > 0U)
     {
@@ -242,6 +265,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef* uart)
 {
     if (uart == GMP_NUCLEO_DL_UART_HANDLE)
     {
+        gmp_nucleo_platform_diag[4]++;
         if (bound_datalink != NULL && uart_tx_phase != XPLT_DL_UART_TX_IDLE)
         {
             uart_tx_phase = XPLT_DL_UART_TX_IDLE;

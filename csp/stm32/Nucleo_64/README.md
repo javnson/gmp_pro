@@ -2,9 +2,9 @@
 
 **English** | [简体中文](README_CN.md)
 
-Status: G431 baseline implementation v0.2
+Status: G431 configured baseline; G474RE, G491RE, and H533RE hardware baselines v0.5
 
-Date: 2026-09-10
+Date: 2026-09-11
 
 This document defines the directory layout, hardware-resource contract, SDPE
 board components, shared `user`/`xplt` boundary, generation workflow, and
@@ -21,6 +21,35 @@ and an IOC consistency checker. Its support state is `configured`: SDPE
 validation and generation, IOC checks, and shared-source syntax checks pass,
 while CubeMX regeneration, a complete link, and hardware tests remain pending.
 See `stm32g431rb_nucleo/validation.md` for the exact evidence.
+
+The NUCLEO-G474RE target is now the first hardware-validated target. Its
+reproducible flow covers CubeMX generation, SDPE/source-manager generation,
+GCC/CMake linking, verified ST-Link programming, and GMP Data Link acceptance
+for framing/CRC recovery, DMA transport, PIL, Tunable, Memory Perspective, and
+DSA Scope. TIM1-triggered ADC callbacks ran at 20 kHz and the user LED
+heartbeat advanced while all three complementary PWM pairs remained disabled.
+External-instrument tests for PWM waveforms, calibrated ADC inputs, QEP, DAC,
+I2C, and FDCAN remain explicitly pending; see
+`stm32g474re_nucleo/validation.md`.
+
+The NUCLEO-G491RE target is the second hardware-validated baseline. It uses the
+same shared sources and passed generation, GCC/CMake linking, verified SWD
+programming, five consecutive complete GMP Data Link acceptance runs at 921600
+baud, and a separate 100/100 full-MTU Echo stress run. Its TIM1-triggered ADC
+callback remained at 20 kHz, the UART error counter did not advance, and PWM
+outputs remained disabled. The 921600-baud default follows the standalone STM32
+Data Link validation project and was more stable than 115200 on the tested
+board; see `stm32g491re_nucleo/validation.md` for the exact scope and remaining
+electrical tests.
+
+The NUCLEO-H533RE target is the first cross-family hardware baseline. It adds
+Cortex-M33/STM32H5 build support, TrustZone-disabled startup, USART2 circular RX
+and split TX GPDMA, six TIM1-triggered injected ADC channels, TIM3 ABZ, I2C1,
+and optional FDCAN1 while retaining the same shared user/xplt sources. CubeMX
+generation, Cortex-M33 GCC linking, verified SWD programming, five complete GMP
+Data Link runs and a 100/100 full-MTU Echo stress run passed at 921600 baud. The
+control ISR held 20 kHz and PWM outputs remained disabled; see
+`stm32h533re_nucleo/validation.md`.
 
 ## 1. Scope and principles
 
@@ -370,9 +399,9 @@ a signal that the SDPE alias contract must be improved.
 
 ### E. Expand across families
 
-Recommended order: NUCLEO-F302R8, NUCLEO-C092RC/NUCLEO-U083RC, then
-NUCLEO-H533RE. Complete and validate one golden board for each new STM32 family
-before adding further members.
+NUCLEO-H533RE is now the validated STM32H5 golden board. Continue with
+NUCLEO-F302R8 and NUCLEO-C092RC/NUCLEO-U083RC, completing one golden board for
+each new STM32 family before adding further members.
 
 ### F. Fleet validation and release
 
@@ -384,12 +413,12 @@ examples only after their replacements are validated.
 
 - approved bilingual specification;
 - `stm32_nucleo_64_board` SDPE schema;
-- G431RB, G474RE, and G491RE board entities;
-- three preferred IOC files and three target SDPE projects;
+- G431RB, G474RE, G491RE, and H533RE board entities;
+- four preferred IOC files and four target SDPE projects;
 - one shared `user`, `xplt`, and `gmp_src_mgr` implementation;
 - IOC/SDPE static validator;
 - headless CubeMX and batch CMake/GCC scripts;
-- three pin maps and validation records;
+- four pin maps and validation records;
 - complete G431RB hardware validation, with accurate status for other boards.
 
 ## 12. Non-goals
