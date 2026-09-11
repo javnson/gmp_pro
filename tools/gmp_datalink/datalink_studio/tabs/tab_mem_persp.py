@@ -372,7 +372,7 @@ class TabMemPersp(QWidget):
 
     def edit_and_write_value(self, offset):
         if not self.hermes.running:
-            self.log("Open the serial port before writing memory.", "red")
+            self.log("Open the target connection before writing memory.", "red")
             return
             
         target_addr = self.target_addr + offset

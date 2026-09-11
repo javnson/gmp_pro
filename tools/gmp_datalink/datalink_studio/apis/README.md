@@ -65,6 +65,23 @@ Do not open the same serial port in the GUI and the headless API at the same
 time. The serial transport is thread-safe and serializes transactions, but a
 single port still has only one request/response owner.
 
+The same client accepts Ethernet transports. TCP defaults to port `50001` and
+UDP defaults to `50002`:
+
+```python
+from apis import GmpDatalinkClient, TcpDataLinkTransport, UdpDataLinkTransport
+
+with GmpDatalinkClient(transport=TcpDataLinkTransport("192.168.137.2")) as dl:
+    print(dl.tunables.discover())
+
+with GmpDatalinkClient(transport=UdpDataLinkTransport("192.168.137.2")) as dl:
+    print(dl.memory.discover())
+```
+
+TCP parses a continuous byte stream. Each UDP transaction uses one request and
+one response datagram. A UDP retry can repeat a non-idempotent command, so use
+`retries=0` for such operations; PIL STEP must likewise never retry.
+
 ## Tunable parameters
 
 Always discover the target table before modifying a controller. Each

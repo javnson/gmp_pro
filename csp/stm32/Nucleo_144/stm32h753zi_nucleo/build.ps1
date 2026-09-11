@@ -1,7 +1,10 @@
 [CmdletBinding()]
 param(
     [ValidateSet("Debug", "Release")]
-    [string]$Configuration = "Release"
+    [string]$Configuration = "Release",
+
+    [ValidateSet("TCP", "UDP")]
+    [string]$DatalinkTransport = "TCP"
 )
 $ErrorActionPreference = "Stop"
 $boardDir = $PSScriptRoot
@@ -39,7 +42,7 @@ finally { Pop-Location }
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $buildDir = Join-Path $boardDir ("build\" + $Configuration.ToLowerInvariant())
-cmake -S $boardDir -B $buildDir -G Ninja "-DCMAKE_TOOLCHAIN_FILE=$(Join-Path $boardDir 'cmake\gcc-arm-none-eabi.cmake')" "-DCMAKE_BUILD_TYPE=$Configuration"
+cmake -S $boardDir -B $buildDir -G Ninja "-DCMAKE_TOOLCHAIN_FILE=$(Join-Path $boardDir 'cmake\gcc-arm-none-eabi.cmake')" "-DCMAKE_BUILD_TYPE=$Configuration" "-DGMP_DATALINK_TRANSPORT=$DatalinkTransport"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 cmake --build $buildDir
 exit $LASTEXITCODE

@@ -7,7 +7,7 @@ Python 接口，适用于测试脚本、自动化验证、实验室工具以及 
 图形化调试器共用协议和资源描述符编解码逻辑，因此下位机不需要分别维护 GUI 与 API
 两套固件。
 
-公共入口为 `GmpDatalinkClient`。一个 Client 独占一条串行请求/响应链路，并提供三组
+公共入口为 `GmpDatalinkClient`。一个 Client 独占一条请求/响应链路，并提供三组
 服务：
 
 | 服务 | 属性 | 主要操作 |
@@ -44,6 +44,23 @@ with GmpDatalinkClient("COM5", 256000) as dl:
     if regions:
         print(dl.memory.read_region(regions[0], byte_length=16).hex(" "))
 ```
+
+Ethernet 使用相同 Client，只需注入网络传输。TCP 默认端口为 `50001`，UDP 默认
+端口为 `50002`：
+
+```python
+from apis import GmpDatalinkClient, TcpDataLinkTransport, UdpDataLinkTransport
+
+with GmpDatalinkClient(transport=TcpDataLinkTransport("192.168.137.2")) as dl:
+    print(dl.tunables.discover())
+
+with GmpDatalinkClient(transport=UdpDataLinkTransport("192.168.137.2")) as dl:
+    print(dl.memory.discover())
+```
+
+TCP 保持一条连接并按字节流组帧；UDP 的一次 `transact()` 发送一个完整请求数据报，
+目标以一个完整响应数据报返回。UDP 重试可能重复执行非幂等命令，此类命令应将
+`retries=0`，PIL STEP 同样不得自动重试。
 
 上下文管理器会自动打开和关闭串口。`timeout` 是单次请求的超时时间，`retries` 是
 首次请求失败后的重试次数：

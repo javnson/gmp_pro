@@ -8,7 +8,8 @@ import serial.tools.list_ports
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QTabWidget, QGroupBox, QComboBox,
                              QPushButton, QTextBrowser, QLabel, QFormLayout,
-                             QProgressBar, QSizePolicy, QMenu, QToolButton)
+                             QProgressBar, QSizePolicy, QMenu, QToolButton,
+                             QLineEdit, QSpinBox)
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
 # Shared communication engine.
@@ -34,7 +35,7 @@ PARITY_MAP = {
 
 LOG_SOURCE_COLORS = {
     "System": "#455A64",
-    "Serial Terminal": "#546E7A",
+    "Transport Terminal": "#546E7A",
     "Loop Test": "#00897B",
     "PIL Simulation": "#3949AB",
     "PIL Bridge": "#7B1FA2",
@@ -85,8 +86,18 @@ class MainWindow(QMainWindow):
         target_unit_bytes = int(os.environ.get("GMP_DATALINK_TARGET_UNIT_BYTES", "1"))
         if target_unit_bytes not in (1, 2):
             target_unit_bytes = 1
+        self.transport_kind = os.environ.get(
+            "GMP_DATALINK_TRANSPORT", "serial"
+        ).lower()
+        if self.transport_kind not in ("serial", "tcp", "udp"):
+            self.transport_kind = "serial"
+        transport_title = (
+            "Serial" if self.transport_kind == "serial"
+            else self.transport_kind.upper()
+        )
         self.setWindowTitle(
-            f"GMP Data Link Studio — u{target_unit_bytes * 8} Target Profile"
+            f"GMP Data Link Studio — {transport_title} / "
+            f"u{target_unit_bytes * 8} Target Profile"
         )
         self.resize(1100, 650)
         
@@ -116,7 +127,7 @@ class MainWindow(QMainWindow):
 
         # Mount feature pages and inject their shared services.
         self.tab_raw = TabRaw(self.hermes)
-        self.tabs.addTab(self.tab_raw, "1. Serial Terminal (RAW)")
+        self.tabs.addTab(self.tab_raw, "1. Transport Terminal (RAW)")
         
         self.tab_ascii = TabAscii(self.hermes)
         self.tabs.addTab(self.tab_ascii, "2. Data Link Loop Test (ECHO)")
@@ -148,8 +159,10 @@ class MainWindow(QMainWindow):
         right_panel = QVBoxLayout()
         main_layout.addLayout(right_panel, stretch=1)
         
-        # Fixed-height serial configuration.
-        self._build_serial_panel(right_panel)
+        if self.transport_kind == "serial":
+            self._build_serial_panel(right_panel)
+        else:
+            self._build_network_panel(right_panel)
         # Fixed-height transmit and receive statistics.
         self._build_stats_panel(right_panel) 
         
@@ -222,6 +235,43 @@ class MainWindow(QMainWindow):
         layout.addWidget(group_box)
         
         self.refresh_ports()
+
+    def _build_network_panel(self, layout: QVBoxLayout) -> None:
+        protocol_name = self.transport_kind.upper()
+        group_box = QGroupBox(f"Ethernet {protocol_name} Configuration")
+        group_box.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        form_layout = QFormLayout()
+        form_layout.setLabelAlignment(Qt.AlignRight)
+
+        self.edit_network_host = QLineEdit(
+            os.environ.get("GMP_DATALINK_ETH_HOST", "192.168.137.2")
+        )
+        self.spin_network_port = QSpinBox()
+        self.spin_network_port.setRange(1, 65535)
+        default_port = 50001 if self.transport_kind == "tcp" else 50002
+        try:
+            configured_port = int(
+                os.environ.get("GMP_DATALINK_ETH_PORT", str(default_port))
+            )
+        except ValueError:
+            configured_port = default_port
+        self.spin_network_port.setValue(min(65535, max(1, configured_port)))
+        form_layout.addRow("Target host:", self.edit_network_host)
+        form_layout.addRow("DL port:", self.spin_network_port)
+
+        self.btn_connect = QPushButton(f"Open {protocol_name}")
+        self.btn_connect.setMinimumHeight(40)
+        font = self.btn_connect.font()
+        font.setBold(True)
+        self.btn_connect.setFont(font)
+        self.btn_connect.clicked.connect(self.toggle_connection)
+
+        vbox = QVBoxLayout()
+        vbox.addLayout(form_layout)
+        vbox.addSpacing(5)
+        vbox.addWidget(self.btn_connect)
+        group_box.setLayout(vbox)
+        layout.addWidget(group_box)
 
     def _build_stats_panel(self, layout: QVBoxLayout):
         """Build independent transmit and receive bus-load indicators."""
@@ -332,15 +382,15 @@ class MainWindow(QMainWindow):
         self.lbl_speed_tx.setText(f"TX: {tx_kbs:.1f} kB/s")
         self.lbl_speed_rx.setText(f"RX: {rx_kbs:.1f} kB/s")
 
-        # Approximate UART capacity as ten wire bits per payload byte.
-        try:
-            baud_rate = int(self.cb_baud.currentText())
-            max_bytes_per_sec = baud_rate / 10.0
-            
-            tx_util = (tx_diff / max_bytes_per_sec) * 100.0 if max_bytes_per_sec > 0 else 0.0
-            rx_util = (rx_diff / max_bytes_per_sec) * 100.0 if max_bytes_per_sec > 0 else 0.0
-        except ValueError:
-            tx_util, rx_util = 0.0, 0.0
+        if self.transport_kind == "serial":
+            try:
+                max_bytes_per_sec = int(self.cb_baud.currentText()) / 10.0
+            except ValueError:
+                max_bytes_per_sec = 0.0
+        else:
+            max_bytes_per_sec = 100_000_000.0 / 8.0
+        tx_util = (tx_diff / max_bytes_per_sec) * 100.0 if max_bytes_per_sec else 0.0
+        rx_util = (rx_diff / max_bytes_per_sec) * 100.0 if max_bytes_per_sec else 0.0
 
         # Clamp display values to the progress-bar range.
         tx_int = int(min(100, max(0, tx_util)))
@@ -366,21 +416,33 @@ class MainWindow(QMainWindow):
 
     def toggle_connection(self):
         if not self.hermes.running:
-            port = self.cb_ports.currentData()
-            if not port:
-                self.log_message("System", "Select a valid serial port first.")
-                return
-            baud = int(self.cb_baud.currentText())
-            data_bits = DATA_BITS_MAP[self.cb_data_bits.currentText()]
-            stop_bits = STOP_BITS_MAP[self.cb_stop_bits.currentText()]
-            parity = PARITY_MAP[self.cb_parity.currentText()]
-            
-            self.hermes.connect_serial(port, baud, data_bits, parity, stop_bits)
+            if self.transport_kind == "serial":
+                port = self.cb_ports.currentData()
+                if not port:
+                    self.log_message("System", "Select a valid serial port first.")
+                    return
+                baud = int(self.cb_baud.currentText())
+                data_bits = DATA_BITS_MAP[self.cb_data_bits.currentText()]
+                stop_bits = STOP_BITS_MAP[self.cb_stop_bits.currentText()]
+                parity = PARITY_MAP[self.cb_parity.currentText()]
+                self.hermes.connect_serial(port, baud, data_bits, parity, stop_bits)
+            else:
+                self.hermes.connect_network(
+                    self.transport_kind,
+                    self.edit_network_host.text().strip(),
+                    self.spin_network_port.value(),
+                )
         else:
             self.hermes.close()
 
     def apply_pil_serial_baudrate(self, baudrate: int) -> None:
         """Apply the SDPE baud rate to the next serial connection."""
+        if self.transport_kind != "serial":
+            self.log_message(
+                "PIL Bridge",
+                f"SDPE serial baud rate {baudrate} is not used by Ethernet Data Link.",
+            )
+            return
         if self.hermes.running:
             active_baudrate = int(self.hermes.serial.baudrate)
             if active_baudrate != baudrate:
@@ -395,14 +457,17 @@ class MainWindow(QMainWindow):
 
     def update_ui_connection_state(self, is_connected: bool):
         if is_connected:
-            self.btn_connect.setText("Close Port")
+            self.btn_connect.setText("Close Connection")
             self.btn_connect.setStyleSheet("""
                 QPushButton { border-left: 6px solid #4CAF50; background-color: #E8F5E9; border-radius: 3px; }
                 QPushButton:hover { background-color: #C8E6C9; }
             """)
             self._set_combos_enabled(False)
         else:
-            self.btn_connect.setText("Open Port")
+            self.btn_connect.setText(
+                "Open Port" if self.transport_kind == "serial"
+                else f"Open {self.transport_kind.upper()}"
+            )
             self.btn_connect.setStyleSheet("""
                 QPushButton { border-left: 6px solid #F44336; background-color: #FAFAFA; border-radius: 3px; }
                 QPushButton:hover { background-color: #EEEEEE; }
@@ -410,12 +475,16 @@ class MainWindow(QMainWindow):
             self._set_combos_enabled(True)
 
     def _set_combos_enabled(self, state: bool):
-        self.cb_ports.setEnabled(state)
-        self.cb_baud.setEnabled(state)
-        self.cb_data_bits.setEnabled(state)
-        self.cb_stop_bits.setEnabled(state)
-        self.cb_parity.setEnabled(state)
-        self.btn_refresh.setEnabled(state)
+        if self.transport_kind == "serial":
+            self.cb_ports.setEnabled(state)
+            self.cb_baud.setEnabled(state)
+            self.cb_data_bits.setEnabled(state)
+            self.cb_stop_bits.setEnabled(state)
+            self.cb_parity.setEnabled(state)
+            self.btn_refresh.setEnabled(state)
+        else:
+            self.edit_network_host.setEnabled(state)
+            self.spin_network_port.setEnabled(state)
 
     def log_message(self, source: str, message: str) -> None:
         """Store and render one plain-text message using its page accent color."""

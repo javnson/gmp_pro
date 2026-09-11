@@ -5,6 +5,7 @@ import queue
 import time
 from datetime import datetime
 from PyQt5.QtCore import QObject, pyqtSignal
+from network_transport import SocketByteTransport
 
 SOF, EOF, ESC, XOR = 0x7B, 0x7D, 0x25, 0x20
 MAX_DL_PAYLOAD = 256
@@ -161,6 +162,31 @@ class HermesDatalinkQt(QObject):
             self.sig_conn_state.emit(False)
             return False
 
+    def connect_network(self, protocol: str, host: str, port: int) -> bool:
+        """Open a TCP or UDP Data Link endpoint and start shared I/O workers."""
+        if self.serial.is_open:
+            self.close()
+        endpoint = SocketByteTransport(protocol, host, port)
+        try:
+            endpoint.open()
+            self.serial = endpoint
+            self.running = True
+            self._transport_name = endpoint.endpoint
+            while not self.tx_queue.empty():
+                try: self.tx_queue.get_nowait()
+                except queue.Empty: break
+            self._start_io_workers()
+            self.emit_log(
+                "System", f"{endpoint.endpoint} opened with queued I/O workers."
+            )
+            self.sig_conn_state.emit(True)
+            return True
+        except Exception as e:
+            endpoint.close()
+            self.emit_log("System", f"Failed to open {endpoint.endpoint}: {str(e)}")
+            self.sig_conn_state.emit(False)
+            return False
+
     def feed_transport(self, data: bytes) -> bool:
         """Deliver target-originated bytes to an attached managed transport."""
         if isinstance(self.serial, _CallbackByteTransport) and self.serial.is_open:
@@ -268,7 +294,7 @@ class HermesDatalinkQt(QObject):
                 continue
             except Exception as e:
                 if self.running:
-                    self.emit_log("System", f"Serial transmit worker failed: {str(e)}")
+                    self.emit_log("System", f"Transport transmit worker failed: {str(e)}")
                     self.close()
 
     # =========================================================
@@ -290,7 +316,7 @@ class HermesDatalinkQt(QObject):
                 raw_bytes = self.serial.read(self.serial.in_waiting or 1)
             except Exception as e:
                 if self.running:
-                    self.emit_log("System", f"Serial hardware disconnected: {str(e)}")
+                    self.emit_log("System", f"Transport disconnected: {str(e)}")
                     self.close()
                 break
                 

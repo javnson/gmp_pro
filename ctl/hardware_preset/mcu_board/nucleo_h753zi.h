@@ -561,6 +561,16 @@ extern "C"
 #define NUCLEO_H753ZI_ETH_UDP_ECHO_PORT (50000U)
 
 /**
+ * @brief GMP Data Link TCP service port.
+ */
+#define NUCLEO_H753ZI_ETH_DL_TCP_PORT (50001U)
+
+/**
+ * @brief GMP Data Link UDP service port.
+ */
+#define NUCLEO_H753ZI_ETH_DL_UDP_PORT (50002U)
+
+/**
  * @brief One when an internal DAC is routed externally.
  */
 #define NUCLEO_H753ZI_HAS_DAC (0U)

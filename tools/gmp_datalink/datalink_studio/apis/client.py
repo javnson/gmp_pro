@@ -9,6 +9,7 @@ from collections.abc import Generator, Iterable, Mapping
 from typing import Protocol, TypeAlias
 
 import serial
+from network_transport import SocketByteTransport
 
 from .protocol import (
     AccessPermission,
@@ -238,6 +239,65 @@ class SerialDataLinkTransport:
                     f"Serial communication failed on {self.port!r}: {error}"
                 ) from error
             raise GmpDlTimeout(f"Command 0x{command:02X} timed out.")
+
+
+class NetworkDataLinkTransport(SerialDataLinkTransport):
+    """Synchronous GMP Data Link transaction transport over TCP or UDP."""
+
+    def __init__(
+        self,
+        protocol: str,
+        host: str,
+        port: int,
+        *,
+        timeout: float = 0.6,
+        retries: int = 2,
+    ) -> None:
+        if timeout <= 0.0:
+            raise ValueError("The transaction timeout must be positive.")
+        if retries < 0:
+            raise ValueError("The retry count cannot be negative.")
+        self.port = f"{protocol.lower()}://{host}:{port}"
+        self.baudrate = 0
+        self.timeout = timeout
+        self.retries = retries
+        self.serial = SocketByteTransport(
+            protocol, host, port, timeout=min(0.05, timeout), connect_timeout=timeout
+        )
+        self._sequence = 0
+        self._lock = threading.RLock()
+
+    def open(self) -> None:
+        """Open the configured network endpoint."""
+        try:
+            self.serial.open()
+            self.serial.reset_input_buffer()
+        except OSError as error:
+            raise GmpDlError(f"Cannot open Data Link endpoint {self.port}: {error}") from error
+
+    def transact(self, command: int, payload: bytes = b"") -> bytes:
+        try:
+            return super().transact(command, payload)
+        except OSError as error:
+            raise GmpDlError(f"Network communication failed on {self.port}: {error}") from error
+
+
+class TcpDataLinkTransport(NetworkDataLinkTransport):
+    """Synchronous GMP Data Link transport over one TCP connection."""
+
+    def __init__(
+        self, host: str, port: int = 50001, *, timeout: float = 0.6, retries: int = 2
+    ) -> None:
+        super().__init__("tcp", host, port, timeout=timeout, retries=retries)
+
+
+class UdpDataLinkTransport(NetworkDataLinkTransport):
+    """Synchronous GMP Data Link transport using one frame per UDP datagram."""
+
+    def __init__(
+        self, host: str, port: int = 50002, *, timeout: float = 0.6, retries: int = 2
+    ) -> None:
+        super().__init__("udp", host, port, timeout=timeout, retries=retries)
 
 
 def _resolve_by_id_or_name(items: Iterable[object], selector: ResourceSelector, id_name: str) -> object:

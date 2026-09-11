@@ -1,4 +1,4 @@
-"""Exercise the NUCLEO-H753ZI GMP Data Link firmware over the ST-Link VCP."""
+"""Exercise NUCLEO-H753ZI GMP Data Link over serial, TCP, or UDP."""
 
 from __future__ import annotations
 
@@ -6,8 +6,11 @@ import argparse
 import math
 import socket
 import struct
+import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import serial
 from serial.tools import list_ports
@@ -17,7 +20,15 @@ EOF = 0x7D
 ESC = 0x25
 XOR = 0x20
 DEFAULT_TARGET_IP = "192.168.137.2"
-DEFAULT_UDP_PORT = 50000
+DEFAULT_UDP_ECHO_PORT = 50000
+DEFAULT_TCP_DL_PORT = 50001
+DEFAULT_UDP_DL_PORT = 50002
+
+STUDIO_DIR = Path(__file__).resolve().parents[4] / "tools" / "gmp_datalink" / "datalink_studio"
+if str(STUDIO_DIR) not in sys.path:
+    sys.path.insert(0, str(STUDIO_DIR))
+
+from network_transport import SocketByteTransport  # noqa: E402
 
 
 def crc16_ccitt(data: bytes) -> int:
@@ -56,7 +67,7 @@ class Frame:
     payload: bytes
 
 
-def read_exact(port: serial.Serial, size: int, deadline: float) -> bytes:
+def read_exact(port: Any, size: int, deadline: float) -> bytes:
     """Read exactly *size* bytes before the shared frame deadline."""
     result = bytearray()
     while len(result) < size and time.monotonic() < deadline:
@@ -64,7 +75,7 @@ def read_exact(port: serial.Serial, size: int, deadline: float) -> bytes:
     return bytes(result)
 
 
-def read_frame(port: serial.Serial, timeout: float = 1.0) -> Frame:
+def read_frame(port: Any, timeout: float = 1.0) -> Frame:
     """Read and validate one frame while ignoring unrelated raw bytes."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -104,7 +115,7 @@ def read_frame(port: serial.Serial, timeout: float = 1.0) -> Frame:
     raise TimeoutError("No valid GMP Data Link frame was received")
 
 
-def transact(port: serial.Serial, sequence: int, command: int, payload: bytes = b"") -> bytes:
+def transact(port: Any, sequence: int, command: int, payload: bytes = b"") -> bytes:
     """Send one request and return its matching response payload."""
     port.write(encode_frame(sequence, command, payload))
     port.flush()
@@ -144,14 +155,47 @@ def validate_udp_echo(target_ip: str, udp_port: int) -> bytes:
 
 
 def run_smoke_test(
-    port_name: str, baudrate: int, target_ip: str, udp_port: int
+    transport: str,
+    port_name: str | None,
+    baudrate: int,
+    target_ip: str,
+    network_port: int,
+    udp_echo_port: int,
 ) -> None:
-    """Validate DMA transport, discovery, read/write services, and Scope capture."""
-    with serial.Serial(port_name, baudrate, timeout=0.05, write_timeout=1.0) as port:
+    """Validate transport, discovery, read/write services, and Scope capture."""
+    if transport == "serial":
+        channel = serial.Serial(
+            port_name or discover_port(), baudrate, timeout=0.05, write_timeout=1.0
+        )
+        endpoint = f"{channel.port} at {baudrate} baud"
+    else:
+        channel = SocketByteTransport(
+            transport, target_ip, network_port, timeout=0.05, connect_timeout=2.0
+        )
+        open_deadline = time.monotonic() + 4.0
+        while True:
+            try:
+                channel.open()
+                break
+            except OSError:
+                if time.monotonic() >= open_deadline:
+                    raise
+                time.sleep(0.15)
+        endpoint = channel.endpoint
+
+    with channel as port:
         port.reset_input_buffer()
         sequence = 1
 
-        info = transact(port, sequence, 0x02)
+        startup_deadline = time.monotonic() + 4.0
+        while True:
+            try:
+                info = transact(port, sequence, 0x02)
+                break
+            except TimeoutError:
+                if transport == "serial" or time.monotonic() >= startup_deadline:
+                    raise
+                time.sleep(0.15)
         expected_info = bytes(
             (3, 1, 1, 8, 4, 4, 0x10, 5, 1, 0x30, 2,
              2, 0x50, 2, 3, 0x60, 1)
@@ -272,7 +316,7 @@ def run_smoke_test(
             ("ADC Feedback Raw", 24),
             ("QEP Count", 4),
             ("PWM Compare (outputs remain disabled)", 12),
-            ("Platform Diagnostics", 48),
+            ("Platform Diagnostics", 72),
         )
         discovered_regions = {}
         for resource_id, (expected_name, expected_length) in enumerate(
@@ -354,15 +398,15 @@ def run_smoke_test(
                 raise AssertionError(
                     f"Repeated DMA stress payload {stress_index} mismatch"
                 )
-        udp_payload = validate_udp_echo(target_ip, udp_port)
+        udp_payload = validate_udp_echo(target_ip, udp_echo_port)
         time.sleep(0.55)
         sequence += 1
         diag_second = transact(
             port, sequence, 0x50, struct.pack("<IBH", diag_address, 1, diag_length)
         )
         diag_elapsed = time.monotonic() - diag_start_time
-        diagnostics_first = struct.unpack("<12I", diag_first[1:])
-        diagnostics = struct.unpack("<12I", diag_second[1:])
+        diagnostics_first = struct.unpack("<18I", diag_first[1:])
+        diagnostics = struct.unpack("<18I", diag_second[1:])
         if diag_first[:1] != b"\x00" or diag_second[:1] != b"\x00":
             raise AssertionError("Platform diagnostics read failed")
         control_isr_rate = (
@@ -374,7 +418,7 @@ def run_smoke_test(
             )
         if diagnostics[1] != 0:
             raise AssertionError(f"PWM outputs unexpectedly enabled: 0x{diagnostics[1]:08X}")
-        if diagnostics[2] == 0 or diagnostics[3] == 0:
+        if transport == "serial" and (diagnostics[2] == 0 or diagnostics[3] == 0):
             raise AssertionError("UART DMA RX/TX callbacks were not observed")
         if diagnostics[4] != diagnostics_first[4]:
             raise AssertionError(
@@ -394,6 +438,20 @@ def run_smoke_test(
                 "Ethernet error count advanced during the test window: "
                 f"{diagnostics_first[11]} -> {diagnostics[11]}"
             )
+        if transport != "serial":
+            if diagnostics[12] <= diagnostics_first[12]:
+                raise AssertionError("Ethernet Data Link RX counter did not advance")
+            if diagnostics[13] <= diagnostics_first[13]:
+                raise AssertionError("Ethernet Data Link TX counter did not advance")
+            if diagnostics[14] <= diagnostics_first[14] or diagnostics[15] <= diagnostics_first[15]:
+                raise AssertionError("Ethernet Data Link byte counters did not advance")
+            if transport == "tcp" and diagnostics[16] == 0:
+                raise AssertionError("TCP accept counter did not advance")
+            if diagnostics[17] != diagnostics_first[17]:
+                raise AssertionError(
+                    "Ethernet Data Link error count advanced during the test window: "
+                    f"{diagnostics_first[17]} -> {diagnostics[17]}"
+                )
 
         sequence += 1
         scope_descriptor = transact(port, sequence, 0x60, bytes((0, 0)))
@@ -476,7 +534,7 @@ def run_smoke_test(
         if not (sine[99] < dc_offset <= sine[100]):
             raise AssertionError("Scope pre-trigger position does not match the configured 25 percent")
 
-    print(f"PASS: u8 Data Link validated on {port_name} at {baudrate} baud")
+    print(f"PASS: u8 Data Link validated over {endpoint}")
     print(f"      Memory discovery: {memory_name}, 0x{memory_address:08X}, {memory_length} bytes")
     print(f"      PIL: mask synchronization and STEP loopback validated")
     print(
@@ -486,9 +544,14 @@ def run_smoke_test(
         f"LED toggles={diagnostics[6]}, PWM output state=0"
     )
     print(
-        f"      Ethernet: {target_ip}:{udp_port}, link=up, "
+        f"      Ethernet: raw UDP echo {target_ip}:{udp_echo_port}, link=up, "
         f"UDP RX/TX={diagnostics[8]}/{diagnostics[9]}, bytes={diagnostics[10]}"
     )
+    if transport != "serial":
+        print(
+            f"      Ethernet DL: {transport.upper()} RX/TX={diagnostics[12]}/{diagnostics[13]}, "
+            f"bytes={diagnostics[14]}/{diagnostics[15]}, errors={diagnostics[17]}"
+        )
     print(f"      Tunable discovery: {len(tunable_names)} physical signal parameters")
     print(
         f"      Scope: {scope_name}, generation {generation}, {depth} x {channels} float32, "
@@ -499,13 +562,25 @@ def run_smoke_test(
 def main() -> None:
     """Parse command-line options and run the hardware smoke test."""
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--transport", choices=("serial", "tcp", "udp"), default="serial"
+    )
     parser.add_argument("--port", default=None, help="Serial port; auto-detected when omitted")
     parser.add_argument("--baudrate", type=int, default=921600)
     parser.add_argument("--target-ip", default=DEFAULT_TARGET_IP)
-    parser.add_argument("--udp-port", type=int, default=DEFAULT_UDP_PORT)
+    parser.add_argument("--network-port", type=int, default=None)
+    parser.add_argument("--udp-echo-port", type=int, default=DEFAULT_UDP_ECHO_PORT)
     args = parser.parse_args()
+    network_port = args.network_port
+    if network_port is None:
+        network_port = DEFAULT_UDP_DL_PORT if args.transport == "udp" else DEFAULT_TCP_DL_PORT
     run_smoke_test(
-        args.port or discover_port(), args.baudrate, args.target_ip, args.udp_port
+        args.transport,
+        args.port,
+        args.baudrate,
+        args.target_ip,
+        network_port,
+        args.udp_echo_port,
     )
 
 

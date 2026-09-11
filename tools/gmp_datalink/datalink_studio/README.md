@@ -4,8 +4,8 @@
 
 This directory contains the single maintained Python/PyQt frontend for GMP
 Data Link and processor-in-the-loop workflows. The u8 and u16 targets use the
-same serial wire format, so they share all protocol, resource-discovery, Scope,
-and user-interface code.
+same wire format, so serial, TCP, and UDP share all protocol,
+resource-discovery, Scope, and user-interface code.
 
 Choose one guarded launcher after installing GMP:
 
@@ -13,6 +13,13 @@ Choose one guarded launcher after installing GMP:
   and most modern CPUs.
 - `run_u16.bat` selects the 16-bit-addressed DSP profile used primarily by TI
   C28x devices.
+- `run_eth_tcp_u8.bat` / `run_eth_tcp_u16.bat` select TCP.
+- `run_eth_udp_u8.bat` / `run_eth_udp_u16.bat` select UDP.
+
+Ethernet launchers default to `192.168.137.2`, TCP port `50001`, and UDP port
+`50002`. Set `GMP_DATALINK_ETH_HOST` or `GMP_DATALINK_ETH_PORT` before launch
+to override them. TCP is parsed as a continuous byte stream; each UDP request
+and response occupies one datagram.
 
 The profile identifies the target contract in the window title; it does not
 fork the host codec. Target-side C selection remains automatic through
@@ -49,6 +56,10 @@ retained messages.
 callback, while `feed_transport()` injects received bytes. Physical serial and
 managed-process users therefore share the same framing, priority queue, and
 feature pages. The CCTL Result Viewer's Data Link page uses this transport.
+
+`HermesDatalinkQt.connect_network(protocol, host, port)` is the corresponding
+GUI network entry point. Every page continues to share one connection and one
+transmit queue.
 
 Memory Perspective always uses byte addresses on the wire. Convert a C28x
 native word address from a linker map to a byte address by multiplying it by

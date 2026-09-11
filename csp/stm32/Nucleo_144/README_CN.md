@@ -27,10 +27,20 @@
 - LAN8742 RMII；MAC：`02:47:4D:50:14:01`
 - 静态地址：`192.168.137.2/24`；网关：`192.168.137.1`
 - UDP 回显验收端口：`50000`
+- GMP DL：TCP `50001`、UDP `50002`
+
+板端通过编译宏 `GMP_NUCLEO_ETH_DL_TRANSPORT` 只选择一种 Ethernet DL 服务，值为
+`GMP_NUCLEO_ETH_DL_TCP` 或 `GMP_NUCLEO_ETH_DL_UDP`。H753ZI 构建脚本提供等价的
+`-DatalinkTransport TCP|UDP` 参数；默认使用 TCP。端口属于 SDPE 板级元件参数，
+不会散落在 user/xplt 业务代码中。USART3 DL 始终保留；示例为 UART 和 Ethernet
+分别创建独立的 DL 状态机及设施对象，两端可同时在线。Tunable 和 Memory 指向同一份
+应用状态，Scope 则各自拥有采集状态和缓冲区，避免并发组帧和采集互相覆盖。
 
 首次使用或 IOC 更新后，先在目标目录用 STM32CubeMX 的命令行模式执行
 `generate_cubemx.txt`。随后使用 `stm32h753zi_nucleo/build.ps1` 编译、
-`flash.ps1` 烧录，再运行 `smoke_test.py` 完成 GMP DL 和以太网联合验收。
+`flash.ps1` 烧录，再运行 `smoke_test.py --transport tcp|udp` 完成 GMP DL 和以太网联合验收。
+`dual_link_test.py --network-transport tcp|udp` 会同时打开 ST-Link VCP 和 Ethernet，
+以同步的大帧事务验证两条链路，并跨链路写入、读回和恢复 Tunable 参数。
 构建脚本会按 IOC 指定的固件版本补齐 CubeMX 板级模板未生成的 ADC HAL
 文件；固件包默认从用户的 STM32Cube 仓库查找，也可通过环境变量
 `STM32_CUBE_REPOSITORY` 指定仓库根目录。以太网测试前应按板卡手册确认

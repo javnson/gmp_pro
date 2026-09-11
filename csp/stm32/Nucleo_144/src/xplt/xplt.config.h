@@ -8,6 +8,16 @@
 
 #include <ctrl_settings.h>
 
+#define GMP_NUCLEO_ETH_DL_TCP (1U)
+#define GMP_NUCLEO_ETH_DL_UDP (2U)
+#ifndef GMP_NUCLEO_ETH_DL_TRANSPORT
+#define GMP_NUCLEO_ETH_DL_TRANSPORT GMP_NUCLEO_ETH_DL_TCP
+#endif
+#if GMP_NUCLEO_ETH_DL_TRANSPORT != GMP_NUCLEO_ETH_DL_TCP &&                  \
+    GMP_NUCLEO_ETH_DL_TRANSPORT != GMP_NUCLEO_ETH_DL_UDP
+#error "GMP_NUCLEO_ETH_DL_TRANSPORT must select TCP or UDP"
+#endif
+
 /* Backward-compatible defaults for board entities generated before v0.6. */
 #ifndef GMP_NUCLEO_QEP_SOFTWARE_INDEX
 #define GMP_NUCLEO_QEP_SOFTWARE_INDEX (0U)
@@ -34,5 +44,4 @@
 #define SPECIFY_BASE_PRINT_NOT_IMPL
 
 #endif // GMP_STM32_NUCLEO_144_XPLT_CONFIG_H
-
 

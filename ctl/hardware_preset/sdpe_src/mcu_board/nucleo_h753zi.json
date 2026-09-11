@@ -90,6 +90,8 @@
     "eth_netmask_0": "255", "eth_netmask_1": "255", "eth_netmask_2": "255", "eth_netmask_3": "0",
     "eth_gateway_0": "192", "eth_gateway_1": "168", "eth_gateway_2": "137", "eth_gateway_3": "1",
     "eth_udp_echo_port": "50000",
+    "eth_dl_tcp_port": "50001",
+    "eth_dl_udp_port": "50002",
     "has_dac": "0",
     "dac_handle": "NULL",
     "dac_symbol": "unused_dac",

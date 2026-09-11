@@ -465,7 +465,7 @@ class ChronosPage(QWidget):
             self.hermes.emit_log("Chronos", f"Stopped real-time acquisition for {self.page_name}.")
         else:
             if not self.hermes.running:
-                QMessageBox.warning(self, "Not Connected", "Open the serial port before starting DAQ.")
+                QMessageBox.warning(self, "Not Connected", "Open the target connection before starting DAQ.")
                 return
             self.is_running = True
             

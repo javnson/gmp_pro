@@ -88,7 +88,7 @@ class TabRaw(QWidget):
         # Transmit editor.
         tx_input_layout = QHBoxLayout()
         self.tx_input = QPlainTextEdit()
-        self.tx_input.setPlaceholderText("Send raw serial bytes without framing.\nHEX accepts forms such as 1A, 0x2b, and 3C 4d.")
+        self.tx_input.setPlaceholderText("Send raw transport bytes without framing.\nHEX accepts forms such as 1A, 0x2b, and 3C 4d.")
         self.tx_input.setMaximumHeight(100)
         self.tx_input.textChanged.connect(self.update_tx_status)
         
@@ -138,7 +138,7 @@ class TabRaw(QWidget):
         
         # Manual raw transfers use background priority and cannot starve services.
         self.hermes.send_raw(payload, priority=2)
-        self.hermes.emit_log("Serial Terminal", f"Sent {len(payload)} raw serial bytes.")
+        self.hermes.emit_log("Transport Terminal", f"Sent {len(payload)} raw transport bytes.")
 
     def on_bus_event(self, ev: dict):
         if ev['dir'] == 'RX': self.rx_total_bytes += len(ev['data'])

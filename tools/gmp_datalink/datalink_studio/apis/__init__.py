@@ -9,7 +9,10 @@ from .client import (
     MemoryApi,
     ScopeApi,
     SerialDataLinkTransport,
+    NetworkDataLinkTransport,
+    TcpDataLinkTransport,
     TunableApi,
+    UdpDataLinkTransport,
     crc16_ccitt,
     encode_frame,
 )
@@ -61,9 +64,12 @@ __all__ = [
     "ScopeStatus",
     "ScopeTriggerMode",
     "SerialDataLinkTransport",
+    "NetworkDataLinkTransport",
+    "TcpDataLinkTransport",
     "TunableApi",
     "TunableDataType",
     "TunableParameter",
+    "UdpDataLinkTransport",
     "crc16_ccitt",
     "encode_frame",
 ]
