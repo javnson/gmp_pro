@@ -59,6 +59,8 @@ def pin_signal(ioc: dict[str, str], pin: str) -> str | None:
         key_pin = key.removesuffix(".Signal").split("-", 1)[0]
         key_pin = key_pin.replace("\\ ", " ").split("(", 1)[0].strip()
         if key_pin == pin:
+            if value.startswith("GPXTI"):
+                return ioc.get(f"SH.{value}.0", value)
             return value
     return None
 
@@ -96,7 +98,8 @@ def check_pwm(report: Report, ioc: dict[str, str], timer: str) -> None:
     )
     report.require(ioc.get(prefix + "DeadTime") is not None, f"{timer} has no dead time")
     report.require(
-        ioc.get(prefix + "TIM_MasterOutputTrigger") == "TIM_TRGO_OC4REF",
+        ioc.get(prefix + "TIM_MasterOutputTrigger") == "TIM_TRGO_OC4REF"
+        or ioc.get(prefix + "TIM_MasterOutputTrigger2") == "TIM_TRGO2_OC4REF",
         f"{timer} does not trigger from OC4REF",
     )
 
@@ -106,6 +109,12 @@ def check_adc_feedback(
 ) -> None:
     parameters = entity["parameters"]
     count = int(parameters["adc_fb_count"])
+    regular_dma = bool(int(parameters.get("adc_regular_dma", "0")))
+    fixed_sequence = regular_dma and ioc.get("ADC1.Sequencer") == "NOT_FULLY_CONFIGURABLE"
+    selected_regular_channels = sorted(
+        int(channel)
+        for channel in re.findall(r"ADC_CHANNEL_(\d+)", ioc.get("ADC1.SelectedChannel", ""))
+    )
     report.require(count >= 6, "board entity exposes fewer than six ADC feedback channels")
     seen_pins: set[str] = set()
     for index in range(count):
@@ -113,11 +122,18 @@ def check_adc_feedback(
         handle = parameters[f"adc_fb{index}_handle"]
         rank_token = parameters[f"adc_fb{index}_rank"]
         adc = peripheral_from_handle(handle, "adc")
-        match = re.fullmatch(r"ADC_INJECTED_RANK_([1-4])", rank_token)
-        report.require(match is not None, f"FB{index} has invalid injected rank {rank_token}")
-        if match is None:
-            continue
-        rank = match.group(1)
+        if regular_dma:
+            rank = str(int(rank_token) + 1) if rank_token.isdigit() else ""
+            report.require(
+                rank_token == str(index),
+                f"FB{index} has invalid regular-DMA index {rank_token}",
+            )
+        else:
+            match = re.fullmatch(r"ADC_INJECTED_RANK_([1-4])", rank_token)
+            report.require(match is not None, f"FB{index} has invalid injected rank {rank_token}")
+            if match is None:
+                continue
+            rank = match.group(1)
         signal = ioc.get(f"{pin}.Signal", "")
         if signal.startswith("ADCx_INP"):
             shared_prefix = f"SH.{signal}."
@@ -133,15 +149,33 @@ def check_adc_feedback(
         signal_match = re.fullmatch(rf"{adc}_INP?(\d+)", signal)
         report.require(signal_match is not None, f"FB{index} {pin} is not routed to {adc}")
         if signal_match:
-            selected_channel = (
-                ioc.get(f"{adc}.Rank{rank}_Channel")
-                or ioc.get(f"{adc}.InjectedChannel-{rank}#ChannelInjectedConversion")
-                or ioc.get(f"{adc}.InjectedChannel-{rank}\\#ChannelInjectedConversion")
-            )
-            report.require(
-                selected_channel == f"ADC_CHANNEL_{signal_match.group(1)}",
-                f"FB{index} {adc} injected rank {rank} does not select {signal}",
-            )
+            if regular_dma:
+                channel = signal_match.group(1)
+                if fixed_sequence:
+                    report.require(
+                        index < len(selected_regular_channels)
+                        and selected_regular_channels[index] == int(channel),
+                        f"FB{index} does not match the fixed ADC sequence at {signal}",
+                    )
+                else:
+                    selected_rank = (
+                        ioc.get(f"{adc}.Rank-{channel}#ChannelRegularConversion")
+                        or ioc.get(f"{adc}.Rank-{channel}\\#ChannelRegularConversion")
+                    )
+                    report.require(
+                        selected_rank == rank,
+                        f"FB{index} {adc} regular rank {rank} does not select {signal}",
+                    )
+            else:
+                selected_channel = (
+                    ioc.get(f"{adc}.Rank{rank}_Channel")
+                    or ioc.get(f"{adc}.InjectedChannel-{rank}#ChannelInjectedConversion")
+                    or ioc.get(f"{adc}.InjectedChannel-{rank}\\#ChannelInjectedConversion")
+                )
+                report.require(
+                    selected_channel == f"ADC_CHANNEL_{signal_match.group(1)}",
+                    f"FB{index} {adc} injected rank {rank} does not select {signal}",
+                )
         report.require(pin not in seen_pins, f"ADC feedback pin {pin} is duplicated")
         report.require(pin in pin_doc, f"ADC feedback pin {pin} is absent from pin_assign.md")
         seen_pins.add(pin)
@@ -171,6 +205,7 @@ def check_target(repo: Path, board_dir: Path) -> Report:
         return report
     entity = load_json(entity_path)
     parameters = entity["parameters"]
+    regular_dma = bool(int(parameters.get("adc_regular_dma", "0")))
     pin_doc_path = board_dir / "pin_assign.md"
     report.require(pin_doc_path.is_file(), "missing pin_assign.md")
     pin_doc = pin_doc_path.read_text(encoding="utf-8") if pin_doc_path.is_file() else ""
@@ -187,7 +222,9 @@ def check_target(repo: Path, board_dir: Path) -> Report:
 
     ips = ioc_ips(ioc)
     dma_ip = "GPDMA1" if ioc.get("Mcu.Family") == "STM32H5" else "DMA"
-    required_ips = {"ADC1", "ADC2", dma_ip, "GPIO", "I2C1", "NVIC", "RCC", "SYS", "USART2"}
+    required_ips = {"ADC1", dma_ip, "GPIO", "I2C1", "NVIC", "RCC", "SYS", "USART2"}
+    if not regular_dma:
+        required_ips.add("ADC2")
     # GPIO is represented by pin settings rather than an Mcu.IP entry in CubeMX.
     required_ips.remove("GPIO")
     report.require(required_ips <= ips, f"missing IOC peripherals: {sorted(required_ips - ips)}")
@@ -217,14 +254,24 @@ def check_target(repo: Path, board_dir: Path) -> Report:
         ioc.get(f"TIM{qep_selection}.EncoderMode") == "TIM_ENCODERMODE_TI12",
         f"TIM{qep_selection} does not count both encoder inputs (TI12)",
     )
-    report.require(
-        any(
-            value.startswith(f"TIM{qep_selection}_ETR,Encoder_Interface_w_index")
-            for key, value in ioc.items()
-            if key.startswith(f"SH.S_TIM{qep_selection}_ETR.")
-        ),
-        f"TIM{qep_selection} has no native index input",
-    )
+    if int(parameters.get("qep_software_index", "0")):
+        qep_z_port = parameters[f"qep_tim{qep_selection}_z_port"]
+        qep_z_mask = parameters[f"qep_tim{qep_selection}_z_pin"]
+        qep_z_number = qep_z_mask.removeprefix("GPIO_PIN_")
+        qep_z_pin = f"P{qep_z_port[-1]}{qep_z_number}"
+        report.require(
+            pin_signal(ioc, qep_z_pin) == f"GPIO_EXTI{qep_z_number}",
+            f"software QEP index is not routed to {qep_z_pin} EXTI",
+        )
+    else:
+        report.require(
+            any(
+                value.startswith(f"TIM{qep_selection}_ETR,Encoder_Interface_w_index")
+                for key, value in ioc.items()
+                if key.startswith(f"SH.S_TIM{qep_selection}_ETR.")
+            ),
+            f"TIM{qep_selection} has no native index input",
+        )
 
     check_adc_feedback(report, ioc, entity, pin_doc)
     expected_trigger = parameters[f"pwm_tim{pwm_selection}_adc_trigger"]
@@ -235,21 +282,32 @@ def check_target(repo: Path, board_dir: Path) -> Report:
     runtime_binding = (
         repo / "csp/stm32/Nucleo_64/src/xplt/xplt.peripheral.c"
     ).read_text(encoding="utf-8")
-    for adc in ("ADC1", "ADC2"):
-        configured_trigger = ioc.get(f"{adc}.ExternalTrigInjecConv")
+    if regular_dma:
         report.require(
-            configured_trigger in supported_triggers,
-            f"{adc} injected trigger is not supplied by TIM1 or TIM8",
+            ioc.get("ADC1.ExternalTrigConv") == expected_trigger,
+            "ADC1 regular scan is not triggered by the selected PWM timer",
         )
-        if configured_trigger != expected_trigger:
+        report.require(
+            ioc.get("ADC1.DMAContinuousRequests") == "ENABLE"
+            and ioc.get("Dma.ADC1.0.Mode") == "DMA_CIRCULAR",
+            "ADC1 regular scan DMA is not continuous and circular",
+        )
+    else:
+        for adc in ("ADC1", "ADC2"):
+            configured_trigger = ioc.get(f"{adc}.ExternalTrigInjecConv")
             report.require(
-                "xplt_select_adc_trigger" in runtime_binding
-                and "GMP_NUCLEO_PWM_ADC_TRIGGER" in runtime_binding,
-                f"{adc} needs runtime trigger rebinding for TIM{pwm_selection}",
+                configured_trigger in supported_triggers,
+                f"{adc} injected trigger is not supplied by TIM1 or TIM8",
             )
-            report.warnings.append(
-                f"{adc} IOC defaults to {configured_trigger}; shared xplt rebinds it to {expected_trigger}"
-            )
+            if configured_trigger != expected_trigger:
+                report.require(
+                    "xplt_select_adc_trigger" in runtime_binding
+                    and "GMP_NUCLEO_PWM_ADC_TRIGGER" in runtime_binding,
+                    f"{adc} needs runtime trigger rebinding for TIM{pwm_selection}",
+                )
+                report.warnings.append(
+                    f"{adc} IOC defaults to {configured_trigger}; shared xplt rebinds it to {expected_trigger}"
+                )
     if ioc.get("Mcu.Family") == "STM32H5":
         report.require(
             any(key.startswith("NVIC.ADC1_IRQn") for key in ioc),
@@ -268,14 +326,24 @@ def check_target(repo: Path, board_dir: Path) -> Report:
             "USART2 TX GPDMA is missing or invalid",
         )
     else:
-        report.require("ADC1_2_IRQn" in " ".join(ioc), "ADC1/2 interrupt is not enabled")
+        if not regular_dma:
+            report.require("ADC1_2_IRQn" in " ".join(ioc), "ADC1/2 interrupt is not enabled")
+        rx_prefix = next(
+            (key.removesuffix(".Mode") for key in ioc if re.fullmatch(r"Dma\.USART2_RX\.\d+\.Mode", key)),
+            "",
+        )
+        tx_prefix = next(
+            (key.removesuffix(".Mode") for key in ioc if re.fullmatch(r"Dma\.USART2_TX\.\d+\.Mode", key)),
+            "",
+        )
         report.require(
-            ioc.get("Dma.USART2_RX.1.Mode") == "DMA_CIRCULAR",
+            bool(rx_prefix) and ioc.get(rx_prefix + ".Mode") == "DMA_CIRCULAR",
             "USART2 RX DMA is not circular",
         )
         report.require(
-            ioc.get("Dma.USART2_TX.2.Direction") == "DMA_MEMORY_TO_PERIPH"
-            and ioc.get("Dma.USART2_TX.2.Mode") == "DMA_NORMAL",
+            bool(tx_prefix)
+            and ioc.get(tx_prefix + ".Direction") == "DMA_MEMORY_TO_PERIPH"
+            and ioc.get(tx_prefix + ".Mode") == "DMA_NORMAL",
             "USART2 TX DMA is missing or invalid",
         )
     report.require(pin_signal(ioc, "PA2") == "USART2_TX", "VCP TX is not PA2/USART2_TX")
@@ -295,12 +363,22 @@ def check_target(repo: Path, board_dir: Path) -> Report:
     if int(parameters["has_dac"]):
         report.require("DAC1" in ips and pin_signal(ioc, "PA4") == "COMP_DAC11_group", "DAC capability mismatch")
     if int(parameters["has_can"]):
+        can_rx_pin = parameters["can_rx_pin"]
+        can_tx_pin = parameters["can_tx_pin"]
         report.require(
             "FDCAN1" in ips
-            and pin_signal(ioc, "PA11") == "FDCAN1_RX"
-            and pin_signal(ioc, "PA12") == "FDCAN1_TX",
+            and pin_signal(ioc, can_rx_pin) == "FDCAN1_RX"
+            and pin_signal(ioc, can_tx_pin) == "FDCAN1_TX",
             "FDCAN capability mismatch",
         )
+        if int(parameters.get("can_has_stby", "0")):
+            can_stby_port = parameters["can_stby_port"]
+            can_stby_number = parameters["can_stby_pin"].removeprefix("GPIO_PIN_")
+            can_stby_pin = f"P{can_stby_port[-1]}{can_stby_number}"
+            report.require(
+                pin_signal(ioc, can_stby_pin) == "GPIO_Output",
+                "CAN transceiver standby pin is not a GPIO output",
+            )
 
     documented_pins = {
         "PA2", "PA3", "PA5", i2c_scl_pin, i2c_sda_pin,

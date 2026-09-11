@@ -8,6 +8,17 @@
 
 #include <ctrl_settings.h>
 
+/* Backward-compatible defaults for board entities generated before v0.6. */
+#ifndef GMP_NUCLEO_QEP_SOFTWARE_INDEX
+#define GMP_NUCLEO_QEP_SOFTWARE_INDEX (0U)
+#endif
+#ifndef GMP_NUCLEO_ADC_REGULAR_DMA
+#define GMP_NUCLEO_ADC_REGULAR_DMA (0U)
+#endif
+#ifndef GMP_NUCLEO_CAN_HAS_STBY
+#define GMP_NUCLEO_CAN_HAS_STBY (0U)
+#endif
+
 #define SPECIFY_ENABLE_GMP_CTL
 #define SPECIFY_CTRL_GT_TYPE USING_FLOAT_FPU
 #define SPECIFY_DISABLE_GMP_LOGO

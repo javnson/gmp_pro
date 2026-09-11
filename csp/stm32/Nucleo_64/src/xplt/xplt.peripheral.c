@@ -10,7 +10,9 @@
 #include <xplt.peripheral.h>
 
 extern ADC_HandleTypeDef GMP_NUCLEO_ADC_PRIMARY_SYMBOL;
+#if !GMP_NUCLEO_ADC_REGULAR_DMA
 extern ADC_HandleTypeDef GMP_NUCLEO_ADC_SECONDARY_SYMBOL;
+#endif
 extern TIM_HandleTypeDef GMP_NUCLEO_PWM_TIMER_SYMBOL;
 extern TIM_HandleTypeDef GMP_NUCLEO_QEP_TIMER_SYMBOL;
 extern UART_HandleTypeDef GMP_NUCLEO_DL_UART_SYMBOL;
@@ -26,6 +28,9 @@ static gmp_datalink_t* bound_datalink;
 static byte_gt uart_rx_dma_buffer[GMP_NUCLEO_DL_RX_BUFFER_SIZE];
 static volatile uint16_t uart_rx_dma_position;
 static volatile fast_gt status_led_on;
+#if GMP_NUCLEO_ADC_REGULAR_DMA
+static uint16_t adc_regular_dma_buffer[GMP_NUCLEO_ADC_FB_COUNT];
+#endif
 volatile uint32_t gmp_nucleo_platform_diag[7];
 
 typedef enum
@@ -46,11 +51,13 @@ static void xplt_dl_arm_rx(void)
         Error_Handler();
 }
 
+#if !GMP_NUCLEO_ADC_REGULAR_DMA
 static void xplt_select_adc_trigger(ADC_HandleTypeDef* adc)
 {
     MODIFY_REG(adc->Instance->JSQR, GMP_NUCLEO_ADC_TRIGGER_MASK,
                GMP_NUCLEO_PWM_ADC_TRIGGER | GMP_NUCLEO_ADC_TRIGGER_EDGE);
 }
+#endif
 
 void setup_peripheral(void)
 {
@@ -79,13 +86,17 @@ void setup_peripheral(void)
     __HAL_TIM_SET_COMPARE(GMP_NUCLEO_PWM_TIMER_HANDLE, TIM_CHANNEL_4,
                           GMP_NUCLEO_PWM_PERIOD / 2U);
     SET_BIT(GMP_NUCLEO_PWM_TIMER_HANDLE->Instance->CCER, TIM_CCER_CC4E);
-    if (HAL_TIM_Base_Start(GMP_NUCLEO_PWM_TIMER_HANDLE) != HAL_OK)
-        Error_Handler();
-
     if (HAL_TIM_Encoder_Start(GMP_NUCLEO_QEP_TIMER_HANDLE,
                               TIM_CHANNEL_ALL) != HAL_OK)
         Error_Handler();
 
+#if GMP_NUCLEO_ADC_REGULAR_DMA
+    if (HAL_ADCEx_Calibration_Start(GMP_NUCLEO_ADC_PRIMARY_HANDLE) != HAL_OK ||
+        HAL_ADC_Start_DMA(GMP_NUCLEO_ADC_PRIMARY_HANDLE,
+                          (uint32_t*)adc_regular_dma_buffer,
+                          GMP_NUCLEO_ADC_FB_COUNT) != HAL_OK)
+        Error_Handler();
+#else
     if (HAL_ADCEx_Calibration_Start(GMP_NUCLEO_ADC_SECONDARY_HANDLE,
                                     ADC_SINGLE_ENDED) != HAL_OK ||
         HAL_ADCEx_Calibration_Start(GMP_NUCLEO_ADC_PRIMARY_HANDLE,
@@ -96,6 +107,15 @@ void setup_peripheral(void)
     if (HAL_ADCEx_InjectedStart(GMP_NUCLEO_ADC_SECONDARY_HANDLE) != HAL_OK ||
         HAL_ADCEx_InjectedStart_IT(GMP_NUCLEO_ADC_PRIMARY_HANDLE) != HAL_OK)
         Error_Handler();
+#endif
+
+    if (HAL_TIM_Base_Start(GMP_NUCLEO_PWM_TIMER_HANDLE) != HAL_OK)
+        Error_Handler();
+
+#if GMP_NUCLEO_CAN_HAS_STBY
+    HAL_GPIO_WritePin(GMP_NUCLEO_CAN_STBY_PORT, GMP_NUCLEO_CAN_STBY_PIN,
+                      GMP_NUCLEO_CAN_STBY_OFF);
+#endif
 
 #if GMP_NUCLEO_HAS_DAC
     if (HAL_DAC_Start(GMP_NUCLEO_DAC_HANDLE, GMP_NUCLEO_DAC_CHANNEL) != HAL_OK)
@@ -150,6 +170,14 @@ static uint32_t xplt_limit_pwm_compare(uint32_t compare)
 
 void xplt_ctl_input(void)
 {
+#if GMP_NUCLEO_ADC_REGULAR_DMA
+    gmp_nucleo_adc_raw[0] = adc_regular_dma_buffer[GMP_NUCLEO_ADC_FB0_RANK];
+    gmp_nucleo_adc_raw[1] = adc_regular_dma_buffer[GMP_NUCLEO_ADC_FB1_RANK];
+    gmp_nucleo_adc_raw[2] = adc_regular_dma_buffer[GMP_NUCLEO_ADC_FB2_RANK];
+    gmp_nucleo_adc_raw[3] = adc_regular_dma_buffer[GMP_NUCLEO_ADC_FB3_RANK];
+    gmp_nucleo_adc_raw[4] = adc_regular_dma_buffer[GMP_NUCLEO_ADC_FB4_RANK];
+    gmp_nucleo_adc_raw[5] = adc_regular_dma_buffer[GMP_NUCLEO_ADC_FB5_RANK];
+#else
     gmp_nucleo_adc_raw[0] = HAL_ADCEx_InjectedGetValue(
         GMP_NUCLEO_ADC_FB0_HANDLE, GMP_NUCLEO_ADC_FB0_RANK);
     gmp_nucleo_adc_raw[1] = HAL_ADCEx_InjectedGetValue(
@@ -162,6 +190,7 @@ void xplt_ctl_input(void)
         GMP_NUCLEO_ADC_FB4_HANDLE, GMP_NUCLEO_ADC_FB4_RANK);
     gmp_nucleo_adc_raw[5] = HAL_ADCEx_InjectedGetValue(
         GMP_NUCLEO_ADC_FB5_HANDLE, GMP_NUCLEO_ADC_FB5_RANK);
+#endif
     gmp_nucleo_qep_count =
         (int32_t)__HAL_TIM_GET_COUNTER(GMP_NUCLEO_QEP_TIMER_HANDLE);
 }
@@ -205,7 +234,11 @@ void xplt_dac_write(uint32_t value)
 }
 #endif
 
+#if GMP_NUCLEO_ADC_REGULAR_DMA
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* adc)
+#else
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* adc)
+#endif
 {
     if (adc == GMP_NUCLEO_ADC_PRIMARY_HANDLE)
     {
@@ -214,6 +247,14 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* adc)
         user_dl_control_step();
     }
 }
+
+#if GMP_NUCLEO_QEP_SOFTWARE_INDEX
+void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin)
+{
+    if (pin == GMP_NUCLEO_QEP_Z_PIN)
+        __HAL_TIM_SET_COUNTER(GMP_NUCLEO_QEP_TIMER_HANDLE, 0U);
+}
+#endif
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* uart, uint16_t size)
 {

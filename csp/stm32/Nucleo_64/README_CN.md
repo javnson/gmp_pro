@@ -2,7 +2,7 @@
 
 [English](README.md) | **简体中文**
 
-状态：G431 配置基线、G474RE、G491RE 与 H533RE 实板基线 v0.5
+状态：G431 配置基线、G474RE、G491RE、H533RE 与 C092RC 实板基线 v0.6
 
 日期：2026-09-11
 
@@ -39,6 +39,14 @@ NUCLEO-H533RE 现已成为首个跨系列实板基线。它补齐 Cortex-M33/STM
 代码。CubeMX 生成、Cortex-M33 GCC 链接、SWD 烧录回读校验、921600 波特率下五轮
 完整 GMP Data Link 验收，以及 100/100 次满 MTU Echo 压力测试均已通过；控制 ISR
 保持 20 kHz，PWM 输出始终关闭，详见 `stm32h533re_nucleo/validation.md`。
+
+NUCLEO-C092RC 已完成 STM32C0 低资源器件基线。由于 STM32C092 只有一个 ADC 且
+没有注入转换组，该目标使用 TIM1 TRGO2 触发的六通道固定序列循环 DMA，并由 DMA
+完成回调推进 20 kHz 控制步；QEP 的 Z 相使用 GPIO EXTI 软件清零。工程同时配置
+TIM1 三对互补 PWM、TIM3 AB、USART2 VCP、用户 LED、I2C1 和板载收发器对应的
+FDCAN1/待机控制。CubeMX 生成、GCC/CMake 链接、SWD 烧录校验和三轮 921600 波特率
+完整 GMP Data Link 冒烟测试均已通过；硬件寄存器回读确认三相 PWM 和 MOE 始终关闭，
+详见 `stm32c092rc_nucleo/validation.md`。
 
 ## 1. 范围和设计原则
 
@@ -83,7 +91,7 @@ Nucleo-64 板卡。板卡进入目录不代表其自动满足完整控制能力�
 - 使用中心对齐计数模式；
 - 支持统一装载三相比较值；
 - 支持死区、输出极性和空闲状态配置；
-- 产生 ADC 注入组硬件触发信号；
+- 为控制 ADC 采样产生硬件触发信号；
 - 上电和初始化阶段保持功率输出关闭；
 - 若 Break 引脚可以外引，应配置为硬件保护输入并声明 `pwm_break` 能力。
 
@@ -253,13 +261,13 @@ ctl/hardware_preset/sdpe_src/mcu_board/<board_id>.json
 | 标识 | `GMP_NUCLEO_BOARD_ID`, `GMP_NUCLEO_MCU_ID` |
 | 时钟 | `GMP_NUCLEO_SYSTEM_CLOCK_HZ`, `GMP_NUCLEO_SYSTEM_TICK_HZ` |
 | PWM | `GMP_NUCLEO_PWM_TIMER_HANDLE`, `GMP_NUCLEO_PWM_TIMER_INSTANCE`, `GMP_NUCLEO_PWM_ADC_TRIGGER` |
-| QEP | `GMP_NUCLEO_QEP_TIMER_HANDLE`, `GMP_NUCLEO_QEP_TIMER_INSTANCE`, `GMP_NUCLEO_QEP_Z_PORT`, `GMP_NUCLEO_QEP_Z_PIN` |
-| ADC | `GMP_NUCLEO_ADC_FB_COUNT`, `GMP_NUCLEO_ADC_FB<n>_HANDLE`, `GMP_NUCLEO_ADC_FB<n>_RANK` |
+| QEP | `GMP_NUCLEO_QEP_TIMER_HANDLE`, `GMP_NUCLEO_QEP_TIMER_INSTANCE`, `GMP_NUCLEO_QEP_Z_PORT`, `GMP_NUCLEO_QEP_Z_PIN`, `GMP_NUCLEO_QEP_SOFTWARE_INDEX` |
+| ADC | `GMP_NUCLEO_ADC_REGULAR_DMA`, `GMP_NUCLEO_ADC_FB_COUNT`, `GMP_NUCLEO_ADC_FB<n>_HANDLE`, `GMP_NUCLEO_ADC_FB<n>_RANK` |
 | DL | `GMP_NUCLEO_DL_UART_HANDLE`, `GMP_NUCLEO_DL_UART_INSTANCE`, `GMP_NUCLEO_DL_RX_DMA_HANDLE`, `GMP_NUCLEO_DL_BAUD_RATE` |
 | LED | `GMP_NUCLEO_STATUS_LED_PORT`, `GMP_NUCLEO_STATUS_LED_PIN`, `GMP_NUCLEO_STATUS_LED_ON`, `GMP_NUCLEO_STATUS_LED_OFF` |
 | I2C | `GMP_NUCLEO_I2C_HANDLE`, `GMP_NUCLEO_I2C_INSTANCE` |
 | DAC | `GMP_NUCLEO_HAS_DAC`，启用时提供句柄和通道宏 |
-| CAN | `GMP_NUCLEO_HAS_CAN`，启用时提供类型、句柄和实例宏 |
+| CAN | `GMP_NUCLEO_HAS_CAN`，启用时提供类型、句柄、实例和可选收发器待机控制宏 |
 | Break | `GMP_NUCLEO_HAS_PWM_BREAK` |
 
 `<n>` 至少覆盖 0 至 5。若一个板卡需要额外别名，必须保持这些基础宏不变。
@@ -306,7 +314,7 @@ xplt.ctl_interface.h
 - `xplt.config.h`：组合 GMP 功能选择和 SDPE 生成设置；
 - `xplt.peripheral.*`：绑定句柄、ADC 校准和启动、UART DMA、QEP、LED、I2C 以及可选外设；
 - `xplt.ctl_interface.h`：读取六路 ADC、写入三相 PWM、快速使能和快速关闭；
-- ADC 注入转换完成回调调用 `gmp_base_ctl_step()`；
+- ADC 转换完成回调（注入组中断或规则组 DMA）调用 `gmp_base_ctl_step()`；
 - 快速关闭路径不得阻塞，不得等待 UART，也不得发布旧 PWM 比较值；
 - 可选 DAC/CAN 使用 `#if GMP_NUCLEO_HAS_*` 编译期裁剪；
 - 板卡差异只能来自 SDPE 统一宏和 CubeMX HAL 句柄。
@@ -346,7 +354,9 @@ csp/stm32/Nucleo_64/
 │   └── sdpe_mgr/
 │       └── sdpe_requirement.json
 ├── stm32g474re_nucleo/
-└── stm32g491re_nucleo/
+├── stm32g491re_nucleo/
+├── stm32h533re_nucleo/
+└── stm32c092rc_nucleo/
 ```
 
 每个板卡目录只维护一个首选主 IOC。只有无法通过 SDPE 宏解决的真实引脚复用冲突，
@@ -439,7 +449,7 @@ csp/stm32/Nucleo_64/
 
 - 示波器确认三对互补 PWM、中心对齐、频率、极性和死区；
 - 启动、停止和重复使能过程中没有窄脉冲或旧占空比输出；
-- 六路 ADC 逐通道注入已知电压，验证顺序、量程和触发时刻；
+- 六路 ADC 逐通道施加已知电压，验证顺序、量程和触发时刻；
 - ADC ISR 周期与 PWM 周期关系正确；
 - QEP A/B 方向、计数和 Z 清零/锁存行为正确；
 - 若声明 Break，外部触发能够在不依赖软件的情况下关闭 PWM。
@@ -505,9 +515,10 @@ C2000 遗留代码。
 建议顺序：
 
 1. NUCLEO-F302R8，验证旧系列高级定时器和 ADC 差异；
-2. NUCLEO-C092RC、NUCLEO-U083RC，评估低资源器件是否满足完整 `control`；
-3. NUCLEO-H533RE（已完成），作为 STM32H5/M33 黄金板；
-4. 根据实际板卡库存继续扩展。
+2. NUCLEO-C092RC（已完成），作为 STM32C0 低资源器件黄金板；
+3. NUCLEO-U083RC，继续评估低资源器件的完整 `control` 能力；
+4. NUCLEO-H533RE（已完成），作为 STM32H5/M33 黄金板；
+5. 根据实际板卡库存继续扩展。
 
 每进入一个新的 STM32 系列，先完成一块黄金板和实板验证，再批量扩展同系列。
 
@@ -525,12 +536,12 @@ C2000 遗留代码。
 
 - 本规格的审核版本；
 - 一个新的 Nucleo-64 SDPE schema；
-- G431RB、G474RE、G491RE、H533RE 四个板卡实体；
-- 四个主 IOC 和四个板卡 SDPE 工程；
+- G431RB、G474RE、G491RE、H533RE、C092RC 五个板卡实体；
+- 五个主 IOC 和五个板卡 SDPE 工程；
 - 一套公共 `user`、`xplt` 和 `gmp_src_mgr`；
 - IOC/SDPE 静态校验工具；
 - CubeMX 无界面生成和 GCC/CMake 批量构建脚本；
-- 四份引脚表和四份验证记录；
+- 五份引脚表和五份验证记录；
 - 至少 G431RB 完整实板验证，其他板卡按实际硬件状态准确标注。
 
 ## 13. 非目标

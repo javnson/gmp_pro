@@ -2,7 +2,7 @@
 
 **English** | [简体中文](README_CN.md)
 
-Status: G431 configured baseline; G474RE, G491RE, and H533RE hardware baselines v0.5
+Status: G431 configured baseline; G474RE, G491RE, H533RE, and C092RC hardware baselines v0.6
 
 Date: 2026-09-11
 
@@ -51,6 +51,17 @@ Data Link runs and a 100/100 full-MTU Echo stress run passed at 921600 baud. The
 control ISR held 20 kHz and PWM outputs remained disabled; see
 `stm32h533re_nucleo/validation.md`.
 
+The NUCLEO-C092RC target is the STM32C0 low-resource hardware baseline. Because
+STM32C092 has one ADC and no injected group, this target uses a six-channel
+fixed regular sequence with circular DMA, triggered by TIM1 TRGO2; the DMA
+completion callback advances the 20 kHz control step. QEP index uses a GPIO EXTI
+software reset. The target also configures three complementary TIM1 PWM pairs,
+TIM3 AB, USART2 VCP, the user LED, I2C1, and FDCAN1 plus the on-board transceiver
+standby control. CubeMX generation, GCC/CMake linking, verified SWD programming,
+and three complete GMP Data Link smoke runs passed at 921600 baud. Independent
+register reads confirmed that the three phase outputs and MOE remained disabled;
+see `stm32c092rc_nucleo/validation.md`.
+
 ## 1. Scope and principles
 
 This catalog targets Nucleo-64 boards whose STM32 devices use 64-pin packages
@@ -98,7 +109,7 @@ The board MUST select TIM1 or TIM8 and provide:
 - center-aligned counting;
 - coherent three-phase compare updates;
 - dead-time, polarity, and idle-state configuration;
-- a hardware trigger for the injected ADC group;
+- a hardware trigger for control-path ADC acquisition;
 - disabled power outputs during reset and initialization;
 - a declared `pwm_break` capability when a break signal is available externally.
 
@@ -225,12 +236,12 @@ The generated target settings resolve at least these aliases:
 | Identity | `GMP_NUCLEO_BOARD_ID`, `GMP_NUCLEO_MCU_ID` |
 | Clock | `GMP_NUCLEO_SYSTEM_CLOCK_HZ`, `GMP_NUCLEO_SYSTEM_TICK_HZ` |
 | PWM | `GMP_NUCLEO_PWM_TIMER_HANDLE`, `GMP_NUCLEO_PWM_TIMER_INSTANCE`, `GMP_NUCLEO_PWM_ADC_TRIGGER` |
-| QEP | `GMP_NUCLEO_QEP_TIMER_HANDLE`, `GMP_NUCLEO_QEP_TIMER_INSTANCE`, `GMP_NUCLEO_QEP_Z_PORT`, `GMP_NUCLEO_QEP_Z_PIN` |
-| ADC | `GMP_NUCLEO_ADC_FB_COUNT`, `GMP_NUCLEO_ADC_FB<n>_HANDLE`, `GMP_NUCLEO_ADC_FB<n>_RANK` |
+| QEP | `GMP_NUCLEO_QEP_TIMER_HANDLE`, `GMP_NUCLEO_QEP_TIMER_INSTANCE`, `GMP_NUCLEO_QEP_Z_PORT`, `GMP_NUCLEO_QEP_Z_PIN`, `GMP_NUCLEO_QEP_SOFTWARE_INDEX` |
+| ADC | `GMP_NUCLEO_ADC_REGULAR_DMA`, `GMP_NUCLEO_ADC_FB_COUNT`, `GMP_NUCLEO_ADC_FB<n>_HANDLE`, `GMP_NUCLEO_ADC_FB<n>_RANK` |
 | Data Link | `GMP_NUCLEO_DL_UART_HANDLE`, `GMP_NUCLEO_DL_UART_INSTANCE`, `GMP_NUCLEO_DL_RX_DMA_HANDLE`, `GMP_NUCLEO_DL_BAUD_RATE` |
 | LED | `GMP_NUCLEO_STATUS_LED_PORT`, `GMP_NUCLEO_STATUS_LED_PIN`, `GMP_NUCLEO_STATUS_LED_ON`, `GMP_NUCLEO_STATUS_LED_OFF` |
 | I2C | `GMP_NUCLEO_I2C_HANDLE`, `GMP_NUCLEO_I2C_INSTANCE` |
-| Optional | `GMP_NUCLEO_HAS_DAC`, `GMP_NUCLEO_HAS_CAN`, `GMP_NUCLEO_HAS_PWM_BREAK` |
+| Optional | `GMP_NUCLEO_HAS_DAC`, `GMP_NUCLEO_HAS_CAN`, optional CAN-transceiver standby aliases, `GMP_NUCLEO_HAS_PWM_BREAK` |
 
 `<n>` covers at least 0 through 5. Every `HAS_*` macro is always defined as 0
 or 1 so unused functionality is removed at compile time.
@@ -263,8 +274,9 @@ xplt.ctl_interface.h
 
 They bind SDPE aliases, initialize and start ADC/UART/QEP/I2C, implement LED and
 optional services, acquire six ADC channels, update three PWM compares, and
-provide fast enable/disable functions. The injected-conversion completion path
-calls `gmp_base_ctl_step()`. Fast shutdown is non-blocking and does not publish
+provide fast enable/disable functions. The ADC completion path, either injected
+conversion interrupt or regular-sequence DMA, calls `gmp_base_ctl_step()`. Fast
+shutdown is non-blocking and does not publish
 stale PWM values. Optional services use `#if GMP_NUCLEO_HAS_*`.
 
 ### `src/gmp_src_mgr`
@@ -296,7 +308,9 @@ csp/stm32/Nucleo_64/
 │   └── sdpe_mgr/
 │       └── sdpe_requirement.json
 ├── stm32g474re_nucleo/
-└── stm32g491re_nucleo/
+├── stm32g491re_nucleo/
+├── stm32h533re_nucleo/
+└── stm32c092rc_nucleo/
 ```
 
 Each board maintains one preferred IOC. A suffixed IOC such as `*_tim8.ioc` or
@@ -399,9 +413,10 @@ a signal that the SDPE alias contract must be improved.
 
 ### E. Expand across families
 
-NUCLEO-H533RE is now the validated STM32H5 golden board. Continue with
-NUCLEO-F302R8 and NUCLEO-C092RC/NUCLEO-U083RC, completing one golden board for
-each new STM32 family before adding further members.
+NUCLEO-H533RE is the validated STM32H5 golden board and NUCLEO-C092RC is the
+validated STM32C0 low-resource golden board. Continue with NUCLEO-F302R8 and
+NUCLEO-U083RC, completing one golden board for each new STM32 family before
+adding further members.
 
 ### F. Fleet validation and release
 
@@ -413,12 +428,12 @@ examples only after their replacements are validated.
 
 - approved bilingual specification;
 - `stm32_nucleo_64_board` SDPE schema;
-- G431RB, G474RE, G491RE, and H533RE board entities;
-- four preferred IOC files and four target SDPE projects;
+- G431RB, G474RE, G491RE, H533RE, and C092RC board entities;
+- five preferred IOC files and five target SDPE projects;
 - one shared `user`, `xplt`, and `gmp_src_mgr` implementation;
 - IOC/SDPE static validator;
 - headless CubeMX and batch CMake/GCC scripts;
-- four pin maps and validation records;
+- five pin maps and validation records;
 - complete G431RB hardware validation, with accurate status for other boards.
 
 ## 12. Non-goals

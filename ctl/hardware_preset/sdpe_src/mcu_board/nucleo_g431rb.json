@@ -33,6 +33,8 @@
     "qep_tim3_z_pin": "GPIO_PIN_2",
     "qep_tim4_z_port": "GPIOB",
     "qep_tim4_z_pin": "GPIO_PIN_3",
+    "qep_software_index": "0",
+    "adc_regular_dma": "0",
     "adc_primary_handle": "(&hadc1)",
     "adc_primary_symbol": "hadc1",
     "adc_secondary_handle": "(&hadc2)",
@@ -70,6 +72,11 @@
     "can_handle": "(&hfdcan1)",
     "can_instance": "FDCAN1",
     "can_tx_pin": "PA12",
-    "can_rx_pin": "PA11"
+    "can_rx_pin": "PA11",
+    "can_has_stby": "0",
+    "can_stby_port": "GPIOA",
+    "can_stby_pin": "GPIO_PIN_0",
+    "can_stby_on": "GPIO_PIN_SET",
+    "can_stby_off": "GPIO_PIN_RESET"
   }
 }
