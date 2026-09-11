@@ -7191,6 +7191,50 @@
                     }
                 ]
             },
+            "c28x_syscfg_cm": {
+                "type": "module",
+                "description": "Optional Cortex-M CSP for multicore TI C2000 devices",
+                "src_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/c28x_syscfg/cm/src/*"
+                ],
+                "inc_patterns": [
+                    "${GMP_PRO_LOCATION}/csp/c28x_syscfg/cm/*",
+                    "${GMP_PRO_LOCATION}/csp/c28x_syscfg/csp.typedef.h"
+                ],
+                "inc_dirs": [
+                    "${GMP_PRO_LOCATION}/csp/c28x_syscfg/cm/"
+                ],
+                "help_docs": [
+                    "${GMP_PRO_LOCATION}/csp/c28x_syscfg/cm/README.md"
+                ],
+                "depends_on": [
+                    "core|std",
+                    "core|rt"
+                ],
+                "tasks": [
+                    {
+                        "id": "sys_compile",
+                        "summary": "Compilation Passed",
+                        "completed": false,
+                        "date": "",
+                        "reply": "Pending F28388D CM reference build"
+                    },
+                    {
+                        "id": "sys_sim",
+                        "summary": "Simulation / Principle Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    },
+                    {
+                        "id": "sys_hw",
+                        "summary": "Physical Hardware Verified",
+                        "completed": false,
+                        "date": "",
+                        "reply": ""
+                    }
+                ]
+            },
             "c29x_syscfg": {
                 "type": "module",
                 "description": "TI C29x Chip Support Package",

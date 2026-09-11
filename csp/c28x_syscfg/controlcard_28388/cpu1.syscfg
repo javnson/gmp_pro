@@ -1,0 +1,145 @@
+/**
+ * @cliArgs --board "/boards/TMDSCNCD28388D" --context "CPU1" --product "C2000WARE@5.04.00.00"
+ * @versions {"tool":"1.21.0+3721"}
+ * GMP F28388D ControlCARD CPU1 resource contract.
+ */
+const device_support = scripting.addModule("/driverlib/device_support.js");
+device_support.useStandardCodeStartBranch = false;
+
+const epwm = scripting.addModule("/driverlib/epwm.js", {}, false);
+const epwm1 = epwm.addInstance();
+const epwm2 = epwm.addInstance();
+const epwm3 = epwm.addInstance();
+function controlPwm(instance, name, hardware) {
+    instance.$name = name;
+    instance.epwmTimebase_hsClockDiv = "EPWM_HSCLOCK_DIVIDER_1";
+    instance.epwmTimebase_counterMode = "EPWM_COUNTER_MODE_UP_DOWN";
+    instance.epwmTimebase_period = 5000;
+    instance.epwmCounterCompare_cmpA = 2500;
+    instance.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_UP_CMPA = "EPWM_AQ_OUTPUT_HIGH";
+    instance.epwmActionQualifier_EPWM_AQ_OUTPUT_A_ON_TIMEBASE_DOWN_CMPA = "EPWM_AQ_OUTPUT_LOW";
+    instance.epwmDeadband_enableRED = true;
+    instance.epwmDeadband_enableFED = true;
+    instance.epwmDeadband_polarityFED = "EPWM_DB_POLARITY_ACTIVE_LOW";
+    instance.epwmDeadband_delayRED = 100;
+    instance.epwmDeadband_delayFED = 100;
+    instance.$hardware = hardware;
+}
+controlPwm(epwm1, "CONTROL_EPWM1", system.deviceData.board.components.PWM_LOC1);
+controlPwm(epwm2, "CONTROL_EPWM2", system.deviceData.board.components.PWM_LOC2);
+controlPwm(epwm3, "CONTROL_EPWM3", system.deviceData.board.components.PWM_LOC3);
+epwm1.epwmEventTrigger_EPWM_SOC_A_triggerEnable = true;
+epwm1.epwmEventTrigger_EPWM_SOC_A_triggerSource = "EPWM_SOC_TBCTR_PERIOD";
+epwm1.epwmEventTrigger_EPWM_SOC_A_triggerEventPrescalar = "1";
+
+const adc = scripting.addModule("/driverlib/adc.js", {}, false);
+const adca = adc.addInstance();
+const adcc = adc.addInstance();
+function feedbackAdc(instance, name, base) {
+    instance.$name = name;
+    instance.adcBase = base;
+    instance.adcClockPrescaler = "ADC_CLK_DIV_4_0";
+    instance.interruptPulseMode = "ADC_PULSE_END_OF_CONV";
+    instance.adcSignalMode = "ADC_MODE_SINGLE_ENDED";
+    instance.adcResolutionMode = "ADC_RESOLUTION_12BIT";
+    instance.enabledSOCs = ["ADC_SOC_NUMBER0","ADC_SOC_NUMBER1","ADC_SOC_NUMBER2"];
+    instance.soc0Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+    instance.soc1Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+    instance.soc2Trigger = "ADC_TRIGGER_EPWM1_SOCA";
+    instance.soc0Channel = "ADC_CH_ADCIN0";
+    instance.soc1Channel = "ADC_CH_ADCIN1";
+    instance.soc2Channel = "ADC_CH_ADCIN2";
+    instance.soc0SampleWindow = 20;
+    instance.soc1SampleWindow = 20;
+    instance.soc2SampleWindow = 20;
+}
+feedbackAdc(adca, "FEEDBACK_ADCA", "ADCA_BASE");
+feedbackAdc(adcc, "FEEDBACK_ADCC", "ADCC_BASE");
+// Keep all six feedback inputs on externally usable channels while leaving
+// ADCINA0/1 available to DACA/DACB on F28388D.
+adca.soc0Channel = "ADC_CH_ADCIN3";
+adca.soc1Channel = "ADC_CH_ADCIN4";
+adca.soc2Channel = "ADC_CH_ADCIN5";
+adcc.soc0Channel = "ADC_CH_ADCIN2";
+adcc.soc1Channel = "ADC_CH_ADCIN3";
+adcc.soc2Channel = "ADC_CH_ADCIN4";
+
+const eqep = scripting.addModule("/driverlib/eqep.js", {}, false);
+const eqep1 = eqep.addInstance();
+eqep1.$name = "ABZ_EQEP1";
+eqep1.eqepResolution = "EQEP_CONFIG_2X_RESOLUTION";
+eqep1.emulationMode = "EQEP_EMULATIONMODE_RUNFREE";
+eqep1.positionCounterMax = 4294967295;
+eqep1.swPositionInit = true;
+eqep1.enableModule = true;
+eqep1.$hardware = system.deviceData.board.components.EQEP_LOC1;
+
+const sci = scripting.addModule("/driverlib/sci.js", {}, false);
+const sci1 = sci.addInstance();
+sci1.$name = "GMP_DL_SCIA";
+sci1.baudRates = 115200;
+sci1.rxFifo = "SCI_FIFO_RX1";
+sci1.$hardware = system.deviceData.board.components.SCI_LOC1;
+
+const i2c = scripting.addModule("/driverlib/i2c.js", {}, false);
+const i2c1 = i2c.addInstance();
+i2c1.$name = "BOARD_I2CA";
+i2c1.duty = "I2C_DUTYCYCLE_50";
+i2c1.bitCount = "I2C_BITCOUNT_8";
+i2c1.dataCount = 1;
+i2c1.targetAddress = 0x50;
+i2c1.ownAddress = 0x30;
+i2c1.$hardware = system.deviceData.board.components.I2C_LOC1;
+
+const spi = scripting.addModule("/driverlib/spi.js", {}, false);
+const spi1 = spi.addInstance();
+spi1.$name = "SDCARD_SPIC";
+spi1.mode = "SPI_MODE_MASTER";
+spi1.bitRate = 1000000;
+spi1.dataWidth = "8";
+spi1.transferProtocol = "SPI_PROT_POL0PHA1";
+spi1.useCase = "CUSTOM";
+spi1.useInterfacePins = ["SPI@_CLK","SPI@_SIMO","SPI@_SOMI"];
+spi1.spi.$assign = "SPIC";
+spi1.spi.spi_simoPin.$assign = "GPIO100";
+spi1.spi.spi_somiPin.$assign = "GPIO101";
+spi1.spi.spi_clkPin.$assign = "GPIO102";
+
+const gpio = scripting.addModule("/driverlib/gpio.js", {}, false);
+function outputGpio(name, pin, initial) {
+    const instance = gpio.addInstance();
+    instance.$name = name;
+    instance.direction = "GPIO_DIR_MODE_OUT";
+    instance.writeInitialValue = true;
+    instance.initialValue = initial;
+    instance.gpioPin.$assign = pin;
+}
+const led1 = gpio.addInstance();
+led1.$name = "LED1";
+led1.direction = "GPIO_DIR_MODE_OUT";
+led1.writeInitialValue = true;
+led1.initialValue = 1;
+led1.$hardware = system.deviceData.board.components.D1;
+const led2 = gpio.addInstance();
+led2.$name = "LED2";
+led2.direction = "GPIO_DIR_MODE_OUT";
+led2.writeInitialValue = true;
+led2.initialValue = 1;
+led2.$hardware = system.deviceData.board.components.D2;
+outputGpio("SDCARD_CS", "GPIO103", 1);
+
+const dac = scripting.addModule("/driverlib/dac.js", {}, false);
+function debugDac(name, base) {
+    const instance = dac.addInstance();
+    instance.$name = name;
+    instance.dacBase = base;
+    instance.referenceVoltage = "DAC_REF_ADC_VREFHI";
+    instance.enableOutput = true;
+}
+debugDac("DEBUG_DACA", "DACA_BASE");
+debugDac("DEBUG_DACB", "DACB_BASE");
+debugDac("DEBUG_DACC", "DACC_BASE");
+
+// CANA's ControlCARD-standard TX is GPIO31, shared with D1.  CAN therefore
+// remains an optional build variant instead of silently using pins which are
+// not connected to the on-board CAN interface.

@@ -74,7 +74,11 @@ SECTIONS
 
 #if defined(__TI_EABI__)
    .init_array      : > FLASH1, ALIGN(8)
-   .bss             : > RAMLS5
+   /* The GMP DL scope and object dictionary are intentionally larger than one
+    * LS bank.  GS6/GS7 are CPU1-owned after reset and are not used by the
+    * vendor filter sections below, so they provide a contiguous-safe split
+    * without changing the CPU2 or CM memory ownership. */
+   .bss             : >> RAMGS6 | RAMGS7
    .bss:output      : > RAMLS3
    .bss:cio         : > RAMLS5
    .data            : > RAMLS5

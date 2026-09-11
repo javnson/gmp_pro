@@ -1,0 +1,7 @@
+/**
+ * @cliArgs --board "/boards/TMDSCNCD28388D" --context "CPU2" --product "C2000WARE@5.04.00.00"
+ * @versions {"tool":"1.21.0+3721"}
+ * CPU2 intentionally owns no pins; it is the deterministic compute domain.
+ */
+const device_support = scripting.addModule("/driverlib/device_support.js");
+device_support.useStandardCodeStartBranch = false;

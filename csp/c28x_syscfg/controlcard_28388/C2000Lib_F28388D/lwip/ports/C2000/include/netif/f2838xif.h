@@ -46,7 +46,7 @@
 #define EPHY_BMSR_LINKSTAT      0x00000004  // Link Status
 
 
-#include "driverlib_cm/ethernet.h"
+#include "ethernet.h"
 
 #ifndef __F2838XIF_H__
 #define __F2838XIF_H__
@@ -65,5 +65,4 @@ void f2838xif_debug_print(struct pbuf *p);
 #endif /* NETIF_DEBUG */
 
 #endif // __F2838XIF_H__
-
 

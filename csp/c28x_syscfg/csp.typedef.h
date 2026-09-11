@@ -12,8 +12,13 @@
 #ifndef _FILE_CSP_TYPE_DEF_H_
 #define _FILE_CSP_TYPE_DEF_H_
 
-// C28x data, fast, time, and address types come from core/std/arch. This
-// file only publishes C28x SysConfig peripheral handle overrides.
+// This is the single source of truth for the C28x SysConfig family data
+// unit. The optional integrated CM CSP includes this exact file as well.
+#ifndef GMP_PORT_DATA_T
+#define GMP_PORT_DATA_T              uint16_t
+#define GMP_PORT_DATA_SIZE_PER_BITS  (16)
+#define GMP_PORT_DATA_SIZE_PER_BYTES (2)
+#endif
 
 // ....................................................................//
 // basic container of PWM results

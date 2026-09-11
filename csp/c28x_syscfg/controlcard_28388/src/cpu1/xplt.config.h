@@ -1,0 +1,11 @@
+#ifndef GMP_F28388D_CPU1_XPLT_CONFIG_H
+#define GMP_F28388D_CPU1_XPLT_CONFIG_H
+
+#include "ctrl_settings.h"
+
+#define SPECIFY_DISABLE_GMP_CTL
+#define SPECIFY_DISABLE_GMP_LOGO
+#define SPECIFY_BASE_PRINT_NOT_IMPL
+#define DSP_C2000_DSP_TIME_DIV (1U)
+
+#endif

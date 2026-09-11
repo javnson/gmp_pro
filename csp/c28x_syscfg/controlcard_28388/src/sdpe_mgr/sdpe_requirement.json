@@ -1,0 +1,44 @@
+{
+  "id": "gmp_controlcard_f28388d_tricore",
+  "macro_prefix": "GMP_F28388D",
+  "display_name": "GMP F28388D ControlCARD three-core reference",
+  "description": "CPU1 control and serial DL, CPU2 computation, and CM-owned USB/Ethernet/EtherCAT communication.",
+  "suite": "c28x_syscfg_controlcard",
+  "version": "0.1.0",
+  "updated_at": "2026-09-12",
+  "output_header": "ctrl_settings.h",
+  "hardware": [{"entity":"controlcard_f28388d"}],
+  "requirements": [
+    {"role":"Board Name","macro":"GMP_F28388D_BOARD_NAME","binding":{"export":"controlcard_f28388d.board_name"},"description":"Selected ControlCARD."},
+    {"role":"C28x Clock","macro":"GMP_F28388D_CPU_CLOCK_HZ","binding":{"export":"controlcard_f28388d.cpu_clock_hz"},"description":"Shared CPU1/CPU2 clock contract."},
+    {"role":"Data Unit Width","macro":"GMP_F28388D_DATA_UNIT_BITS","binding":{"export":"controlcard_f28388d.data_unit_bits"},"description":"All three cores use the system-u16 Data Link model."},
+    {"role":"Serial Peripheral","macro":"GMP_F28388D_SCI_BASE","binding":{"export":"controlcard_f28388d.serial_base"},"description":"CPU1 XDS virtual COM port."},
+    {"role":"Serial Baud Rate","macro":"GMP_F28388D_SCI_BAUDRATE","binding":{"export":"controlcard_f28388d.serial_baudrate"},"description":"Serial GMP DL baud rate."},
+    {"role":"PWM Frequency","macro":"GMP_F28388D_PWM_HZ","binding":{"export":"controlcard_f28388d.pwm_frequency_hz"},"description":"Three-phase complementary control PWM."},
+    {"role":"QEP Peripheral","macro":"GMP_F28388D_QEP_BASE","binding":{"export":"controlcard_f28388d.qep_base"},"description":"ABZ capture interface."},
+    {"role":"Feedback Count","macro":"GMP_F28388D_ADC_CHANNEL_COUNT","binding":{"export":"controlcard_f28388d.adc_channel_count"},"description":"Number of fixed feedback channels."},
+    {"role":"USB Capability","macro":"GMP_F28388D_CM_HAS_USB","binding":{"export":"controlcard_f28388d.has_usb"},"description":"CM owns USB at runtime."},
+    {"role":"Ethernet Capability","macro":"GMP_F28388D_CM_HAS_ETHERNET","binding":{"export":"controlcard_f28388d.has_ethernet"},"description":"CM owns Ethernet at runtime."},
+    {"role":"EtherCAT Capability","macro":"GMP_F28388D_CM_HAS_ETHERCAT","binding":{"export":"controlcard_f28388d.has_ethercat"},"description":"CM owns EtherCAT at runtime."},
+    {"role":"Ethernet IPv4","macro":"GMP_F28388D_CM_IPV4","binding":{"export":"controlcard_f28388d.ethernet_ipv4"},"description":"Static Ethernet address."},
+    {"role":"TCP Port","macro":"GMP_F28388D_CM_TCP_PORT","binding":{"export":"controlcard_f28388d.tcp_port"},"description":"TCP-u16 DL endpoint."},
+    {"role":"UDP Port","macro":"GMP_F28388D_CM_UDP_PORT","binding":{"export":"controlcard_f28388d.udp_port"},"description":"UDP-u16 DL endpoint."}
+  ],
+  "option_macros": [
+    {"group":"Control Resource Selection","macro":"GMP_F28388D_PRIMARY_PWM_BASE","enabled":true,"weak":false,"value":"CONTROL_EPWM1_BASE","options_preset":"controlcard_f28388d.CONTROL_PWM_BASE","options":[],"description":"Primary PWM and ADC trigger source."},
+    {"group":"Control Resource Selection","macro":"GMP_F28388D_PRIMARY_ADC_SOC","enabled":true,"weak":false,"value":"FEEDBACK_ADCA_SOC0","options_preset":"controlcard_f28388d.FEEDBACK_ADC_SOC","options":[],"description":"Primary feedback input."},
+    {"group":"Control Resource Selection","macro":"GMP_F28388D_DEBUG_DAC_BASE","enabled":true,"weak":false,"value":"DACA_BASE","options_preset":"controlcard_f28388d.DEBUG_DAC_BASE","options":[],"description":"Analog debug output."}
+  ],
+  "feature_macros": [
+    {"group":"CM Communication","macro":"GMP_F28388D_CM_ENABLE_USB","enabled":true,"weak":false,"value":"","description":"Initialize USB device mode on CM."},
+    {"group":"CM Communication","macro":"GMP_F28388D_CM_ENABLE_ETHERNET","enabled":true,"weak":false,"value":"","description":"Initialize Ethernet and GMP DL on CM."},
+    {"group":"CM Communication","macro":"GMP_F28388D_CM_ENABLE_ETHERCAT","enabled":true,"weak":false,"value":"","description":"Initialize EtherCAT ownership and ESC memory on CM."}
+  ],
+  "requirement_groups": [
+    {"name":"Core Contract","requirements":["Board Name","C28x Clock","Data Unit Width"]},
+    {"name":"Control Resources","requirements":["Serial Peripheral","Serial Baud Rate","PWM Frequency","QEP Peripheral","Feedback Count"]},
+    {"name":"CM Communication","requirements":["USB Capability","Ethernet Capability","EtherCAT Capability","Ethernet IPv4","TCP Port","UDP Port"]}
+  ],
+  "option_macro_groups":["Control Resource Selection"],
+  "feature_macro_groups":["CM Communication"]
+}

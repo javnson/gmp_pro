@@ -8,6 +8,7 @@
 
 - [代码规范](code-standard.md)
 - [Core、CSP、CTL 依赖与验证体系](GMP_CTL_DEPENDENCY_ARCHITECTURE.md)
+- [多线程与 RTOS 兼容性分析及演进建议](multithreading_rtos_architecture_analysis_cn.md)
 - [CTL 单元测试工程](../ctl/unit_test/README.md)
 - [变更历史](ChangeHistory.md)
 - [旧版中文综合手册](legacy_manual_cn.md)

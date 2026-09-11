@@ -1,0 +1,47 @@
+{
+  "id": "controlcard_f28388d",
+  "schema": "controlcard_f28388d_board",
+  "display_name": "TMDSCNCD28388D ControlCARD",
+  "macro_prefix": "CONTROLCARD_F28388D",
+  "components": {},
+  "parameters": {
+    "board_name": "TMDSCNCD28388D",
+    "chip": "TMS320F28388D",
+    "cpu_clock_hz": "200000000",
+    "cm_clock_hz": "125000000",
+    "data_unit_bits": "16",
+    "cpu1_role": "control and serial DL",
+    "cpu2_role": "deterministic computation",
+    "cm_role": "USB Ethernet EtherCAT communication",
+    "serial_base": "SCIA_BASE",
+    "serial_baudrate": "115200",
+    "pwm_frequency_hz": "20000",
+    "pwm_phase_count": "3",
+    "qep_base": "EQEP1_BASE",
+    "adc_channel_count": "6",
+    "led_count": "2",
+    "i2c_base": "I2CA_BASE",
+    "sd_spi_base": "SPIC_BASE",
+    "dac_count": "3",
+    "has_usb": "1",
+    "has_ethernet": "1",
+    "has_ethercat": "1",
+    "ethernet_ipv4": "0xC0A88902",
+    "tcp_port": "50001",
+    "udp_port": "50002"
+  },
+  "option_sets": {
+    "CONTROL_PWM_BASE": {
+      "options": ["CONTROL_EPWM1_BASE", "CONTROL_EPWM2_BASE", "CONTROL_EPWM3_BASE"],
+      "description": "Three synchronized complementary ControlCARD ePWM pairs."
+    },
+    "FEEDBACK_ADC_SOC": {
+      "options": ["FEEDBACK_ADCA_SOC0", "FEEDBACK_ADCA_SOC1", "FEEDBACK_ADCA_SOC2", "FEEDBACK_ADCC_SOC0", "FEEDBACK_ADCC_SOC1", "FEEDBACK_ADCC_SOC2"],
+      "description": "Six EPWM1-SOCA-triggered external feedback inputs."
+    },
+    "DEBUG_DAC_BASE": {
+      "options": ["DACA_BASE", "DACB_BASE", "DACC_BASE"],
+      "description": "Three optional analog debug outputs."
+    }
+  }
+}

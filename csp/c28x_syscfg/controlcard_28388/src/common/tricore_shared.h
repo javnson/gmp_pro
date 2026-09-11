@@ -2,6 +2,7 @@
 #define GMP_F28388D_TRICORE_SHARED_H
 
 #include <stdint.h>
+#include <limits.h>
 
 #define GMP_TRICORE_MAGIC            (0x47323838UL)
 #define GMP_TRICORE_DEFAULT_FREQ_HZ  (50.0F)
@@ -30,6 +31,12 @@ typedef struct
     volatile uint32_t source_core;
     volatile uint32_t sequence_end;
 } gmp_wave_snapshot_t;
+
+/* sizeof() counts 16-bit C bytes on C28x and 8-bit C bytes on CM. */
+typedef char gmp_wave_command_layout_must_be_192_bits[
+    (sizeof(gmp_wave_command_t) * CHAR_BIT == 192U) ? 1 : -1];
+typedef char gmp_wave_snapshot_layout_must_be_288_bits[
+    (sizeof(gmp_wave_snapshot_t) * CHAR_BIT == 288U) ? 1 : -1];
 
 static inline uint32_t gmp_wave_snapshot_valid(const volatile gmp_wave_snapshot_t *snapshot)
 {

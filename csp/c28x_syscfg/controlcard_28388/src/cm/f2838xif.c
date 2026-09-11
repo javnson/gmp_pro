@@ -104,9 +104,9 @@
 #include "inc/hw_ints.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
-#include "driverlib_cm/ethernet.h"
-#include "driverlib_cm/interrupt.h"
-#include "driverlib_cm/sysctl.h"
+#include "ethernet.h"
+#include "interrupt.h"
+#include "sysctl.h"
 
 #include "utils/lwiplib.h"
 /**

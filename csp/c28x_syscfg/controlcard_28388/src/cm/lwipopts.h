@@ -193,11 +193,9 @@
 // ---------- TCP options ----------
 //
 //*****************************************************************************
-#ifdef MQTT_ON
+// The example selects TCP or UDP at compile time.  Keep both raw APIs in the
+// image so changing GMP_F28388D_CM_DL_TRANSPORT never requires editing lwIP.
 #define LWIP_TCP                        1
-#else
-#define LWIP_TCP                        0
-#endif
 //#define TCP_TTL                         (IP_DEFAULT_TTL)
 #define TCP_WND                         4096   // default is 2048
 //#define TCP_MAXRTX                      12
@@ -421,4 +419,3 @@ extern void UARTprintf(const char *pcString, ...);
 //#define DNS_DEBUG                       LWIP_DBG_OFF
 
 #endif /* __LWIPOPTS_H__ */
-

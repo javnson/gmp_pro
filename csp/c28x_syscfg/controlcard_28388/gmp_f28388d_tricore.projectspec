@@ -1,0 +1,109 @@
+<projectSpec>
+  <project
+        name="gmp_f28388d_controlcard_cpu1"
+        device="TMS320F28388D"
+        cgtVersion="22.6.1.LTS"
+        products="sysconfig;C2000WARE:5.4.0.00"
+        outputFormat="ELF"
+        launchWizard="False"
+        linkerCommandFile=""
+        enableSysConfigTool="true"
+        sysConfigBuildOptions="--product ${C2000WARE_ROOT}/.metadata/sdk.json --board /boards/TMDSCNCD28388D --context CPU1"
+        >
+    <configuration name="CPU1_FLASH"
+        compilerBuildOptions="--opt_level=2 -I${PROJECT_ROOT}/src -I${PROJECT_ROOT}/src/common -I${PROJECT_ROOT}/csp -I${PROJECT_ROOT}/gmp_inc -I${PROJECT_ROOT}/device -I${PROJECT_ROOT}/driverlib/include -I${PROJECT_BUILD_DIR}/syscfg -v28 -ml -mt --define=_FLASH --cla_support=cla2 --float_support=fpu64 --tmu_support=tmu0 --define=CPU1 --gen_func_subsections=on --diag_warning=225 --diag_suppress=10063"
+        linkerBuildOptions="--entry_point code_start --stack_size=0x3F8 --heap_size=0x400 --define=_FLASH -i${C2000WARE_ROOT} -i${PROJECT_BUILD_DIR}/syscfg -lboard.cmd.genlibs -lc2000ware_libraries.cmd.genlibs" />
+    <pathVariable name="C2000WARE_ROOT" path="${COM_TI_C2000WARE_INSTALL_DIR}" scope="project" />
+    <file action="copy" path="C2000Lib_F28388D/device/c28x/driverlib.h" targetDirectory="device" />
+    <file action="copy" path="C2000Lib_F28388D/device/c28x/f2838x_codestartbranch.asm" targetDirectory="device" />
+    <file action="copy" path="C2000Lib_F28388D/driverlib/c28x/include/" targetDirectory="driverlib" excludeFromBuild="True" />
+    <file action="copy" path="C2000Lib_F28388D/2838x_FLASH_lnk_cpu1.cmd" targetDirectory="" />
+    <file action="copy" path="C2000Lib_F28388D/targetConfigs/TMS320F28388D.ccxml" targetDirectory="targetConfigs" />
+    <file action="copy" path="gmp_src_mgr/gmp_inc/" targetDirectory="" excludeFromBuild="True" />
+    <file action="copy" path="gmp_src_mgr/gmp_src/" targetDirectory="" />
+    <file action="copy" path="src/common/tricore_shared.h" targetDirectory="src/common" />
+    <file action="copy" path="src/common/ctrl_settings.h" targetDirectory="src/common" />
+    <file action="copy" path="src/common/hardware_preset/mcu_board/controlcard_f28388d.h" targetDirectory="src/common/hardware_preset/mcu_board" />
+    <file action="copy" path="src/cpu1/cpu1_app.c" targetDirectory="src" />
+    <file action="copy" path="src/cpu1/cpu1_board.c" targetDirectory="src" />
+    <file action="copy" path="src/cpu1/xplt.config.h" targetDirectory="src" />
+    <file action="copy" path="../csp.config.h" targetDirectory="csp" />
+    <file action="copy" path="../csp.general.h" targetDirectory="csp" />
+    <file action="copy" path="../csp.typedef.h" targetDirectory="csp" />
+    <file action="copy" path="../c28x_peripheral_driver.h" targetDirectory="csp" />
+    <file action="copy" path="../src/sysconfig_adapter.c" targetDirectory="src" />
+    <file action="copy" path="cpu1.syscfg" targetDirectory="" />
+  </project>
+
+  <project
+        name="gmp_f28388d_controlcard_cpu2"
+        device="TMS320F28388D"
+        cgtVersion="22.6.1.LTS"
+        products="sysconfig;C2000WARE:5.4.0.00"
+        outputFormat="ELF"
+        launchWizard="False"
+        linkerCommandFile=""
+        enableSysConfigTool="true"
+        sysConfigBuildOptions="--product ${C2000WARE_ROOT}/.metadata/sdk.json --board /boards/TMDSCNCD28388D --context CPU2"
+        >
+    <configuration name="CPU2_FLASH"
+        compilerBuildOptions="--opt_level=2 -I${PROJECT_ROOT}/src -I${PROJECT_ROOT}/src/common -I${PROJECT_ROOT}/csp -I${PROJECT_ROOT}/gmp_inc -I${PROJECT_ROOT}/device -I${PROJECT_ROOT}/driverlib/include -I${PROJECT_BUILD_DIR}/syscfg -v28 -ml -mt --define=_FLASH --cla_support=cla2 --float_support=fpu64 --tmu_support=tmu0 --define=CPU2 --gen_func_subsections=on --diag_warning=225 --diag_suppress=10063"
+        linkerBuildOptions="--entry_point code_start --stack_size=0x3F8 --heap_size=0x400 --define=_FLASH -i${C2000WARE_ROOT} -i${PROJECT_BUILD_DIR}/syscfg -lboard.cmd.genlibs -lc2000ware_libraries.cmd.genlibs" />
+    <pathVariable name="C2000WARE_ROOT" path="${COM_TI_C2000WARE_INSTALL_DIR}" scope="project" />
+    <file action="copy" path="C2000Lib_F28388D/device/c28x/driverlib.h" targetDirectory="device" />
+    <file action="copy" path="C2000Lib_F28388D/device/c28x/f2838x_codestartbranch.asm" targetDirectory="device" />
+    <file action="copy" path="C2000Lib_F28388D/driverlib/c28x/include/" targetDirectory="driverlib" excludeFromBuild="True" />
+    <file action="copy" path="C2000Lib_F28388D/2838x_FLASH_lnk_cpu2.cmd" targetDirectory="" />
+    <file action="copy" path="C2000Lib_F28388D/targetConfigs/TMS320F28388D.ccxml" targetDirectory="targetConfigs" />
+    <file action="copy" path="gmp_src_mgr/gmp_inc/" targetDirectory="" excludeFromBuild="True" />
+    <file action="copy" path="gmp_src_mgr/gmp_src/" targetDirectory="" />
+    <file action="copy" path="src/common/tricore_shared.h" targetDirectory="src/common" />
+    <file action="copy" path="src/common/ctrl_settings.h" targetDirectory="src/common" />
+    <file action="copy" path="src/common/hardware_preset/mcu_board/controlcard_f28388d.h" targetDirectory="src/common/hardware_preset/mcu_board" />
+    <file action="copy" path="src/cpu2/cpu2_app.c" targetDirectory="src" />
+    <file action="copy" path="src/cpu2/xplt.config.h" targetDirectory="src" />
+    <file action="copy" path="../csp.config.h" targetDirectory="csp" />
+    <file action="copy" path="../csp.general.h" targetDirectory="csp" />
+    <file action="copy" path="../csp.typedef.h" targetDirectory="csp" />
+    <file action="copy" path="../c28x_peripheral_driver.h" targetDirectory="csp" />
+    <file action="copy" path="../src/sysconfig_adapter.c" targetDirectory="src" />
+    <file action="copy" path="cpu2.syscfg" targetDirectory="" />
+  </project>
+
+  <project
+        name="gmp_f28388d_controlcard_cm"
+        device="Cortex M.TMS320F28388D"
+        cgtVersion="20.2.7.LTS"
+        products="C2000WARE:5.4.0.00"
+        endianness="little"
+        outputFormat="ELF"
+        launchWizard="False"
+        linkerCommandFile=""
+        >
+    <configuration name="CM_FLASH_TCP_U16"
+        compilerBuildOptions="--opt_level=2 -I${PROJECT_ROOT}/src -I${PROJECT_ROOT}/src/cm -I${PROJECT_ROOT}/src/common -I${PROJECT_ROOT}/csp/c28x_syscfg/cm -I${PROJECT_ROOT}/csp -I${PROJECT_ROOT}/gmp_inc -I${PROJECT_ROOT}/device -I${PROJECT_ROOT}/driverlib_cm/include -I${PROJECT_ROOT}/lwip -I${PROJECT_ROOT}/lwip/src/include -I${PROJECT_ROOT}/lwip/ports/C2000/include --define=_FLASH --define=GMP_F28388D_CM_DL_TRANSPORT=GMP_F28388D_CM_DL_TCP --float_support=none -mv7M4 -me --gen_func_subsections=on --diag_warning=225"
+        linkerBuildOptions="--stack_size=2048 --heap_size=4096 --library=libc.a" />
+    <configuration name="CM_FLASH_UDP_U16"
+        compilerBuildOptions="--opt_level=2 -I${PROJECT_ROOT}/src -I${PROJECT_ROOT}/src/cm -I${PROJECT_ROOT}/src/common -I${PROJECT_ROOT}/csp/c28x_syscfg/cm -I${PROJECT_ROOT}/csp -I${PROJECT_ROOT}/gmp_inc -I${PROJECT_ROOT}/device -I${PROJECT_ROOT}/driverlib_cm/include -I${PROJECT_ROOT}/lwip -I${PROJECT_ROOT}/lwip/src/include -I${PROJECT_ROOT}/lwip/ports/C2000/include --define=_FLASH --define=GMP_F28388D_CM_DL_TRANSPORT=GMP_F28388D_CM_DL_UDP --float_support=none -mv7M4 -me --gen_func_subsections=on --diag_warning=225"
+        linkerBuildOptions="--stack_size=2048 --heap_size=4096 --library=libc.a" />
+    <file action="copy" path="C2000Lib_F28388D/device/cm/cm.c" targetDirectory="device" />
+    <file action="copy" path="C2000Lib_F28388D/device/cm/cm.h" targetDirectory="device" />
+    <file action="copy" path="C2000Lib_F28388D/device/cm/driverlib_cm.h" targetDirectory="device" />
+    <file action="copy" path="C2000Lib_F28388D/driverlib/cm/include/" targetDirectory="driverlib_cm" excludeFromBuild="True" />
+    <file action="copy" path="C2000Lib_F28388D/driverlib/cm/driverlib_cm.lib" targetDirectory="" />
+    <file action="copy" path="C2000Lib_F28388D/2838x_flash_lnk_cm_lwip.cmd" targetDirectory="" />
+    <file action="copy" path="C2000Lib_F28388D/targetConfigs/TMS320F28388D.ccxml" targetDirectory="targetConfigs" />
+    <file action="copy" path="C2000Lib_F28388D/lwip/" targetDirectory="" excludeFromBuild="True" />
+    <file action="copy" path="gmp_src_mgr/gmp_inc/" targetDirectory="" excludeFromBuild="True" />
+    <file action="copy" path="gmp_src_mgr/gmp_src/" targetDirectory="" />
+    <file action="copy" path="src/common/tricore_shared.h" targetDirectory="src/common" />
+    <file action="copy" path="src/common/ctrl_settings.h" targetDirectory="src/common" />
+    <file action="copy" path="src/common/hardware_preset/mcu_board/controlcard_f28388d.h" targetDirectory="src/common/hardware_preset/mcu_board" />
+    <file action="copy" path="src/cm/" targetDirectory="src" />
+    <file action="copy" path="../csp.typedef.h" targetDirectory="csp/c28x_syscfg" />
+    <file action="copy" path="../cm/csp.config.h" targetDirectory="csp/c28x_syscfg/cm" />
+    <file action="copy" path="../cm/csp.general.h" targetDirectory="csp/c28x_syscfg/cm" />
+    <file action="copy" path="../cm/csp.typedef.h" targetDirectory="csp/c28x_syscfg/cm" />
+    <file action="copy" path="../cm/src/sysconfig_adapter_cm.c" targetDirectory="src" />
+  </project>
+</projectSpec>

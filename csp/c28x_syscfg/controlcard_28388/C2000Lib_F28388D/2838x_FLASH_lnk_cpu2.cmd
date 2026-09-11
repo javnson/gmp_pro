@@ -76,13 +76,13 @@ SECTIONS
    .bss:output      : > RAMLS3
    .bss:cio         : > RAMLS3
    .data            : > RAMLS2
-   .sysmem          : > RAMM1
+   .sysmem          : > RAMLS4
    /* Initalized sections go in Flash */
    .const           : > FLASH5, ALIGN(8)
 #else
    .pinit           : > FLASH1, ALIGN(8)
    .ebss            : > RAMLS3
-   .esysmem         : > RAMM1
+   .esysmem         : > RAMLS4
    .cio             : > RAMLS3
    /* Initalized sections go in Flash */
    .econst          : >> FLASH4 | FLASH5, ALIGN(8)

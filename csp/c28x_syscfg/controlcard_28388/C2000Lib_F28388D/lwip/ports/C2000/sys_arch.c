@@ -48,7 +48,7 @@
 
 /* F2838x device header files required for this interface driver. */
 #include "inc/hw_types.h"
-#include "driverlib_cm/interrupt.h"
+#include "interrupt.h"
 
 /**
  * This global is defined in lwiplib.c and contains a count of the number of
@@ -661,5 +661,4 @@ sys_arch_unprotect(sys_prot_t val)
 }
 
 #endif /* NO_SYS */
-
 
