@@ -15,6 +15,9 @@ extern ADC_HandleTypeDef GMP_NUCLEO_ADC_SECONDARY_SYMBOL;
 #endif
 extern TIM_HandleTypeDef GMP_NUCLEO_PWM_TIMER_SYMBOL;
 extern TIM_HandleTypeDef GMP_NUCLEO_QEP_TIMER_SYMBOL;
+#if GMP_NUCLEO_ADC_TRIGGER_BRIDGE
+extern TIM_HandleTypeDef GMP_NUCLEO_ADC_TRIGGER_TIMER_SYMBOL;
+#endif
 extern UART_HandleTypeDef GMP_NUCLEO_DL_UART_SYMBOL;
 #if GMP_NUCLEO_HAS_DAC
 extern DAC_HandleTypeDef GMP_NUCLEO_DAC_SYMBOL;
@@ -91,8 +94,11 @@ void setup_peripheral(void)
         Error_Handler();
 
 #if GMP_NUCLEO_ADC_REGULAR_DMA
-    if (HAL_ADCEx_Calibration_Start(GMP_NUCLEO_ADC_PRIMARY_HANDLE) != HAL_OK ||
-        HAL_ADC_Start_DMA(GMP_NUCLEO_ADC_PRIMARY_HANDLE,
+#if GMP_NUCLEO_ADC_HAS_CALIBRATION
+    if (HAL_ADCEx_Calibration_Start(GMP_NUCLEO_ADC_PRIMARY_HANDLE) != HAL_OK)
+        Error_Handler();
+#endif
+    if (HAL_ADC_Start_DMA(GMP_NUCLEO_ADC_PRIMARY_HANDLE,
                           (uint32_t*)adc_regular_dma_buffer,
                           GMP_NUCLEO_ADC_FB_COUNT) != HAL_OK)
         Error_Handler();
@@ -109,6 +115,10 @@ void setup_peripheral(void)
         Error_Handler();
 #endif
 
+#if GMP_NUCLEO_ADC_TRIGGER_BRIDGE
+    if (HAL_TIM_Base_Start(GMP_NUCLEO_ADC_TRIGGER_TIMER_HANDLE) != HAL_OK)
+        Error_Handler();
+#endif
     if (HAL_TIM_Base_Start(GMP_NUCLEO_PWM_TIMER_HANDLE) != HAL_OK)
         Error_Handler();
 
@@ -249,7 +259,11 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* adc)
 }
 
 #if GMP_NUCLEO_QEP_SOFTWARE_INDEX
+#if GMP_NUCLEO_QEP_LEGACY_EXTI_CALLBACK
+void HAL_GPIO_EXTI_Callback(uint16_t pin)
+#else
 void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin)
+#endif
 {
     if (pin == GMP_NUCLEO_QEP_Z_PIN)
         __HAL_TIM_SET_COUNTER(GMP_NUCLEO_QEP_TIMER_HANDLE, 0U);

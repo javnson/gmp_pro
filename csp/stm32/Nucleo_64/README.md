@@ -2,7 +2,7 @@
 
 **English** | [简体中文](README_CN.md)
 
-Status: G431 configured baseline; G474RE, G491RE, H533RE, and C092RC hardware baselines v0.6
+Status: G431 configured baseline; G474RE, G491RE, H533RE, C092RC, and F411RE hardware baselines v0.7
 
 Date: 2026-09-11
 
@@ -61,6 +61,16 @@ standby control. CubeMX generation, GCC/CMake linking, verified SWD programming,
 and three complete GMP Data Link smoke runs passed at 921600 baud. Independent
 register reads confirmed that the three phase outputs and MOE remained disabled;
 see `stm32c092rc_nucleo/validation.md`.
+
+The NUCLEO-F411RE target is the STM32F4 hardware baseline. Its ADC1 regular
+group cannot directly select TIM1 TRGO/CC4, so the IOC implements a pin-free
+hardware bridge: TIM1 OC4REF -> TIM2 ITR0/reset -> TIM2 update TRGO -> ADC1
+six-channel circular DMA. CubeMX generation, SDPE/IOC validation, GCC/CMake
+linking, verified SWD programming, and complete GMP Data Link acceptance at
+921600 baud passed. The control callback measured 20.269 kHz, and independent
+register reads confirmed that all three complementary PWM pairs and MOE stayed
+disabled. STM32F411RE has neither on-chip DAC nor CAN/FDCAN; see
+`stm32f411re_nucleo/validation.md`.
 
 ## 1. Scope and principles
 
@@ -292,6 +302,7 @@ include lists are outputs, and flattened C/C++ source names must remain unique.
 csp/stm32/Nucleo_64/
 ├── README.md
 ├── README_CN.md
+├── start_sdpe.bat
 ├── src/
 │   ├── user/
 │   ├── xplt/
@@ -310,7 +321,8 @@ csp/stm32/Nucleo_64/
 ├── stm32g474re_nucleo/
 ├── stm32g491re_nucleo/
 ├── stm32h533re_nucleo/
-└── stm32c092rc_nucleo/
+├── stm32c092rc_nucleo/
+└── stm32f411re_nucleo/
 ```
 
 Each board maintains one preferred IOC. A suffixed IOC such as `*_tim8.ioc` or
@@ -330,6 +342,11 @@ select board
   -> optionally generate a Keil project
   -> inspect expected outputs
 ```
+
+Run or double-click `start_sdpe.bat` in this directory. It resolves the repository
+root, invokes the canonical `tools/SDPE_v2/gmp_sdpe_project_gui.bat`, and uses the
+whole `Nucleo_64` directory as the board-project discovery root, avoiding a
+separate launcher for every board.
 
 `GMP_PRO_LOCATION` is registered before GMP tools run. Supported CubeMX and
 per-family firmware-package versions are pinned; `LastFirmware` is not a
@@ -413,10 +430,10 @@ a signal that the SDPE alias contract must be improved.
 
 ### E. Expand across families
 
-NUCLEO-H533RE is the validated STM32H5 golden board and NUCLEO-C092RC is the
-validated STM32C0 low-resource golden board. Continue with NUCLEO-F302R8 and
-NUCLEO-U083RC, completing one golden board for each new STM32 family before
-adding further members.
+NUCLEO-H533RE is the validated STM32H5 golden board, NUCLEO-C092RC is the
+validated STM32C0 low-resource golden board, and NUCLEO-F411RE is the validated
+STM32F4 golden board. Continue with NUCLEO-U083RC, completing one golden board
+for each new STM32 family before adding further members.
 
 ### F. Fleet validation and release
 
@@ -428,12 +445,12 @@ examples only after their replacements are validated.
 
 - approved bilingual specification;
 - `stm32_nucleo_64_board` SDPE schema;
-- G431RB, G474RE, G491RE, H533RE, and C092RC board entities;
-- five preferred IOC files and five target SDPE projects;
+- G431RB, G474RE, G491RE, H533RE, C092RC, and F411RE board entities;
+- six preferred IOC files and six target SDPE projects;
 - one shared `user`, `xplt`, and `gmp_src_mgr` implementation;
 - IOC/SDPE static validator;
 - headless CubeMX and batch CMake/GCC scripts;
-- five pin maps and validation records;
+- six pin maps and validation records;
 - complete G431RB hardware validation, with accurate status for other boards.
 
 ## 12. Non-goals

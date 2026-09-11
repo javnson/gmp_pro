@@ -134,14 +134,14 @@ def check_adc_feedback(
             if match is None:
                 continue
             rank = match.group(1)
-        signal = ioc.get(f"{pin}.Signal", "")
-        if signal.startswith("ADCx_INP"):
+        signal = pin_signal(ioc, pin) or ""
+        if signal.startswith("ADCx_IN"):
             shared_prefix = f"SH.{signal}."
             signal = next(
                 (
                     value
                     for key, value in ioc.items()
-                    if key.startswith(shared_prefix) and value.startswith(f"{adc}_INP")
+                    if key.startswith(shared_prefix) and value.startswith(f"{adc}_IN")
                 ),
                 signal,
             )
@@ -206,6 +206,7 @@ def check_target(repo: Path, board_dir: Path) -> Report:
     entity = load_json(entity_path)
     parameters = entity["parameters"]
     regular_dma = bool(int(parameters.get("adc_regular_dma", "0")))
+    trigger_bridge = bool(int(parameters.get("adc_trigger_bridge", "0")))
     pin_doc_path = board_dir / "pin_assign.md"
     report.require(pin_doc_path.is_file(), "missing pin_assign.md")
     pin_doc = pin_doc_path.read_text(encoding="utf-8") if pin_doc_path.is_file() else ""
@@ -225,6 +226,8 @@ def check_target(repo: Path, board_dir: Path) -> Report:
     required_ips = {"ADC1", dma_ip, "GPIO", "I2C1", "NVIC", "RCC", "SYS", "USART2"}
     if not regular_dma:
         required_ips.add("ADC2")
+    if trigger_bridge:
+        required_ips.add(parameters["adc_trigger_timer_instance"])
     # GPIO is represented by pin settings rather than an Mcu.IP entry in CubeMX.
     required_ips.remove("GPIO")
     report.require(required_ips <= ips, f"missing IOC peripherals: {sorted(required_ips - ips)}")
@@ -292,6 +295,22 @@ def check_target(repo: Path, board_dir: Path) -> Report:
             and ioc.get("Dma.ADC1.0.Mode") == "DMA_CIRCULAR",
             "ADC1 regular scan DMA is not continuous and circular",
         )
+        if trigger_bridge:
+            bridge_timer = parameters["adc_trigger_timer_instance"]
+            report.require(
+                ioc.get(f"{bridge_timer}.TIM_SlaveMode") == "TIM_SLAVEMODE_RESET"
+                and ioc.get(f"{bridge_timer}.TIM_MasterOutputTrigger")
+                == "TIM_TRGO_UPDATE",
+                f"{bridge_timer} does not relay PWM TRGO to the ADC",
+            )
+            report.require(
+                any(
+                    key.startswith(f"VP_{bridge_timer}_VS_ClockSourceITR")
+                    and value == "TriggerSource_ITR0"
+                    for key, value in ioc.items()
+                ),
+                f"{bridge_timer} trigger bridge is not sourced from TIM1 ITR0",
+            )
     else:
         for adc in ("ADC1", "ADC2"):
             configured_trigger = ioc.get(f"{adc}.ExternalTrigInjecConv")

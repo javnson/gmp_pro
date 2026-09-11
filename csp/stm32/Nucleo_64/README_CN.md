@@ -2,7 +2,7 @@
 
 [English](README.md) | **简体中文**
 
-状态：G431 配置基线、G474RE、G491RE、H533RE 与 C092RC 实板基线 v0.6
+状态：G431 配置基线；G474RE、G491RE、H533RE、C092RC 与 F411RE 实板基线 v0.7
 
 日期：2026-09-11
 
@@ -47,6 +47,13 @@ TIM1 三对互补 PWM、TIM3 AB、USART2 VCP、用户 LED、I2C1 和板载收发
 FDCAN1/待机控制。CubeMX 生成、GCC/CMake 链接、SWD 烧录校验和三轮 921600 波特率
 完整 GMP Data Link 冒烟测试均已通过；硬件寄存器回读确认三相 PWM 和 MOE 始终关闭，
 详见 `stm32c092rc_nucleo/validation.md`。
+
+NUCLEO-F411RE 已完成 STM32F4 实板基线。该器件的 ADC1 规则组不能直接选择 TIM1
+TRGO/CC4，因此 IOC 使用 TIM1 OC4REF -> TIM2 ITR0/reset -> TIM2 update TRGO 的纯硬件
+桥接，在不占用额外引脚的情况下触发六通道循环 DMA。CubeMX 生成、SDPE/IOC 校验、
+GCC/CMake 链接、SWD 烧录回读和 921600 波特率完整 GMP Data Link 验收均已通过，
+控制回调实测 20.269 kHz；寄存器回读确认三相互补 PWM 与 MOE 保持关闭。F411RE 没有
+片内 DAC 和 CAN/FDCAN，详见 `stm32f411re_nucleo/validation.md`。
 
 ## 1. 范围和设计原则
 
@@ -338,6 +345,7 @@ xplt.ctl_interface.h
 csp/stm32/Nucleo_64/
 ├── README.md
 ├── README_CN.md
+├── start_sdpe.bat
 ├── src/
 │   ├── user/
 │   ├── xplt/
@@ -356,7 +364,8 @@ csp/stm32/Nucleo_64/
 ├── stm32g474re_nucleo/
 ├── stm32g491re_nucleo/
 ├── stm32h533re_nucleo/
-└── stm32c092rc_nucleo/
+├── stm32c092rc_nucleo/
+└── stm32f411re_nucleo/
 ```
 
 每个板卡目录只维护一个首选主 IOC。只有无法通过 SDPE 宏解决的真实引脚复用冲突，
@@ -377,6 +386,10 @@ csp/stm32/Nucleo_64/
   -> 可选生成 Keil 工程
   -> 静态检查预期输出
 ```
+
+可从本目录双击或运行 `start_sdpe.bat`。该入口自动解析仓库根目录，调用规范的
+`tools/SDPE_v2/gmp_sdpe_project_gui.bat`，并将整个 `Nucleo_64` 目录作为板卡工程
+发现范围，因此无需为每块板维护一份启动脚本。
 
 要求：
 
@@ -514,7 +527,7 @@ C2000 遗留代码。
 
 建议顺序：
 
-1. NUCLEO-F302R8，验证旧系列高级定时器和 ADC 差异；
+1. NUCLEO-F411RE（已完成），作为 STM32F4 黄金板并验证 ADC 触发桥接；
 2. NUCLEO-C092RC（已完成），作为 STM32C0 低资源器件黄金板；
 3. NUCLEO-U083RC，继续评估低资源器件的完整 `control` 能力；
 4. NUCLEO-H533RE（已完成），作为 STM32H5/M33 黄金板；
@@ -536,12 +549,12 @@ C2000 遗留代码。
 
 - 本规格的审核版本；
 - 一个新的 Nucleo-64 SDPE schema；
-- G431RB、G474RE、G491RE、H533RE、C092RC 五个板卡实体；
-- 五个主 IOC 和五个板卡 SDPE 工程；
+- G431RB、G474RE、G491RE、H533RE、C092RC、F411RE 六个板卡实体；
+- 六个主 IOC 和六个板卡 SDPE 工程；
 - 一套公共 `user`、`xplt` 和 `gmp_src_mgr`；
 - IOC/SDPE 静态校验工具；
 - CubeMX 无界面生成和 GCC/CMake 批量构建脚本；
-- 五份引脚表和五份验证记录；
+- 六份引脚表和六份验证记录；
 - 至少 G431RB 完整实板验证，其他板卡按实际硬件状态准确标注。
 
 ## 13. 非目标
