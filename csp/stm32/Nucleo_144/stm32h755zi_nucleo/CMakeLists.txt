@@ -87,6 +87,7 @@ function(configure_core target core_dir cpu_flags linker_script)
         --specs=nano.specs --specs=nosys.specs
         -Wl,-Map=${target}.map -Wl,--gc-sections -Wl,--print-memory-usage
     )
+    set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS "${linker_script}")
     target_link_libraries(${target} PRIVATE m)
     add_custom_command(TARGET ${target} POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${target}> ${CMAKE_CURRENT_BINARY_DIR}/${target}.hex

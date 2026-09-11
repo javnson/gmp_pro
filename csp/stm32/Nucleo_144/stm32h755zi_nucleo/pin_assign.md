@@ -10,7 +10,7 @@
 | GMP DL VCP TX/RX (CM4) | USART3 | PD8 / PD9 |
 | Status LEDs LD1 / LD2 / LD3 | GPIO | PB0 (CM7) / PE1 (CM4) / PB14 (CM7) |
 | SWDIO / SWCLK | DEBUG | PA13 / PA14 |
-| Arduino I2C SCL/SDA (CM7) | I2C1 | PB8 / PB9 |
+| Arduino I2C SCL/SDA (CM4) | I2C1 | PB8 / PB9 |
 | RMII REF_CLK | ETH | PA1 |
 | RMII MDIO/MDC | ETH | PA2 / PC1 |
 | RMII CRS_DV | ETH | PA7 |

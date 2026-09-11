@@ -286,7 +286,7 @@ def run_smoke_test(
         sequence += 1
         memory_descriptor = transact(port, sequence, 0x51, b"\x00")
         memory_header = struct.Struct("<BBBBIIBB")
-        if len(memory_descriptor) < memory_header.size or memory_descriptor[:4] != bytes((2, 0, 5, 0)):
+        if len(memory_descriptor) < memory_header.size or memory_descriptor[:4] != bytes((2, 0, 6, 0)):
             raise AssertionError(f"Invalid Memory descriptor: {memory_descriptor.hex(' ')}")
         memory_fields = memory_header.unpack_from(memory_descriptor)
         discovered_address, discovered_length = memory_fields[4:6]
@@ -317,6 +317,7 @@ def run_smoke_test(
             ("QEP Count", 4),
             ("PWM Compare (outputs remain disabled)", 12),
             ("Platform Diagnostics", 72),
+            ("Dual Core Status", 16),
         )
         discovered_regions = {}
         for resource_id, (expected_name, expected_length) in enumerate(
@@ -325,7 +326,7 @@ def run_smoke_test(
             sequence += 1
             descriptor = transact(port, sequence, 0x51, bytes((resource_id,)))
             if len(descriptor) < memory_header.size or descriptor[:4] != bytes(
-                (2, 0, 5, resource_id)
+                (2, 0, 6, resource_id)
             ):
                 raise AssertionError(
                     f"Invalid Memory descriptor {resource_id}: {descriptor.hex(' ')}"
@@ -384,10 +385,18 @@ def run_smoke_test(
         )
 
         diag_address, diag_length = discovered_regions["Platform Diagnostics"]
+        dual_address, dual_length = discovered_regions["Dual Core Status"]
         sequence += 1
         diag_first = transact(
             port, sequence, 0x50, struct.pack("<IBH", diag_address, 1, diag_length)
         )
+        sequence += 1
+        dual_first_payload = transact(
+            port, sequence, 0x50, struct.pack("<IBH", dual_address, 1, dual_length)
+        )
+        if dual_first_payload[:1] != b"\x00" or len(dual_first_payload) != 17:
+            raise AssertionError("Dual-core status read failed")
+        dual_first = struct.unpack("<4I", dual_first_payload[1:])
         diag_start_time = time.monotonic()
         for stress_index in range(8):
             sequence += 1
@@ -399,23 +408,39 @@ def run_smoke_test(
                     f"Repeated DMA stress payload {stress_index} mismatch"
                 )
         udp_payload = validate_udp_echo(target_ip, udp_echo_port)
-        time.sleep(0.55)
+        time.sleep(1.1)
         sequence += 1
         diag_second = transact(
             port, sequence, 0x50, struct.pack("<IBH", diag_address, 1, diag_length)
         )
+        sequence += 1
+        dual_second_payload = transact(
+            port, sequence, 0x50, struct.pack("<IBH", dual_address, 1, dual_length)
+        )
+        if dual_second_payload[:1] != b"\x00" or len(dual_second_payload) != 17:
+            raise AssertionError("Dual-core status read failed")
+        dual_status = struct.unpack("<4I", dual_second_payload[1:])
         diag_elapsed = time.monotonic() - diag_start_time
         diagnostics_first = struct.unpack("<18I", diag_first[1:])
         diagnostics = struct.unpack("<18I", diag_second[1:])
         if diag_first[:1] != b"\x00" or diag_second[:1] != b"\x00":
             raise AssertionError("Platform diagnostics read failed")
-        control_isr_rate = (
-            diagnostics[0] - diagnostics_first[0]
-        ) / diag_elapsed
-        if not 18000.0 <= control_isr_rate <= 22000.0:
+        if dual_status[0] != 0x47373535:
+            raise AssertionError(f"Invalid dual-core status magic: 0x{dual_status[0]:08X}")
+        if any(dual_status[index] <= dual_first[index] for index in (1, 2, 3)):
             raise AssertionError(
-                f"TIM/ADC control ISR rate is {control_isr_rate:.1f} Hz"
+                "CM7 scheduler, CM4 scheduler, or CM7 control heartbeat did not advance: "
+                f"{dual_first} -> {dual_status}"
             )
+        control_isr_rate = 0.0
+        if transport != "serial":
+            control_isr_rate = (
+                diagnostics[0] - diagnostics_first[0]
+            ) / diag_elapsed
+            if not 18000.0 <= control_isr_rate <= 22000.0:
+                raise AssertionError(
+                    f"TIM/ADC control ISR rate is {control_isr_rate:.1f} Hz"
+                )
         if diagnostics[1] != 0:
             raise AssertionError(f"PWM outputs unexpectedly enabled: 0x{diagnostics[1]:08X}")
         if transport == "serial" and (diagnostics[2] == 0 or diagnostics[3] == 0):
@@ -427,18 +452,18 @@ def run_smoke_test(
             )
         if diagnostics[6] <= diagnostics_first[6]:
             raise AssertionError("Tick-driven user LED heartbeat is not advancing")
-        if diagnostics[7] != 1:
-            raise AssertionError("Ethernet PHY link is not reported up")
-        if diagnostics[8] <= diagnostics_first[8] or diagnostics[9] <= diagnostics_first[9]:
-            raise AssertionError("UDP RX/TX diagnostic counters did not advance")
-        if diagnostics[10] - diagnostics_first[10] < len(udp_payload):
-            raise AssertionError("UDP byte counter did not include the echo payload")
-        if diagnostics[11] != diagnostics_first[11]:
-            raise AssertionError(
-                "Ethernet error count advanced during the test window: "
-                f"{diagnostics_first[11]} -> {diagnostics[11]}"
-            )
         if transport != "serial":
+            if diagnostics[7] != 1:
+                raise AssertionError("Ethernet PHY link is not reported up")
+            if diagnostics[8] <= diagnostics_first[8] or diagnostics[9] <= diagnostics_first[9]:
+                raise AssertionError("UDP RX/TX diagnostic counters did not advance")
+            if diagnostics[10] - diagnostics_first[10] < len(udp_payload):
+                raise AssertionError("UDP byte counter did not include the echo payload")
+            if diagnostics[11] != diagnostics_first[11]:
+                raise AssertionError(
+                    "Ethernet error count advanced during the test window: "
+                    f"{diagnostics_first[11]} -> {diagnostics[11]}"
+                )
             if diagnostics[12] <= diagnostics_first[12]:
                 raise AssertionError("Ethernet Data Link RX counter did not advance")
             if diagnostics[13] <= diagnostics_first[13]:
@@ -537,21 +562,31 @@ def run_smoke_test(
     print(f"PASS: u8 Data Link validated over {endpoint}")
     print(f"      Memory discovery: {memory_name}, 0x{memory_address:08X}, {memory_length} bytes")
     print(f"      PIL: mask synchronization and STEP loopback validated")
-    print(
-        f"      Platform: ISR={diagnostics[0]} ({control_isr_rate:.1f} Hz), "
-        f"RX={diagnostics[2]}, "
-        f"TX={diagnostics[3]}, UART error baseline={diagnostics[4]}, "
-        f"LED toggles={diagnostics[6]}, PWM output state=0"
-    )
-    print(
-        f"      Ethernet: raw UDP echo {target_ip}:{udp_echo_port}, link=up, "
-        f"UDP RX/TX={diagnostics[8]}/{diagnostics[9]}, bytes={diagnostics[10]}"
-    )
+    if transport == "serial":
+        print(
+            f"      CM4 platform: UART RX/TX={diagnostics[2]}/{diagnostics[3]}, "
+            f"errors={diagnostics[4]}, LED toggles={diagnostics[6]}, PWM output state=0"
+        )
+        print(f"      CM7 Ethernet: raw UDP echo {target_ip}:{udp_echo_port} passed")
+    else:
+        print(
+            f"      CM7 platform: ISR={diagnostics[0]} ({control_isr_rate:.1f} Hz), "
+            f"LED toggles={diagnostics[6]}, PWM output state=0"
+        )
+        print(
+            f"      Ethernet: raw UDP echo {target_ip}:{udp_echo_port}, link=up, "
+            f"UDP RX/TX={diagnostics[8]}/{diagnostics[9]}, bytes={diagnostics[10]}"
+        )
     if transport != "serial":
         print(
             f"      Ethernet DL: {transport.upper()} RX/TX={diagnostics[12]}/{diagnostics[13]}, "
             f"bytes={diagnostics[14]}/{diagnostics[15]}, errors={diagnostics[17]}"
         )
+    print(
+        "      Dual core: "
+        f"CM7 scheduler={dual_status[1]}, CM4 scheduler={dual_status[2]}, "
+        f"CM7 control={dual_status[3]}"
+    )
     print(f"      Tunable discovery: {len(tunable_names)} physical signal parameters")
     print(
         f"      Scope: {scope_name}, generation {generation}, {depth} x {channels} float32, "

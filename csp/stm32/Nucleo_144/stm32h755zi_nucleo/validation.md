@@ -1,39 +1,50 @@
-# H753ZI acceptance record
+# H755ZI-Q dual-core acceptance record
 
 The target is accepted only when all of the following pass:
 
-1. IOC/schema/entity consistency validation and SDPE generation.
-2. Clean GCC build with the repository-local GMP source manager output.
-3. SWD erase/program/verify/reset through the onboard ST-Link.
-4. GMP Data Link discovery, PIL, Tunable, Memory and Scope tests over USART3,
-   TCP, and UDP.
-5. A 20 kHz ADC DMA callback rate while PWM output state remains zero.
-6. Ethernet link-up, raw UDP echo on `192.168.137.2:50000`, TCP Data Link on
+1. CubeMX open/save/generate round-trip plus IOC/schema/entity validation.
+2. GCC Release builds for both CM7 and CM4 with TCP and UDP selected through
+   `GMP_DATALINK_TRANSPORT`.
+3. SWD erase/program/verify/reset of CM7 bank 1 and CM4 bank 2 through the
+   onboard ST-Link.
+4. CM7 owns TIM1, TIM3, ADC1, Ethernet and its scheduler; CM4 owns USART3,
+   I2C1 and its scheduler.
+5. GMP Data Link discovery, PIL, Tunable, Memory and Scope over CM4 USART3 and
+   over CM7 TCP or UDP.
+6. A 20 kHz CM7 ADC DMA callback rate while physical PWM outputs remain off.
+7. Ethernet link-up, raw UDP echo on `192.168.137.3:50000`, TCP Data Link on
    port `50001`, and UDP Data Link on port `50002`.
-7. Concurrent USART3 plus TCP and concurrent USART3 plus UDP transactions with
-   independent protocol state and shared application resources.
+8. Concurrent USART3 plus TCP and USART3 plus UDP transactions, with both
+   scheduler heartbeats and the CM7 control heartbeat advancing in shared SRAM4.
 
 The USB Ethernet adapter used for the reference test is configured as
 `192.168.137.1/24`. No power stage is connected or driven by this test.
 
 ## Reference hardware result (2026-09-11)
 
-- Board/ST-Link: NUCLEO-H753ZI, V3J5M2, SWD program/verify/reset passed.
-- Build: both TCP and UDP GCC release configurations passed; IOC and all 31
-  schemas / 79 entities validated.
-- GMP DL: COM71 at 921600 baud; discovery, PIL, Tunable, Memory, Scope, DMA
-  stress, CRC rejection and recovery passed.
-- Control path: measured ADC DMA callback rate 20,136.4 Hz; LED heartbeat and
-  six ADC samples valid; PWM output state remained zero.
-- Ethernet: 100 Mbps link; UDP echo at `192.168.137.2:50000` passed with RX/TX
-  counters `1/1`, 25 payload bytes, and no Ethernet errors.
-- TCP DL: full u8 acceptance suite passed at `192.168.137.2:50001`; observed
-  DL RX/TX counters `38/36`, byte counters `2879/3150`, and zero DL errors.
-- UDP DL: the same suite passed at `192.168.137.2:50002`; observed DL RX/TX
-  counters `38/36`, byte counters `2879/3150`, and zero DL errors.
-- Both runs preserved the 20 kHz control ISR, six ADC channels, LED heartbeat,
-  CRC rejection/recovery, and disabled physical PWM output state.
+- Board/ST-Link: NUCLEO-H755ZI-Q, serial `003F001A3234510C33353533`, firmware
+  V3J5M2. Dual-bank SWD program/verify/reset passed.
+- CubeMX 6.17.0 successfully reopened, saved and regenerated the project. The
+  six ADC ranks, three DMA requests, CM7 SWD pins, per-pin core assignments,
+  CM4 I2C1 and all RMII pins remained serialized in the IOC.
+- Ethernet RX descriptors use the low D2 SRAM reservation at `0x30000000`;
+  TX descriptors and receive buffers use SRAM3 from `0x30040060`. CM4 RAM uses
+  the non-overlapping alias range `0x10008000–0x1003ffff`.
+- Build: both CM7 and CM4 GCC Release images passed for TCP and UDP. The board
+  entity and all 31 SDPE schemas / 80 entities validated.
+- CM4 serial DL: COM72 at 921600 baud; discovery, PIL, Tunable, Memory, Scope,
+  DMA stress, CRC rejection and recovery passed. Observed UART RX/TX callbacks
+  were `62/76`, with zero UART errors.
+- CM7 TCP DL: full u8 suite passed at `192.168.137.3:50001`; observed control
+  ISR rate was 20,247.9 Hz, DL RX/TX counters `40/38`, byte counters
+  `2907/3217`, and zero DL errors.
+- CM7 UDP DL: full u8 suite passed at `192.168.137.3:50002`; observed control
+  ISR rate was 20,244.7 Hz, DL RX/TX counters `40/38`, byte counters
+  `2907/3217`, and zero DL errors.
+- Raw UDP echo and ICMP ping passed with the 100 Mbps Ethernet link up. All
+  runs kept physical PWM outputs disabled.
 - Concurrent UART+TCP and UART+UDP tests each completed 48 synchronized ECHO
   transactions per link, including 256-byte bursts. Both endpoint facility
-  tables matched, cross-link Tunable write/read/restore passed, and all link
-  error counters remained zero.
+  tables matched, each endpoint's Tunable write/read/restore passed, all link
+  error counters stayed zero, and shared CM7/CM4 scheduler plus CM7 control
+  counters advanced.

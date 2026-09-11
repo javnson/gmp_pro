@@ -48,6 +48,9 @@ void init(void)
 {
     size_gt index;
 
+#if GMP_NUCLEO_DUAL_CORE && defined(CORE_CM7)
+    user_dl_dual_core_bootstrap();
+#endif
     gmp_scheduler_init(&scheduler);
     for (index = 0U; index < sizeof(tasks) / sizeof(tasks[0]); ++index)
         (void)gmp_scheduler_add_task(&scheduler, &tasks[index]);

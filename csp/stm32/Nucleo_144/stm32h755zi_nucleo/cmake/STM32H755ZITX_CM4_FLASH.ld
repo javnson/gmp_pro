@@ -6,7 +6,8 @@
 **
 **
 **  Abstract    : Linker script for STM32H7 series
-**                1024Kbytes FLASH and 288Kbytes RAM
+**                1024Kbytes FLASH and 224Kbytes RAM.  The first and last
+**                32Kbytes of D2 SRAM are reserved for CM7 Ethernet DMA.
 **
 **                Set heap size, stack size and stack location according
 **                to application requirements.
@@ -44,7 +45,7 @@ _Min_Stack_Size = 0x400 ; /* required amount of stack */
 MEMORY
 {
 FLASH (rx)      : ORIGIN = 0x08100000, LENGTH = 1024K
-RAM (xrw)      : ORIGIN = 0x10000000, LENGTH = 288K
+RAM (xrw)      : ORIGIN = 0x10008000, LENGTH = 224K
 RAM_SHARED (xrw) : ORIGIN = 0x38000000, LENGTH = 64K
 }
 
@@ -179,4 +180,3 @@ SECTIONS
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }
-

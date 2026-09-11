@@ -76,7 +76,7 @@ SECTIONS
     . = ALIGN(8);
   } >DTCMRAM
 
-  .RxDescripSection 0x30040000 (NOLOAD) : { KEEP(*(.RxDescripSection)) } >RAM_D2
+  .RxDescripSection 0x30000000 (NOLOAD) : { KEEP(*(.RxDescripSection)) } >RAM_D2
   .TxDescripSection 0x30040060 (NOLOAD) : { KEEP(*(.TxDescripSection)) } >RAM_D2
   .Rx_PoolSection 0x30040200 (NOLOAD) : { KEEP(*(.Rx_PoolSection)) } >RAM_D2
 

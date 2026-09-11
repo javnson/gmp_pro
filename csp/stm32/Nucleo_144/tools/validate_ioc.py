@@ -83,6 +83,17 @@ def pin_signal(ioc: dict[str, str], pin: str) -> str:
     return direct
 
 
+def pin_attribute(ioc: dict[str, str], pin: str) -> str:
+    for key, value in ioc.items():
+        if not key.endswith(".PinAttribute"):
+            continue
+        key_pin = key.removesuffix(".PinAttribute").split("-", 1)[0]
+        key_pin = key_pin.replace("\\ ", " ").split("(", 1)[0].strip()
+        if key_pin == pin:
+            return value
+    return ""
+
+
 def option(requirement: dict, macro: str) -> str:
     return next(
         str(item["value"])
@@ -263,18 +274,44 @@ def check_target(root: Path, board: Path) -> Report:
             f"status LED{index} routing mismatch",
         )
         report.require(led_pin in pin_doc, f"{led_pin} is absent from pin_assign.md")
+        if ioc.get("Mcu.ContextNb") == "2":
+            expected_context = "CortexM4" if index == 2 else "CortexM7"
+            report.require(
+                pin_attribute(ioc, led_pin) == expected_context,
+                f"status LED{index} {led_pin} is not assigned to {expected_context}",
+            )
 
     if ioc.get("Mcu.ContextNb") == "2":
         cm4_ips = ioc.get("CortexM4.IPs", "")
         cm7_ips = ioc.get("CortexM7.IPs", "")
         report.require("USART3\\:I" in cm4_ips and "USART3\\:I" not in cm7_ips, "USART3 is not owned by CM4")
+        report.require("I2C1\\:I" in cm4_ips and "I2C1\\:I" not in cm7_ips, "I2C1 is not owned by CM4")
         report.require("ETH\\:I" in cm7_ips and "ETH\\:I" not in cm4_ips, "Ethernet is not owned by CM7")
+        for pin in (p["dl_tx_pin"], p["dl_rx_pin"], p["i2c_scl_pin"], p["i2c_sda_pin"]):
+            report.require(pin_attribute(ioc, pin) == "CortexM4", f"{pin} is not assigned to CM4")
+        cm7_pins = ["PA13", "PA14"]
+        cm7_pins.extend(p[f"adc_fb{index}_pin"] for index in range(int(p["adc_fb_count"])))
+        cm7_pins.extend(p[field] for field in (
+            "eth_ref_clk_pin", "eth_mdio_pin", "eth_crs_dv_pin", "eth_mdc_pin",
+            "eth_rxd0_pin", "eth_rxd1_pin", "eth_tx_en_pin", "eth_txd0_pin",
+            "eth_txd1_pin",
+        ))
+        for pin in cm7_pins:
+            report.require(pin_attribute(ioc, pin) == "CortexM7", f"{pin} is not assigned to CM7")
         report.require(
             "NVIC1.DMA1_Stream0_IRQn" in ioc
             and "NVIC2.DMA1_Stream1_IRQn" in ioc
             and "NVIC2.DMA1_Stream2_IRQn" in ioc,
             "dual-core DMA interrupts are assigned to the wrong NVIC context",
         )
+        cm4_linker = board / "cmake/STM32H755ZITX_CM4_FLASH.ld"
+        report.require(cm4_linker.is_file(), "CM4 linker script is missing")
+        if cm4_linker.is_file():
+            linker_text = cm4_linker.read_text(encoding="utf-8")
+            report.require(
+                "ORIGIN = 0x10008000, LENGTH = 224K" in linker_text,
+                "CM4 RAM overlaps the Ethernet DMA reservations",
+            )
 
     eth_pins = {
         "eth_ref_clk_pin": "ETH_REF_CLK",
@@ -292,6 +329,25 @@ def check_target(root: Path, board: Path) -> Report:
         report.require(pin_signal(ioc, pin) == signal, f"{pin} is not {signal}")
         report.require(pin in pin_doc, f"{pin} is absent from pin_assign.md")
     report.require(ioc.get("ETH.MediaInterface") == p["eth_media_interface"], "Ethernet is not RMII")
+    try:
+        rx_desc = int(ioc.get("ETH.RxDescAddress", ""), 0)
+        tx_desc = int(ioc.get("ETH.TxDescAddress", ""), 0)
+        rx_buffer = int(ioc.get("ETH.RxBufferAddress", ""), 0)
+    except ValueError:
+        rx_desc = tx_desc = rx_buffer = -1
+    report.require(
+        all(address >= 0 and address % 32 == 0 for address in (rx_desc, tx_desc, rx_buffer)),
+        "Ethernet DMA addresses must be 32-byte aligned",
+    )
+    if ioc.get("Mcu.ContextNb") == "2":
+        report.require(
+            (rx_desc, tx_desc, rx_buffer) == (0x30000000, 0x30040060, 0x30040200),
+            "dual-core Ethernet DMA layout does not match the CM7 linker script",
+        )
+        report.require(
+            ioc.get("RCC.ADCCLockSelection") == "RCC_ADCCLKSOURCE_PLL2",
+            "ADC clock is not sourced from PLL2P using CubeMX's serialized key",
+        )
     expected_mac = ":".join(p[f"eth_mac{index}"].upper() for index in range(6))
     report.require(ioc.get("ETH.MACAddr", "").replace("\\:", ":").upper() == expected_mac, "MAC mismatch")
     report.require(ioc.get("LWIP.LWIP_DHCP") == "0", "acceptance target must use static IPv4")
