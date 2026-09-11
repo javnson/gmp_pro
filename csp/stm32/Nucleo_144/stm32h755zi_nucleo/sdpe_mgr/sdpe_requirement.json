@@ -1,0 +1,74 @@
+{
+  "id": "nucleo_144_stm32h755zi",
+  "macro_prefix": "GMP_NUCLEO_H755ZI_TARGET",
+  "display_name": "GMP Nucleo-144 STM32H755ZI Dual-Core Target",
+  "description": "CM4 USART Data Link and CM7 Ethernet Data Link with independent GMP schedulers.",
+  "suite": "stm32_nucleo_144",
+  "version": "0.1.0",
+  "updated_at": "2026-09-11",
+  "output_header": "ctrl_settings.h",
+  "hardware": [
+    {"entity": "nucleo_h755zi_q"}
+  ],
+  "code_sections": {
+    "after_extern_open": "/* CubeMX handle declarations are emitted after HAL types are available. */",
+    "before_footer": "/* Map the selected SDPE entity to the shared Nucleo-144 implementation. */\n#define GMP_NUCLEO_ENTITY_PREFIX NUCLEO_H755ZI_Q\n#include <nucleo_board_aliases.h>"
+  },
+  "feature_macros": [],
+  "option_macros": [
+    {
+      "group": "Board",
+      "macro": "GMP_NUCLEO_PWM_TIMER_SELECTION",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "nucleo_h755zi_q.PWM_TIMER_SELECTION",
+      "options": [],
+      "description": "CM7 advanced timer used for three-phase PWM and ADC triggering."
+    },
+    {
+      "group": "Board",
+      "macro": "GMP_NUCLEO_QEP_TIMER_SELECTION",
+      "enabled": true,
+      "value": "3",
+      "options_preset": "nucleo_h755zi_q.QEP_TIMER_SELECTION",
+      "options": [],
+      "description": "CM7 general-purpose timer used for ABZ position capture."
+    },
+    {
+      "group": "Datalink",
+      "macro": "GMP_NUCLEO_DL_BAUD_RATE",
+      "enabled": true,
+      "value": "921600",
+      "options_preset": "nucleo_h755zi_q.DL_BAUD_RATE",
+      "options": [],
+      "description": "CM4 ST-Link VCP baud rate."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "PWM Period",
+      "macro": "GMP_NUCLEO_PWM_PERIOD",
+      "binding": {"number": "4999"},
+      "description": "20 kHz center-aligned TIM1 baseline at 200 MHz timer clock."
+    },
+    {
+      "role": "PWM Deadtime",
+      "macro": "GMP_NUCLEO_PWM_DEADTIME",
+      "binding": {"number": "100"},
+      "description": "Advanced-timer dead-time register value."
+    },
+    {
+      "role": "UART RX Buffer Size",
+      "macro": "GMP_NUCLEO_DL_RX_BUFFER_SIZE",
+      "binding": {"number": "256"},
+      "description": "CM4 circular USART3 receive DMA buffer size."
+    }
+  ],
+  "requirement_groups": [
+    {"name": "Control Timing", "requirements": ["PWM Period", "PWM Deadtime"]},
+    {"name": "Datalink", "requirements": ["UART RX Buffer Size"]}
+  ],
+  "common_requirements": [],
+  "feature_macro_groups": [],
+  "option_macro_groups": ["Board", "Datalink"]
+}

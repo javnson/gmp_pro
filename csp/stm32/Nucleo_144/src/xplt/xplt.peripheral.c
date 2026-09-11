@@ -10,6 +10,7 @@
 #include <xplt.ethernet.h>
 #include <xplt.peripheral.h>
 
+#if GMP_NUCLEO_ENABLE_CONTROL
 extern ADC_HandleTypeDef GMP_NUCLEO_ADC_PRIMARY_SYMBOL;
 #if !GMP_NUCLEO_ADC_REGULAR_DMA
 extern ADC_HandleTypeDef GMP_NUCLEO_ADC_SECONDARY_SYMBOL;
@@ -19,7 +20,10 @@ extern TIM_HandleTypeDef GMP_NUCLEO_QEP_TIMER_SYMBOL;
 #if GMP_NUCLEO_ADC_TRIGGER_BRIDGE
 extern TIM_HandleTypeDef GMP_NUCLEO_ADC_TRIGGER_TIMER_SYMBOL;
 #endif
+#endif
+#if GMP_NUCLEO_ENABLE_UART_DL
 extern UART_HandleTypeDef GMP_NUCLEO_DL_UART_SYMBOL;
+#endif
 #if GMP_NUCLEO_HAS_DAC
 extern DAC_HandleTypeDef GMP_NUCLEO_DAC_SYMBOL;
 #endif
@@ -28,15 +32,20 @@ extern DAC_HandleTypeDef GMP_NUCLEO_DAC_SYMBOL;
     (TIM_CCER_CC1E | TIM_CCER_CC1NE | TIM_CCER_CC2E | TIM_CCER_CC2NE |     \
      TIM_CCER_CC3E | TIM_CCER_CC3NE)
 
+#if GMP_NUCLEO_ENABLE_UART_DL
 static gmp_datalink_t* uart_datalink;
 static byte_gt uart_rx_dma_buffer[GMP_NUCLEO_DL_RX_BUFFER_SIZE];
 static volatile uint16_t uart_rx_dma_position;
+#endif
+#if GMP_NUCLEO_ENABLE_STATUS_LED
 static volatile fast_gt status_led_on;
-#if GMP_NUCLEO_ADC_REGULAR_DMA
+#endif
+#if GMP_NUCLEO_ENABLE_CONTROL && GMP_NUCLEO_ADC_REGULAR_DMA
 static uint16_t adc_regular_dma_buffer[GMP_NUCLEO_ADC_FB_COUNT];
 #endif
 volatile uint32_t gmp_nucleo_platform_diag[18];
 
+#if GMP_NUCLEO_ENABLE_UART_DL
 typedef enum
 {
     XPLT_DL_UART_TX_IDLE = 0,
@@ -54,8 +63,9 @@ static void xplt_dl_arm_rx(void)
             (uint16_t)GMP_NUCLEO_DL_RX_BUFFER_SIZE) != HAL_OK)
         Error_Handler();
 }
+#endif
 
-#if !GMP_NUCLEO_ADC_REGULAR_DMA
+#if GMP_NUCLEO_ENABLE_CONTROL && !GMP_NUCLEO_ADC_REGULAR_DMA
 static void xplt_select_adc_trigger(ADC_HandleTypeDef* adc)
 {
     MODIFY_REG(adc->Instance->JSQR, GMP_NUCLEO_ADC_TRIGGER_MASK,
@@ -72,18 +82,43 @@ void setup_peripheral(void)
                      sizeof(gmp_nucleo_platform_diag[0]);
          ++index)
         gmp_nucleo_platform_diag[index] = 0U;
+#if GMP_NUCLEO_ENABLE_UART_DL
     debug_uart = GMP_NUCLEO_DL_UART_HANDLE;
     debug_uart->Init.BaudRate = GMP_NUCLEO_DL_BAUD_RATE;
     if (HAL_UART_Init(debug_uart) != HAL_OK)
         Error_Handler();
 
-    HAL_GPIO_WritePin(GMP_NUCLEO_STATUS_LED_PORT, GMP_NUCLEO_STATUS_LED_PIN,
-                      GMP_NUCLEO_STATUS_LED_OFF);
-    status_led_on = 0;
     uart_datalink = NULL;
     uart_tx_phase = XPLT_DL_UART_TX_IDLE;
     xplt_dl_arm_rx();
+#endif
 
+#if GMP_NUCLEO_ENABLE_STATUS_LED
+    GPIO_InitTypeDef led_gpio = {0};
+
+    /* Nucleo-144 user LEDs are on GPIOB and, on newer boards, GPIOE.  Keep
+       this initialization here as well as in generated code so each H755
+       core can own and start its status LED independently. */
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOE_CLK_ENABLE();
+    led_gpio.Pin = GMP_NUCLEO_STATUS_LED_PIN;
+    led_gpio.Mode = GPIO_MODE_OUTPUT_PP;
+    led_gpio.Pull = GPIO_NOPULL;
+    led_gpio.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GMP_NUCLEO_STATUS_LED_PORT, &led_gpio);
+    HAL_GPIO_WritePin(GMP_NUCLEO_STATUS_LED_PORT, GMP_NUCLEO_STATUS_LED_PIN,
+                      GMP_NUCLEO_STATUS_LED_OFF);
+#if GMP_NUCLEO_DUAL_CORE && defined(CORE_CM7)
+    led_gpio.Pin = GMP_NUCLEO_ENTITY(_STATUS_LED3_PIN);
+    HAL_GPIO_Init(GMP_NUCLEO_ENTITY(_STATUS_LED3_PORT), &led_gpio);
+    HAL_GPIO_WritePin(GMP_NUCLEO_ENTITY(_STATUS_LED3_PORT),
+                      GMP_NUCLEO_ENTITY(_STATUS_LED3_PIN),
+                      GMP_NUCLEO_ENTITY(_STATUS_LED3_OFF));
+#endif
+    status_led_on = 0;
+#endif
+
+#if GMP_NUCLEO_ENABLE_CONTROL
     xplt_pwm_disable();
     __HAL_TIM_SET_AUTORELOAD(GMP_NUCLEO_PWM_TIMER_HANDLE,
                              GMP_NUCLEO_PWM_PERIOD);
@@ -143,9 +178,13 @@ void setup_peripheral(void)
     if (HAL_DAC_Start(GMP_NUCLEO_DAC_HANDLE, GMP_NUCLEO_DAC_CHANNEL) != HAL_OK)
         Error_Handler();
 #endif
+#endif
+#if GMP_NUCLEO_ENABLE_ETHERNET_DL
     xplt_eth_init();
+#endif
 }
 
+#if GMP_NUCLEO_ENABLE_CONTROL
 void xplt_pwm_enable(void)
 {
     TIM_HandleTypeDef* timer = GMP_NUCLEO_PWM_TIMER_HANDLE;
@@ -173,7 +212,9 @@ void xplt_pwm_disable(void)
     gmp_nucleo_platform_diag[1] = 0U;
     gmp_base_leave_critical();
 }
+#endif
 
+#if GMP_NUCLEO_ENABLE_STATUS_LED
 void xplt_toggle_status_led(void)
 {
     status_led_on = !status_led_on;
@@ -183,7 +224,9 @@ void xplt_toggle_status_led(void)
                       status_led_on ? GMP_NUCLEO_STATUS_LED_ON
                                     : GMP_NUCLEO_STATUS_LED_OFF);
 }
+#endif
 
+#if GMP_NUCLEO_ENABLE_CONTROL
 static uint32_t xplt_limit_pwm_compare(uint32_t compare)
 {
     return compare <= (uint32_t)GMP_NUCLEO_PWM_PERIOD
@@ -227,7 +270,9 @@ void xplt_ctl_output(void)
     __HAL_TIM_SET_COMPARE(GMP_NUCLEO_PWM_TIMER_HANDLE, TIM_CHANNEL_3,
                           xplt_limit_pwm_compare(gmp_nucleo_pwm_compare[2]));
 }
+#endif
 
+#if GMP_NUCLEO_ENABLE_UART_DL
 void xplt_uart_dl_bind(gmp_datalink_t* datalink)
 {
     uart_datalink = datalink;
@@ -246,8 +291,9 @@ void xplt_uart_dl_start_tx(gmp_datalink_t* datalink)
         gmp_dev_dl_tx_state_done(datalink);
     }
 }
+#endif
 
-#if GMP_NUCLEO_HAS_DAC
+#if GMP_NUCLEO_ENABLE_CONTROL && GMP_NUCLEO_HAS_DAC
 void xplt_dac_write(uint32_t value)
 {
     if (value > 4095U)
@@ -257,11 +303,12 @@ void xplt_dac_write(uint32_t value)
 }
 #endif
 
-#if GMP_NUCLEO_ADC_REGULAR_DMA
+#if GMP_NUCLEO_ENABLE_CONTROL && GMP_NUCLEO_ADC_REGULAR_DMA
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* adc)
-#else
+#elif GMP_NUCLEO_ENABLE_CONTROL
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* adc)
 #endif
+#if GMP_NUCLEO_ENABLE_CONTROL
 {
     if (adc == GMP_NUCLEO_ADC_PRIMARY_HANDLE)
     {
@@ -270,8 +317,9 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* adc)
         user_dl_control_step();
     }
 }
+#endif
 
-#if GMP_NUCLEO_QEP_SOFTWARE_INDEX
+#if GMP_NUCLEO_ENABLE_CONTROL && GMP_NUCLEO_QEP_SOFTWARE_INDEX
 #if GMP_NUCLEO_QEP_LEGACY_EXTI_CALLBACK
 void HAL_GPIO_EXTI_Callback(uint16_t pin)
 #else
@@ -283,6 +331,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin)
 }
 #endif
 
+#if GMP_NUCLEO_ENABLE_UART_DL
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* uart, uint16_t size)
 {
     if (uart == GMP_NUCLEO_DL_UART_HANDLE && uart_datalink != NULL)
@@ -343,3 +392,4 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef* uart)
         xplt_dl_arm_rx();
     }
 }
+#endif

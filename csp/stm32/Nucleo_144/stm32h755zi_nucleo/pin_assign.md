@@ -1,4 +1,4 @@
-# NUCLEO-H753ZI GMP pin assignment
+# NUCLEO-H755ZI-Q GMP dual-core pin assignment
 
 | Function | Peripheral | Pins |
 | --- | --- | --- |
@@ -6,11 +6,11 @@
 | PWM V/V_N | TIM1 CH2/CH2N | PE11 / PE10 |
 | PWM W/W_N | TIM1 CH3/CH3N | PE13 / PE12 |
 | Encoder A/B/Z | TIM3 CH1/CH2 + EXTI2 | PA6 / PB5 / PG2 |
-| ADC FB0..FB5 | ADC1 ranks 1..6 | PA3 / PC0 / PB1 / PA4 / PA5 / PA0 |
-| GMP DL VCP TX/RX | USART3 | PD8 / PD9 |
-| Status LEDs LD1 / LD2 / LD3 | GPIO | PB0 / PB7 / PB14 |
+| ADC FB0..FB5 (CM7) | ADC1 ranks 6 / 2 / 1 / 4 / 5 / 3 | PA3 / PC0 / PB1 / PA4 / PA5 / PA0 |
+| GMP DL VCP TX/RX (CM4) | USART3 | PD8 / PD9 |
+| Status LEDs LD1 / LD2 / LD3 | GPIO | PB0 (CM7) / PE1 (CM4) / PB14 (CM7) |
 | SWDIO / SWCLK | DEBUG | PA13 / PA14 |
-| Arduino I2C SCL/SDA | I2C1 | PB8 / PB9 |
+| Arduino I2C SCL/SDA (CM7) | I2C1 | PB8 / PB9 |
 | RMII REF_CLK | ETH | PA1 |
 | RMII MDIO/MDC | ETH | PA2 / PC1 |
 | RMII CRS_DV | ETH | PA7 |

@@ -1,0 +1,7 @@
+config load stm32h755zi_nucleo.ioc
+config save stm32h755zi_nucleo.ioc
+project name stm32h755zi_nucleo
+project toolchain MDK-ARM
+project path ..
+project generate
+exit

@@ -10,7 +10,9 @@
 - TIM3 或 TIM4：编码器 A/B 正交输入，以及原生或 GPIO 中断形式的 Z 索引。
 - 至少六路固定 ADC 反馈输入，由 PWM 时基触发采样。
 - 连接 ST-Link VCP 的串口，RX 使用循环 DMA、TX 使用 DMA，承载 GMP DL。
-- 一个用户状态 LED、一路 I2C、1 kHz 系统 Tick。
+- 三个板载用户 LED、一路 I2C、1 kHz 系统 Tick。板级元件分别导出三颗 LED，
+  双核目标可为两个内核分配独立心跳，并保留一颗故障/链路指示灯。
+- IOC 必须保持串行线调试启用（PA13 SWDIO、PA14 SWCLK）。
 - 以太网 MAC、板载 PHY 和介质接口；板级元件必须给出本地管理 MAC 和静态
   验收地址。
 - DAC、CAN/FDCAN 仍为可选能力。
@@ -47,3 +49,11 @@
 PHY 相关焊桥/跳线（JP6、SB72）处于接通状态。
 
 `start_sdpe.bat` 是 Nucleo-144 目录统一的 SDPE 启动入口。
+
+## H755ZI-Q 双核参考目标
+
+`stm32h755zi_nucleo` 同时运行两个独立的 GMP 调度器。Cortex-M7 负责
+TIM1/ADC 控制链路、TIM3 QEP、I2C1、Ethernet/LwIP 和 LD1；Cortex-M4 通过
+HSEM0 唤醒，独占 USART3 及其 RX/TX DMA，并驱动 LD2；LD3 预留为共享故障/
+链路状态指示。构建参数 `-DatalinkTransport TCP|UDP` 只切换 CM7 的以太网
+DL 协议，两种构建中 CM4 串口 DL 始终启用。

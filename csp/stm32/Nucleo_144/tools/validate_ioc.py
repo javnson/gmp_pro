@@ -135,14 +135,24 @@ def check_target(root: Path, board: Path) -> Report:
         "entity IOC path points elsewhere",
     )
     report.require(
-        ioc.get("ProjectManager.LastFirmware") == "false",
-        "CubeMX firmware version must be pinned",
+        ioc.get("ProjectManager.FirmwarePackage", "").startswith("STM32Cube FW_H7 V"),
+        "CubeMX H7 firmware package version is not recorded",
     )
 
     pwm = f"TIM{option(requirement, 'GMP_NUCLEO_PWM_TIMER_SELECTION')}"
     qep = f"TIM{option(requirement, 'GMP_NUCLEO_QEP_TIMER_SELECTION')}"
-    mandatory = {"ADC1", "DMA", "ETH", "I2C1", "LWIP", pwm, qep, "USART3"}
+    mandatory = {"ADC1", "DEBUG", "DMA", "ETH", "I2C1", "LWIP", pwm, qep, "USART3"}
     report.require(mandatory <= ips(ioc), f"missing IOC IPs: {sorted(mandatory - ips(ioc))}")
+    report.require(
+        pin_signal(ioc, "PA13") == "DEBUG_JTMS-SWDIO"
+        and ioc.get("PA13\\ (JTMS/SWDIO).Mode") == "Serial_Wire",
+        "SWDIO debug pin is not enabled",
+    )
+    report.require(
+        pin_signal(ioc, "PA14") == "DEBUG_JTCK-SWCLK"
+        and ioc.get("PA14\\ (JTCK/SWCLK).Mode") == "Serial_Wire",
+        "SWCLK debug pin is not enabled",
+    )
 
     for channel in range(1, 4):
         report.require(
@@ -177,22 +187,29 @@ def check_target(root: Path, board: Path) -> Report:
         )
 
     report.require(int(p["adc_fb_count"]) >= 6, "fewer than six ADC feedback pins")
+    adc_channel_slots: dict[int, tuple[str, str]] = {}
+    for key, value in ioc.items():
+        slot_match = re.fullmatch(r"ADC1\.Channel-(\d+)\\#ChannelRegularConversion", key)
+        channel_match = re.fullmatch(r"ADC_CHANNEL_(\d+)", value)
+        if slot_match and channel_match:
+            adc_channel_slots[int(channel_match.group(1))] = (slot_match.group(1), value)
+
     for index in range(int(p["adc_fb_count"])):
         pin = p[f"adc_fb{index}_pin"]
         signal = pin_signal(ioc, pin)
         match = re.fullmatch(r"ADC1_INP?(\d+)", signal)
         report.require(match is not None, f"FB{index} {pin} is not routed to ADC1")
         if match:
-            channel_key = f"ADC1.Channel-{index}\\#ChannelRegularConversion"
-            rank_key = f"ADC1.Rank-{index}\\#ChannelRegularConversion"
-            report.require(
-                ioc.get(channel_key) == f"ADC_CHANNEL_{match.group(1)}",
-                f"FB{index} channel ordering does not match {pin}",
-            )
-            report.require(
-                ioc.get(rank_key) == str(index + 1),
-                f"FB{index} rank ordering is invalid",
-            )
+            channel = int(match.group(1))
+            slot = adc_channel_slots.get(channel)
+            report.require(slot is not None, f"FB{index} channel ordering does not match {pin}")
+            if slot:
+                rank_key = f"ADC1.Rank-{slot[0]}\\#ChannelRegularConversion"
+                expected_rank = int(p[f"adc_fb{index}_rank"]) + 1
+                report.require(
+                    ioc.get(rank_key) == str(expected_rank),
+                    f"FB{index} DMA buffer rank does not match {pin}",
+                )
         report.require(pin in pin_doc, f"{pin} is absent from pin_assign.md")
     report.require(
         ioc.get("ADC1.ExternalTrigConv") == p["pwm_tim1_adc_trigger"],
@@ -202,6 +219,11 @@ def check_target(root: Path, board: Path) -> Report:
         ioc.get("ADC1.ConversionDataManagement") == "ADC_CONVERSIONDATA_DMA_CIRCULAR"
         and ioc.get("Dma.ADC1.0.Mode") == "DMA_CIRCULAR",
         "ADC1 circular DMA is not configured",
+    )
+    report.require(
+        ioc.get("ADC1.NbrOfConversionFlag") == "1"
+        and ioc.get("Dma.RequestsNb") is not None,
+        "ADC/DMA settings were not serialized by CubeMX",
     )
 
     uart = p["dl_uart_instance"]
@@ -230,8 +252,29 @@ def check_target(root: Path, board: Path) -> Report:
     )
     report.require(pin_signal(ioc, p["i2c_scl_pin"]) == "I2C1_SCL", "I2C SCL mismatch")
     report.require(pin_signal(ioc, p["i2c_sda_pin"]) == "I2C1_SDA", "I2C SDA mismatch")
-    led_pin = f"P{p['status_led_port'][-1]}{p['status_led_pin'].removeprefix('GPIO_PIN_')}"
-    report.require(pin_signal(ioc, led_pin) == "GPIO_Output", "status LED routing mismatch")
+    report.require(int(p["status_led_count"]) >= 3, "Nucleo-144 requires three user LEDs")
+    for index, suffix in enumerate(("", "2", "3"), 1):
+        led_pin = (
+            f"P{p[f'status_led{suffix}_port'][-1]}"
+            f"{p[f'status_led{suffix}_pin'].removeprefix('GPIO_PIN_')}"
+        )
+        report.require(
+            pin_signal(ioc, led_pin) == "GPIO_Output",
+            f"status LED{index} routing mismatch",
+        )
+        report.require(led_pin in pin_doc, f"{led_pin} is absent from pin_assign.md")
+
+    if ioc.get("Mcu.ContextNb") == "2":
+        cm4_ips = ioc.get("CortexM4.IPs", "")
+        cm7_ips = ioc.get("CortexM7.IPs", "")
+        report.require("USART3\\:I" in cm4_ips and "USART3\\:I" not in cm7_ips, "USART3 is not owned by CM4")
+        report.require("ETH\\:I" in cm7_ips and "ETH\\:I" not in cm4_ips, "Ethernet is not owned by CM7")
+        report.require(
+            "NVIC1.DMA1_Stream0_IRQn" in ioc
+            and "NVIC2.DMA1_Stream1_IRQn" in ioc
+            and "NVIC2.DMA1_Stream2_IRQn" in ioc,
+            "dual-core DMA interrupts are assigned to the wrong NVIC context",
+        )
 
     eth_pins = {
         "eth_ref_clk_pin": "ETH_REF_CLK",

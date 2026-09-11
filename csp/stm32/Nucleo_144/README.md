@@ -14,7 +14,10 @@ endpoint mandatory.
   index input.
 - At least six fixed ADC feedback inputs, sampled from the PWM timebase.
 - ST-Link VCP UART with circular RX DMA and TX DMA for GMP Data Link.
-- One user status LED, one I2C bus, and a 1 kHz system tick.
+- Three onboard user LEDs, one I2C bus, and a 1 kHz system tick. Board entities
+  expose every LED separately so a dual-core target can assign independent
+  heartbeats and retain a third fault/status indicator.
+- Serial-wire debug must remain enabled in the IOC (PA13 SWDIO and PA14 SWCLK).
 - Ethernet MAC plus board PHY and media interface. A locally administered MAC
   and a non-DHCP acceptance address must be specified by the board entity.
 - DAC and CAN/FDCAN remain optional capabilities.
@@ -60,3 +63,12 @@ Ethernet endpoint at the same time, exchange synchronized large frames, and
 verify a cross-link Tunable write/read/restore operation.
 
 Run `start_sdpe.bat` to open the Nucleo-144 SDPE workspace.
+
+## H755ZI-Q dual-core reference target
+
+`stm32h755zi_nucleo` runs two independent GMP schedulers. Cortex-M7 owns the
+TIM1/ADC control path, TIM3 QEP, I2C1, Ethernet/LwIP and LD1. Cortex-M4 wakes
+through HSEM0, owns USART3 plus its RX/TX DMA channels, and drives LD2. LD3 is
+reserved for a shared fault/link indication. The CM7 Ethernet DL transport is
+selected at build time with `-DatalinkTransport TCP|UDP`; CM4 UART DL remains
+enabled in both variants.

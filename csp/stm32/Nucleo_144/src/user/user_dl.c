@@ -39,8 +39,17 @@ typedef struct
         CTL_DSA_DL_SCOPE_STORAGE_ELEMENTS(USER_DSA_CHANNELS, USER_DSA_DEPTH)];
 } user_dl_endpoint_t;
 
+#if GMP_NUCLEO_ENABLE_UART_DL
 static user_dl_endpoint_t uart_endpoint;
+#endif
+#if GMP_NUCLEO_ENABLE_ETHERNET_DL
 static user_dl_endpoint_t ethernet_endpoint;
+#endif
+
+#if GMP_NUCLEO_DUAL_CORE
+volatile gmp_nucleo_dual_core_status_t gmp_nucleo_dual_core_status
+    __attribute__((section(".shared_sram4"), aligned(32)));
+#endif
 
 volatile uint32_t gmp_nucleo_dl_facility_init_errors;
 float gmp_nucleo_signal_frequency_hz = 50.0F;
@@ -78,6 +87,11 @@ static const gmp_mem_region_t memory_regions[] = {
      GMP_MEM_PERM_RW, "PWM Compare (outputs remain disabled)"},
     {(void*)gmp_nucleo_platform_diag, sizeof(gmp_nucleo_platform_diag),
      GMP_MEM_PERM_RO, "Platform Diagnostics"},
+#if GMP_NUCLEO_DUAL_CORE
+    {(void*)&gmp_nucleo_dual_core_status,
+     sizeof(gmp_nucleo_dual_core_status), GMP_MEM_PERM_RO,
+     "Dual Core Status"},
+#endif
 };
 
 static void user_dl_append(fast_gt result)
@@ -165,16 +179,24 @@ void user_dl_init(void)
         memory_window[index] = (byte_gt)index;
 
     gmp_nucleo_dl_facility_init_errors = 0U;
+#if GMP_NUCLEO_ENABLE_UART_DL
     user_dl_init_endpoint(&uart_endpoint);
+#endif
+#if GMP_NUCLEO_ENABLE_ETHERNET_DL
     user_dl_init_endpoint(&ethernet_endpoint);
+#endif
 
     oscillator_sine = real2ctrl(0.0F);
     oscillator_cosine = real2ctrl(1.0F);
     oscillator_index = 0U;
     scope_sample_divider = 0U;
     user_dl_apply_signal_parameters();
+#if GMP_NUCLEO_ENABLE_UART_DL
     xplt_uart_dl_bind(&uart_endpoint.datalink);
+#endif
+#if GMP_NUCLEO_ENABLE_ETHERNET_DL
     xplt_eth_dl_bind(&ethernet_endpoint.datalink);
+#endif
 }
 
 gmp_task_status_t user_dl_task(gmp_task_t* task)
@@ -182,41 +204,44 @@ gmp_task_status_t user_dl_task(gmp_task_t* task)
     gmp_dl_event_t event;
     GMP_UNUSED_VAR(task);
 
+#if GMP_NUCLEO_ENABLE_UART_DL
     event = gmp_dev_dl_loop_cb(&uart_endpoint.datalink);
     if (event == GMP_DL_EVENT_TX_RDY)
         xplt_uart_dl_start_tx(&uart_endpoint.datalink);
     else if (event == GMP_DL_EVENT_RX_OK)
         (void)gmp_dev_dl_dispatch_rx(&uart_endpoint.datalink);
+#endif
 
+#if GMP_NUCLEO_ENABLE_ETHERNET_DL
     event = gmp_dev_dl_loop_cb(&ethernet_endpoint.datalink);
     if (event == GMP_DL_EVENT_TX_RDY)
         xplt_eth_dl_start_tx(&ethernet_endpoint.datalink);
     else if (event == GMP_DL_EVENT_RX_OK)
         (void)gmp_dev_dl_dispatch_rx(&ethernet_endpoint.datalink);
+#endif
     user_dl_apply_signal_parameters();
     return GMP_TASK_DONE;
 }
 
-void user_dl_control_step(void)
+void user_dl_scheduler_step(void)
 {
     ctrl_gt unit_sine;
     ctrl_gt unit_cosine;
     ctrl_gt sine_sample;
     ctrl_gt cosine_sample;
 
-    scope_sample_divider++;
-    if (scope_sample_divider < (USER_CONTROL_RATE / USER_DSA_SAMPLE_RATE))
-        return;
-    scope_sample_divider = 0U;
-
     unit_sine = oscillator_sine;
     unit_cosine = oscillator_cosine;
     sine_sample = unit_sine * active_signal_gain + active_signal_dc_offset;
     cosine_sample = unit_cosine * active_signal_gain + active_signal_dc_offset;
+#if GMP_NUCLEO_ENABLE_UART_DL
     ctl_step_dsa_dl_scope_2ch(&uart_endpoint.dl_scope, sine_sample,
                               cosine_sample);
+#endif
+#if GMP_NUCLEO_ENABLE_ETHERNET_DL
     ctl_step_dsa_dl_scope_2ch(&ethernet_endpoint.dl_scope, sine_sample,
                               cosine_sample);
+#endif
     oscillator_sine =
         unit_sine * oscillator_step_cosine + unit_cosine * oscillator_step_sine;
     oscillator_cosine =
@@ -234,10 +259,32 @@ void user_dl_control_step(void)
     }
 }
 
+void user_dl_control_step(void)
+{
+    scope_sample_divider++;
+    if (scope_sample_divider < (USER_CONTROL_RATE / USER_DSA_SAMPLE_RATE))
+        return;
+    scope_sample_divider = 0U;
+#if GMP_NUCLEO_DUAL_CORE
+    gmp_nucleo_dual_core_status.cm7_control_steps++;
+#endif
+    user_dl_scheduler_step();
+}
+
+#if GMP_NUCLEO_DUAL_CORE
+void user_dl_dual_core_bootstrap(void)
+{
+    gmp_nucleo_dual_core_status.magic = GMP_NUCLEO_DUAL_CORE_MAGIC;
+    gmp_nucleo_dual_core_status.cm7_scheduler_heartbeats = 0U;
+    gmp_nucleo_dual_core_status.cm4_scheduler_heartbeats = 0U;
+    gmp_nucleo_dual_core_status.cm7_control_steps = 0U;
+    __DMB();
+}
+#endif
+
 void gmp_pil_sim_step(const gmp_sim_rx_buf_t* rx, gmp_sim_tx_buf_t* tx)
 {
     tx->digital_out = rx->digital_input;
     tx->pwm_cmp[0] = rx->adc_result[0];
     tx->monitor[0] = rx->panel[0];
 }
-
