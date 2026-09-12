@@ -1,5 +1,14 @@
 param(
-    [ValidateSet("F280049C")]
+    [ValidateSet(
+        "F2800137C",
+        "F280025C",
+        "F280039C",
+        "F280049C",
+        "F28377S",
+        "F28379D",
+        "F28P55X",
+        "F28P65X"
+    )]
     [string]$Board = "F280049C",
     [string]$CcsRoot = "C:\ti\ccs1281\ccs",
     [ValidateSet("Debug", "Release", "All")]

@@ -1,0 +1,4 @@
+C2000Ware_5_04_00_00
+family=f280013x
+board=LAUNCHXL-F2800137
+
