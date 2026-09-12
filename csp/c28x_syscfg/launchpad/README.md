@@ -180,6 +180,13 @@ state and optional PIL service. The scheduler, task table, task counters,
 Data Link context, scope state and CAN counters are non-static so they can be
 added directly to the CCS Expressions view.
 
+Scope acquisition is part of `ctl_dispatch()` and therefore runs exactly once
+per hardware control interrupt. Its published sample rate is the selected
+`GMP_LAUNCHPAD_PWM_FREQUENCY_HZ` (20 kHz in the reference configurations).
+Lower display rates use the Scope protocol's runtime `sample_divider`; the CSP
+does not apply a hidden fixed divider and the cooperative scheduler never owns
+real-time sampling.
+
 ## Hardware multiplexing exceptions
 
 SysConfig pin-mux validation and LaunchPad switch routing are both part of the

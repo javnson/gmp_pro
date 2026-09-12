@@ -323,7 +323,6 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* adc)
     {
         gmp_nucleo_platform_diag[0]++;
         gmp_base_ctl_step();
-        user_dl_control_step();
     }
 }
 #endif

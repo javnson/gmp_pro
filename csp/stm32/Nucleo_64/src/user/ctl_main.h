@@ -12,10 +12,12 @@ extern volatile int32_t gmp_nucleo_qep_count;
 
 void ctl_init(void);
 void ctl_mainloop(void);
+void user_dl_control_step(void);
 
 GMP_STATIC_INLINE void ctl_dispatch(void)
 {
     /* Bring-up firmware only exposes observations; it never enables power. */
+    user_dl_control_step();
 }
 
 #endif // GMP_STM32_NUCLEO_64_CTL_MAIN_H

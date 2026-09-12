@@ -24,7 +24,6 @@
 
 static gmp_datalink_t* bound_datalink;
 volatile uint32_t control_isr_runs;
-static uint16_t dsa_sample_divider;
 #if LAUNCHPAD_CAN_CLASSIC
 volatile uint16_t can_last_rx[8];
 volatile uint32_t can_rx_count;
@@ -324,12 +323,6 @@ __interrupt void MainISR(void)
 {
     control_isr_runs++;
     gmp_base_ctl_step();
-    dsa_sample_divider++;
-    if (dsa_sample_divider >= (GMP_LAUNCHPAD_PWM_FREQUENCY_HZ / 1000UL))
-    {
-        dsa_sample_divider = 0U;
-        user_dl_dsa_timer_step();
-    }
     gmp_step_system_tick();
     ADC_clearInterruptStatus(BOOSTXL_ADCA_BASE, ADC_INT_NUMBER1);
     if (ADC_getInterruptOverflowStatus(BOOSTXL_ADCA_BASE, ADC_INT_NUMBER1))

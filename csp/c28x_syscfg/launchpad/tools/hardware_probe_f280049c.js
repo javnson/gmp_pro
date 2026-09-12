@@ -26,6 +26,10 @@ function report(name) {
 report("startup_task_runs");
 report("heartbeat_task_runs");
 report("datalink.service_run_count");
+report("dl_scope.resource.sample_rate_hz");
+report("dl_scope.sample_divider");
+report("dl_scope.generation");
+report("dl_scope_control_steps");
 report("can_task_runs");
 report("control_isr_runs");
 report("DSPC2000_SystemTick");

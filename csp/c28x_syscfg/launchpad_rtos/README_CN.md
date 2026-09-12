@@ -45,6 +45,7 @@ main / CSP 初始化
 
 - CPU Timer2/INT14 由 TI FreeRTOS 端口占用，系统 tick 为 1 kHz。
 - ADC 控制 ISR 保持硬件中断形式，不进入 FreeRTOS 调度，也不调用 RTOS API。
+- Scope 在 `ctl_dispatch()` 内随每次控制中断采样，参考配置为 20 kHz；需要降采样时使用 Scope 协议自身的 `sample_divider`，CSP 不做隐藏固定分频。
 - SCI ISR 只搬运接收数据，DL 协议解析和响应在 `gmpService` 中完成。
 - `gmp_csp_post_process()` 在 RTOS 模式下不全局开中断；应用中断在 GMP 初始化完成后开启。
 - GMP 临界区在任务上下文映射到 FreeRTOS 临界区。不要在控制 ISR 中调用这些任务上下文接口。
@@ -104,6 +105,11 @@ LAUNCHXL-F280049C。默认 XDS110 Application UART 为 `COM5`、波特率 115200
 控制 ISR，以及 DL 信息查询、长帧回显、参数、内存和 400 x 2 float32 Scope 数据。
 所有 DL CRC、FIFO、超时和 SCI overrun 计数均为 0。正常物理控制模式没有发布 PIL
 facility，因此测试会按设备实际发布的能力跳过 PIL。
+
+Scope 实时路径修正后的 5 秒板上采样得到 `control_isr_runs=99898`、
+`dl_scope_control_steps=99898`，两者完全一致；Scope 发布采样率为 20000 Hz，运行时
+分频为 0。这证明采样由控制 ISR 中的 `ctl_dispatch()` 逐次驱动，而不是由 RTOS
+轮询任务或 CSP 固定分频驱动。
 
 ## 新增用户任务
 

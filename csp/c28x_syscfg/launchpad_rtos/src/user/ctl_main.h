@@ -18,10 +18,14 @@ void ctl_init(void);
 /** @brief Run controller-layer background work. */
 void ctl_mainloop(void);
 
+/** @brief Sample the Data Link Scope at the undivided control rate. */
+void user_dl_control_step(void);
+
 /** @brief Dispatch one synchronous controller step. */
 GMP_STATIC_INLINE void ctl_dispatch(void)
 {
     launchpad_output_pu = launchpad_adc_pu;
+    user_dl_control_step();
 }
 
 #endif // GMP_LAUNCHPAD_CTL_MAIN_H

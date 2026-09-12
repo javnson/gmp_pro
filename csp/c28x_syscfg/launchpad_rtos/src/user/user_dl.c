@@ -23,7 +23,7 @@
 #define USER_DL_TUNABLE_CMD       0x30U
 #define USER_DL_MEMORY_CMD        0x50U
 #define USER_DL_SCOPE_CMD         0x60U
-#define USER_DSA_SAMPLE_RATE      1000UL
+#define USER_DSA_SAMPLE_RATE      ((uint32_t)GMP_LAUNCHPAD_PWM_FREQUENCY_HZ)
 #define USER_DSA_DEPTH            400UL
 #define USER_DSA_CHANNELS         2U
 #define USER_SIGNAL_MIN_RATE_HZ   1.0F
@@ -41,6 +41,7 @@ ctl_dsa_dl_scope_t dl_scope;
 gmp_pil_sim_t pil;
 #endif
 volatile uint32_t dl_facility_init_errors;
+volatile uint32_t dl_scope_control_steps;
 
 float signal_frequency_hz = 50.0F;
 float signal_gain = 1.0F;
@@ -157,6 +158,7 @@ void user_dl_init(void)
     }
 
     dl_facility_init_errors = 0U;
+    dl_scope_control_steps = 0U;
     gmp_dev_dl_init(&datalink);
 #if defined(ENABLE_GMP_DL_PIL_SIM)
     gmp_pil_sim_init(&pil, &datalink, GMP_PIL_DL_BASE_COMMAND);
@@ -199,7 +201,7 @@ void user_dl_background(void)
     xplt_dl_poll_rx();
 }
 
-void user_dl_dsa_timer_step(void)
+void user_dl_control_step(void)
 {
     ctrl_gt unit_sine = oscillator_sine;
     ctrl_gt unit_cosine = oscillator_cosine;
@@ -210,6 +212,7 @@ void user_dl_dsa_timer_step(void)
     ctrl_gt sine_sample = unit_sine * gain + dc_offset;
     ctrl_gt cosine_sample = unit_cosine * gain + dc_offset;
 
+    dl_scope_control_steps++;
     ctl_step_dsa_dl_scope_2ch(&dl_scope, sine_sample, cosine_sample);
 
     oscillator_sine = unit_sine * step_cosine + unit_cosine * step_sine;

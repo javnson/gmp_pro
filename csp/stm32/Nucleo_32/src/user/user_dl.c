@@ -21,10 +21,10 @@
 #define USER_DL_TUNABLE_COMMAND 0x30U
 #define USER_DL_MEMORY_COMMAND  0x50U
 #define USER_DL_SCOPE_COMMAND   0x60U
-#define USER_DSA_SAMPLE_RATE    1000UL
 #define USER_DSA_DEPTH          400UL
 #define USER_DSA_CHANNELS       2U
 #define USER_CONTROL_RATE       20000UL
+#define USER_DSA_SAMPLE_RATE    USER_CONTROL_RATE
 #define USER_SIGNAL_TWO_PI      6.2831853071795864769F
 
 static gmp_datalink_t datalink;
@@ -50,7 +50,6 @@ static volatile ctrl_gt oscillator_step_cosine;
 static volatile ctrl_gt active_signal_gain;
 static volatile ctrl_gt active_signal_dc_offset;
 static uint16_t oscillator_index;
-static uint16_t scope_sample_divider;
 
 static const gmp_param_item_t tunable_dictionary[] = {
     {&gmp_nucleo_signal_frequency_hz, GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW,
@@ -154,7 +153,6 @@ void user_dl_init(void)
     oscillator_sine = real2ctrl(0.0F);
     oscillator_cosine = real2ctrl(1.0F);
     oscillator_index = 0U;
-    scope_sample_divider = 0U;
     user_dl_apply_signal_parameters();
     xplt_dl_bind(&datalink);
 }
@@ -179,11 +177,6 @@ void user_dl_control_step(void)
     ctrl_gt unit_cosine;
     ctrl_gt sine_sample;
     ctrl_gt cosine_sample;
-
-    scope_sample_divider++;
-    if (scope_sample_divider < (USER_CONTROL_RATE / USER_DSA_SAMPLE_RATE))
-        return;
-    scope_sample_divider = 0U;
 
     unit_sine = oscillator_sine;
     unit_cosine = oscillator_cosine;

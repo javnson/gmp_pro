@@ -37,6 +37,9 @@
 不会散落在 user/xplt 业务代码中。USART3 DL 始终保留；示例为 UART 和 Ethernet
 分别创建独立的 DL 状态机及设施对象，两端可同时在线。Tunable 和 Memory 指向同一份
 应用状态，Scope 则各自拥有采集状态和缓冲区，避免并发组帧和采集互相覆盖。
+启用控制中断时，两套 Scope 都由 `ctl_dispatch()` 在每个 20 kHz 控制周期同步采样；
+后台调度器只处理协议，不负责实时采集。需要降低显示采样率时使用 Scope 自身的
+`sample_divider`。
 
 首次使用或 IOC 更新后，先在目标目录用 STM32CubeMX 的命令行模式执行
 `generate_cubemx.txt`。随后使用 `stm32h753zi_nucleo/build.ps1` 编译、

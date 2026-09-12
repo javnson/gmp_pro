@@ -48,6 +48,10 @@ both clients may remain online concurrently. Tunable and Memory reference the
 same application state, while each Scope owns separate capture state and
 storage.
 
+When control is enabled, both Scopes are sampled by `ctl_dispatch()` on every
+20 kHz control interrupt. The background scheduler handles protocol traffic
+only; optional decimation uses the Scope's own `sample_divider`.
+
 After the first checkout or an IOC change, run STM32CubeMX in command-line mode
 with `generate_cubemx.txt`. Then build with `stm32h753zi_nucleo/build.ps1`,
 flash with `flash.ps1`, and run `smoke_test.py --transport tcp|udp` for the combined GMP Data Link

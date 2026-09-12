@@ -34,6 +34,11 @@ priority-1 `userTask` demonstrates independent application work. ADC control
 loops remain hardware ISRs and call no RTOS API. SCI interrupts only transfer
 bytes while GMP Data Link parsing runs in the service task.
 
+Scope acquisition is called from `ctl_dispatch()` on every control interrupt,
+so the reference configurations publish the real 20 kHz control rate. Optional
+decimation is owned by the Scope protocol's runtime `sample_divider`; neither
+the CSP nor the FreeRTOS service task performs hidden fixed-rate sampling.
+
 Each root `LAUNCHXL_*.syscfg` file is the authoritative peripheral, FreeRTOS,
 and task configuration for its board. A CCS configuration includes only its
 matching SysConfig input, `C2000Lib_<board>`, and SDPE requirements. Generated
@@ -74,6 +79,12 @@ task, the independent user task, the 20 kHz control ISR, and Data Link info,
 echo, tunable, memory, and 400 x 2 float32 scope transfers. Protocol CRC, FIFO,
 timeout, and SCI overrun counters were all zero. PIL is intentionally absent in
 the normal physical-control configuration and is tested only when advertised.
+
+After correcting the real-time Scope path, a five-second target probe measured
+`control_isr_runs=99898` and `dl_scope_control_steps=99898`, with a published
+sample rate of 20000 Hz and a runtime divider of zero. Scope acquisition is
+therefore driven once per `ctl_dispatch()` call, not by the RTOS polling task or
+a fixed CSP divider.
 
 See [README_CN.md](README_CN.md) for the architecture, extension rules,
 hardware-probe command, and SCI error-recovery constraint.

@@ -207,7 +207,10 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
             struct.unpack_from("<f", tunable, 7)[0],
             struct.unpack_from("<f", tunable, 12)[0],
         )
-        test_settings = (25.0, 0.5, 0.25)
+        # At the undivided 20 kHz control rate, 200 Hz must produce exactly
+        # 100 samples per electrical period. This catches accidental CSP-side
+        # scheduling or fixed-rate decimation of the real-time Scope path.
+        test_settings = (200.0, 0.5, 0.25)
         sequence += 1
         write_payload = struct.pack(
             "<BBfBfBf", 3, 0, test_settings[0], 1, test_settings[1], 2, test_settings[2]
@@ -264,7 +267,7 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
         channels, depth, sample_rate, scope_bytes, scope_name_length = fields[7:]
         scope_name = scope_descriptor[descriptor_format.size:descriptor_format.size + scope_name_length].decode("ascii")
         if (channels, depth, sample_rate, scope_bytes, scope_name) != (
-            2, 400, 1000, 3200, "Sine and Cosine Scope"
+            2, 400, 20000, 3200, "Sine and Cosine Scope"
         ):
             raise AssertionError("Unexpected Scope resource metadata")
 
@@ -321,7 +324,15 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
         sine_rms = math.sqrt(sum(value * value for value in centered_sine) / depth)
         cosine_rms = math.sqrt(sum(value * value for value in centered_cosine) / depth)
         quadrature_error = abs(sum(a * b for a, b in zip(centered_sine, centered_cosine)) / depth)
-        periodic_error = max(abs(sine[index] - sine[index + 40]) for index in range(depth - 40))
+        expected_period_samples = round(sample_rate / test_settings[0])
+        if expected_period_samples != 100:
+            raise AssertionError(
+                f"Expected 100 samples per 200 Hz period, got {expected_period_samples}"
+            )
+        periodic_error = max(
+            abs(sine[index] - sine[index + expected_period_samples])
+            for index in range(depth - expected_period_samples)
+        )
         mean_error = abs(sum(sine) / depth - dc_offset)
         if not (0.34 < sine_rms < 0.36 and 0.34 < cosine_rms < 0.36):
             raise AssertionError("Scope waveform RMS is outside the expected range")
@@ -335,6 +346,22 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
             )
         if not (sine[99] < dc_offset <= sine[100]):
             raise AssertionError("Scope pre-trigger position does not match the configured 25 percent")
+        rising_crossings = [
+            index for index in range(1, depth)
+            if sine[index - 1] < dc_offset <= sine[index]
+        ]
+        crossing_periods = [
+            later - earlier
+            for earlier, later in zip(rising_crossings, rising_crossings[1:])
+        ]
+        if len(crossing_periods) < 2 or any(
+            abs(period - expected_period_samples) > 1
+            for period in crossing_periods
+        ):
+            raise AssertionError(
+                "Scope does not contain 100 samples per 200 Hz period: "
+                f"rising crossings={rising_crossings}"
+            )
 
     print(f"PASS: u16 Data Link validated on {port_name} at {baudrate} baud")
     print(f"      Memory discovery: {memory_name}, 0x{memory_address:08X}, {memory_length} bytes")
@@ -345,7 +372,8 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
     print(f"      Tunable discovery: {len(tunable_names)} physical signal parameters")
     print(
         f"      Scope: {scope_name}, generation {generation}, {depth} x {channels} float32, "
-        f"validated at {test_settings[0]:.0f} Hz / {test_settings[1]:.2f}x / {test_settings[2]:.2f} V"
+        f"validated at {test_settings[0]:.0f} Hz / {expected_period_samples} samples per period / "
+        f"{test_settings[1]:.2f}x / {test_settings[2]:.2f} V"
     )
 
 
