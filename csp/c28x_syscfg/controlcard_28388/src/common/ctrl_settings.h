@@ -86,6 +86,11 @@ extern "C"
 #define GMP_F28388D_CPU_CLOCK_HZ CONTROLCARD_F28388D_CPU_CLOCK_HZ
 
 /**
+ * @brief CM runtime clock after USB PLL setup.
+ */
+#define GMP_F28388D_CM_CLOCK_HZ CONTROLCARD_F28388D_CM_CLOCK_HZ
+
+/**
  * @brief All three cores use the system-u16 Data Link model.
  */
 #define GMP_F28388D_DATA_UNIT_BITS CONTROLCARD_F28388D_DATA_UNIT_BITS

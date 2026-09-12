@@ -21,9 +21,9 @@
 #define CPU1_SCOPE_DEPTH     (400UL)
 #define CPU1_SCOPE_CHANNELS  (2U)
 
-#pragma DATA_SECTION(cpu1_to_cpu2_command, "MSGRAM_CPU1_TO_CPU2")
+#pragma DATA_SECTION(cpu1_to_cpu2_command, "GMP_MSGRAM_CPU1_TO_CPU2")
 volatile gmp_wave_command_t cpu1_to_cpu2_command;
-#pragma DATA_SECTION(cpu2_to_cpu1_snapshot, "MSGRAM_CPU2_TO_CPU1")
+#pragma DATA_SECTION(cpu2_to_cpu1_snapshot, "GMP_MSGRAM_CPU2_TO_CPU1")
 volatile gmp_wave_snapshot_t cpu2_to_cpu1_snapshot;
 
 static gmp_datalink_t cpu1_datalink;
@@ -35,7 +35,7 @@ static ctrl_gt cpu1_scope_storage[
 static byte_gt cpu1_scratch[64];
 static gmp_scheduler_t cpu1_scheduler;
 
-void cpu1_board_start_multicore(void);
+void cpu1_board_initialize_and_handoff(void);
 
 float cpu2_frequency_hz = GMP_TRICORE_DEFAULT_FREQ_HZ;
 float cpu2_gain = 1.0F;
@@ -53,7 +53,8 @@ static const gmp_param_item_t cpu1_tunable_dictionary[] = {
 static const gmp_mem_region_t cpu1_memory_regions[] = {
     {cpu1_scratch, sizeof(cpu1_scratch) * GMP_PORT_DATA_SIZE_PER_BYTES,
      GMP_MEM_PERM_RW, "CPU1 scratch"},
-    {(void *)&cpu2_to_cpu1_snapshot, sizeof(cpu2_to_cpu1_snapshot),
+    {(void *)&cpu2_to_cpu1_snapshot,
+     sizeof(cpu2_to_cpu1_snapshot) * GMP_PORT_DATA_SIZE_PER_BYTES,
      GMP_MEM_PERM_RO, "CPU2 waveform snapshot"}
 };
 
@@ -164,7 +165,7 @@ static void cpu1_init_timer(void)
 
 void setup_peripheral(void)
 {
-    cpu1_board_start_multicore();
+    cpu1_board_initialize_and_handoff();
     cpu1_init_sci_transport();
     cpu1_init_timer();
 }

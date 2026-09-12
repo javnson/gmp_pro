@@ -11,6 +11,7 @@
 #include "cm.h"
 #include "lwip/init.h"
 #include "lwip/pbuf.h"
+#include "lwip/sys.h"
 #include "lwip/tcp.h"
 #include "lwip/timeouts.h"
 #include "lwip/udp.h"
@@ -26,9 +27,9 @@
 #define CM_DL_SCOPE_CMD   (0x60U)
 #define CM_SCOPE_DEPTH    (400UL)
 
-#pragma DATA_SECTION(cm_to_cpu2_command, "MSGRAM_CM_TO_CPU2")
+#pragma DATA_SECTION(cm_to_cpu2_command, "GMP_MSGRAM_CM_TO_CPU2")
 volatile gmp_wave_command_t cm_to_cpu2_command;
-#pragma DATA_SECTION(cpu2_to_cm_snapshot, "MSGRAM_CPU2_TO_CM")
+#pragma DATA_SECTION(cpu2_to_cm_snapshot, "GMP_MSGRAM_CPU2_TO_CM")
 volatile gmp_wave_snapshot_t cpu2_to_cm_snapshot;
 
 extern void CM_init(void);
@@ -51,6 +52,13 @@ float cm_offset = 0.0F;
 volatile uint32_t cm_dl_errors;
 volatile uint32_t cm_rx_frames;
 volatile uint32_t cm_tx_frames;
+volatile int32_t cm_last_network_error;
+volatile uint32_t cm_tx_retry_pending;
+volatile uint32_t cm_err_mem_count;
+volatile uint32_t cm_err_mem_stage;
+volatile uint32_t cm_last_tx_frame_size;
+volatile uint32_t cm_last_tcp_sndbuf;
+volatile uint32_t cm_last_tcp_queuelen;
 volatile uint32_t cm_scheduler_heartbeats;
 volatile uint32_t cm_ethercat_ready;
 
@@ -209,10 +217,25 @@ static err_t cm_network_send(void)
     uint8_t frame[544];
     u16_t frame_size = cm_pack_tx_frame(frame, (u16_t)sizeof(frame));
     err_t result;
+    cm_last_tx_frame_size = frame_size;
     if ((frame_size == 0U) || (cm_tcp_client == NULL)) return ERR_CONN;
-    if (tcp_sndbuf(cm_tcp_client) < frame_size) return ERR_MEM;
-    result = tcp_write(cm_tcp_client, frame, frame_size, 0U);
-    if (result == ERR_OK) result = tcp_output(cm_tcp_client);
+    cm_last_tcp_sndbuf = tcp_sndbuf(cm_tcp_client);
+    cm_last_tcp_queuelen = cm_tcp_client->snd_queuelen;
+    if (cm_last_tcp_sndbuf < frame_size)
+    {
+        cm_err_mem_stage = 1UL;
+        return ERR_MEM;
+    }
+    /* frame is a stack-local octet projection of the u16 Data Link buffers.
+     * lwIP must own a copy after this function returns. */
+    result = tcp_write(cm_tcp_client, frame, frame_size, TCP_WRITE_FLAG_COPY);
+    if (result == ERR_MEM)
+        cm_err_mem_stage = 2UL;
+    /* Once tcp_write accepts the bytes, lwIP owns the queued copy and will
+     * retry transmission internally.  tcp_output may report transient memory
+     * pressure even though the frame is already queued, so it must not make
+     * the Data Link layer enqueue the same response again. */
+    if (result == ERR_OK) (void)tcp_output(cm_tcp_client);
     return result;
 }
 #endif
@@ -242,17 +265,52 @@ static void cm_network_server_init(void)
 #endif
 }
 
+static void cm_try_send_pending_frame(void)
+{
+    sys_prot_t protection;
+    err_t result;
+    /* TI's NO_SYS port feeds tcp_input from the EMAC RX ISR. Protect every
+     * raw-API operation executed by the scheduler so tcp_input cannot mutate
+     * the same PCB concurrently (which otherwise underflows snd_queuelen). */
+    SYS_ARCH_PROTECT(protection);
+    result = cm_network_send();
+    SYS_ARCH_UNPROTECT(protection);
+    cm_last_network_error = (int32_t)result;
+    if (result == ERR_OK)
+    {
+        cm_tx_frames++;
+        cm_tx_retry_pending = 0UL;
+        gmp_dev_dl_tx_state_done(&cm_datalink);
+    }
+    else if (result == ERR_MEM)
+    {
+        /* GMP_DL_EVENT_TX_RDY is edge-triggered, so remember that the current
+         * frame still needs a hardware send attempt on the next scheduler
+         * cycle. */
+        cm_tx_retry_pending = 1UL;
+        cm_err_mem_count++;
+    }
+    else
+    {
+        cm_dl_errors++;
+        cm_tx_retry_pending = 0UL;
+        gmp_dev_dl_tx_state_done(&cm_datalink);
+    }
+}
+
 static gmp_task_status_t cm_dl_task(gmp_task_t *task)
 {
     gmp_dl_event_t event;
     GMP_UNUSED_VAR(task);
+    if (cm_tx_retry_pending != 0UL)
+    {
+        cm_try_send_pending_frame();
+        cm_publish_command();
+        return GMP_TASK_DONE;
+    }
     event = gmp_dev_dl_loop_cb(&cm_datalink);
     if (event == GMP_DL_EVENT_TX_RDY)
-    {
-        if (cm_network_send() == ERR_OK) cm_tx_frames++;
-        else cm_dl_errors++;
-        gmp_dev_dl_tx_state_done(&cm_datalink);
-    }
+        cm_try_send_pending_frame();
     else if (event == GMP_DL_EVENT_RX_OK)
         (void)gmp_dev_dl_dispatch_rx(&cm_datalink);
     cm_publish_command();
@@ -291,29 +349,23 @@ static gmp_task_t cm_tasks[] = {
     {"heartbeat", cm_heartbeat_task, 500U, 0U, 1, NULL}
 };
 
-static void cm_init_ethercat_owner(void)
-{
-    // CPU1 has already assigned the shared block and its pins to CM.  CM owns
-    // the EtherCAT reset, memory and (later) SSC protocol service lifecycle.
-    SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_ECAT);
-    ESCSS_configureEEPROMSize(ESC_SS_CONFIG_BASE, ESCSS_LESS_THAN_16K);
-    SysCtl_resetPeripheral(SYSCTL_PERIPH_RES_ECAT);
-    ESCSS_initMemory(ESC_SS_BASE);
-    cm_ethercat_ready = (uint32_t)ESCSS_getMemoryInitDoneStatusBlocking(
-        ESC_SS_BASE, 0x300UL);
-}
-
 void gmp_c28x_syscfg_cm_device_init(void)
 {
     unsigned char mac[6] = {0xA8U, 0x63U, 0xF2U, 0x00U, 0x28U, 0x88U};
+    /* CPU1 completed board clocks, resets, pin mux and ownership before it
+     * booted CM. CM initializes only its local execution environment and the
+     * runtime communication drivers/protocol stacks. */
     CM_init();
-    SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_USB);
-    SysCtl_resetPeripheral(SYSCTL_PERIPH_RES_USB);
-    USBDevMode(USB0_BASE);
-    cm_init_ethercat_owner();
+    /* First acknowledge that the 125 MHz boot-ROM phase is complete. CPU1
+     * then retunes AUXPLL for USB and completes board ownership routing. */
+    IPC_sync(IPC_CM_L_CPU1_R, IPC_FLAG30);
+    IPC_sync(IPC_CM_L_CPU1_R, IPC_FLAG31);
+    cm_ethercat_ready =
+        (uint32_t)ESCSS_getMemoryInitDoneStatusNonBlocking(ESC_SS_BASE);
     Ethernet_init(mac);
-    lwIPInit(0U, mac, 0xC0A88902UL, 0xFFFFFF00UL, 0U, IPADDR_USE_STATIC);
-    systickPeriodValue = 125000UL;
+    lwIPInit(0U, mac, GMP_F28388D_CM_IPV4, 0xFFFFFF00UL, 0U,
+             IPADDR_USE_STATIC);
+    systickPeriodValue = GMP_F28388D_CM_CLOCK_HZ / 1000UL;
     SYSTICK_setPeriod(systickPeriodValue);
     SYSTICK_registerInterruptHandler(SysTickIntHandler);
     SYSTICK_enableInterrupt();
@@ -322,7 +374,10 @@ void gmp_c28x_syscfg_cm_device_init(void)
 
 void gmp_c28x_syscfg_cm_device_loop(void)
 {
+    sys_prot_t protection;
+    SYS_ARCH_PROTECT(protection);
     sys_check_timeouts();
+    SYS_ARCH_UNPROTECT(protection);
 }
 
 void gmp_c28x_syscfg_cm_post_start(void)
@@ -355,7 +410,12 @@ void init(void)
             ctl_dsa_dl_scope_facility(&cm_scope)))
         cm_dl_errors++;
     cm_publish_command();
-    cm_network_server_init();
+    {
+        sys_prot_t protection;
+        SYS_ARCH_PROTECT(protection);
+        cm_network_server_init();
+        SYS_ARCH_UNPROTECT(protection);
+    }
     gmp_scheduler_init(&cm_scheduler);
     for (index = 0U; index < sizeof(cm_tasks) / sizeof(cm_tasks[0]); ++index)
         (void)gmp_scheduler_add_task(&cm_scheduler, &cm_tasks[index]);

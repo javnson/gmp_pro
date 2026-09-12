@@ -77,25 +77,66 @@ static void cpu1_setup_ethercat_gpio(void)
     GPIO_setPinConfig(GPIO_128_ESC_SYNC1);
 }
 
-void cpu1_board_start_multicore(void)
+static void cpu1_initialize_usb_for_cm(void)
 {
-    /* CPU1 owns the boot-time allocation registers.  Communication runtime
-     * (EtherCAT, USB and Ethernet) belongs to CM after this handoff. */
+    /* USB requires a fixed 60 MHz auxiliary clock. CPU1 owns this board-level
+     * clock/reset decision and selects device mode before handing USBA to CM. */
+    SysCtl_setAuxClock(SYSCTL_AUXPLL_OSCSRC_XTAL |
+                       SYSCTL_AUXPLL_IMULT(48) |
+                       SYSCTL_REFDIV(2U) | SYSCTL_ODIV(5U) |
+                       SYSCTL_AUXPLL_DIV_2 |
+                       SYSCTL_AUXPLL_ENABLE |
+                       SYSCTL_DCC_BASE_0);
+    SysCtl_disablePeripheral(SYSCTL_PERIPH_CLK_USBA);
+    SysCtl_resetPeripheral(SYSCTL_PERIPH_RES_USBA);
+    SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_USBA);
+    USBDevMode(USBA_BASE);
+    SysCtl_allocateSharedPeripheral(SYSCTL_PALLOCATE_USBA, 1U);
+}
+
+static void cpu1_initialize_ethercat_for_cm(void)
+{
     SysCtl_disablePeripheral(SYSCTL_PERIPH_CLK_ECAT);
-    SysCtl_allocateSharedPeripheral(SYSCTL_PALLOCATE_ETHERCAT, 1U);
     SysCtl_setECatClk(SYSCTL_ECATCLKOUT_DIV_2, SYSCTL_SOURCE_SYSPLL, 1U);
     SysCtl_enablePeripheral(SYSCTL_PERIPH_CLK_ECAT);
     cpu1_setup_ethercat_gpio();
+    ESCSS_configureEEPROMSize(ESC_SS_CONFIG_BASE, ESCSS_LESS_THAN_16K);
+    SysCtl_resetPeripheral(SYSCTL_PERIPH_RES_ECAT);
+    ESCSS_initMemory(ESC_SS_BASE);
+    (void)ESCSS_getMemoryInitDoneStatusBlocking(ESC_SS_BASE, 0x300UL);
+    SysCtl_allocateSharedPeripheral(SYSCTL_PALLOCATE_ETHERCAT, 1U);
+}
 
-    SysCtl_disablePeripheral(SYSCTL_PERIPH_CLK_USBA);
-    SysCtl_allocateSharedPeripheral(SYSCTL_PALLOCATE_USBA, 1U);
+void cpu1_board_initialize_and_handoff(void)
+{
+    /* CPU1 is the only board-initialization authority. It establishes every
+     * communication clock, reset and pin route before releasing the other
+     * cores. Ethernet is physically in the CM domain; CPU1 still owns its
+     * clock, MII pin mux and PHY control GPIO initialization. */
+#ifdef _FLASH
+    /* The CM boot ROM must be released while CMCLK still matches the
+     * 125 MHz boot-frequency key. The CM waits at IPC flag 31 until CPU1
+     * completes the board-level initialization below. */
+    Device_bootCM(BOOTMODE_BOOT_TO_FLASH_SECTOR0);
+#else
+    Device_bootCM(BOOTMODE_BOOT_TO_S0RAM);
+#endif
+
+    /* CM acknowledges from application code while CMCLK is still 125 MHz.
+     * Only after this boot-ROM barrier may CPU1 retune AUXPLL for USB. */
+    IPC_sync(IPC_CPU1_L_CM_R, IPC_FLAG30);
+
     cpu1_setup_ethernet_gpio();
+    cpu1_initialize_ethercat_for_cm();
+    cpu1_initialize_usb_for_cm();
 
 #ifdef _FLASH
     Device_bootCPU2(BOOTMODE_BOOT_TO_FLASH_SECTOR0);
-    Device_bootCM(BOOTMODE_BOOT_TO_FLASH_SECTOR0);
 #else
     Device_bootCPU2(BOOTMODE_BOOT_TO_M0RAM);
-    Device_bootCM(BOOTMODE_BOOT_TO_S0RAM);
 #endif
+
+    /* Release CM communication initialization only after clocks, reset state,
+     * pin mux and ownership are final. */
+    IPC_sync(IPC_CPU1_L_CM_R, IPC_FLAG31);
 }

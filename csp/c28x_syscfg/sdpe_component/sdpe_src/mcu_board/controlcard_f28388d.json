@@ -8,7 +8,7 @@
     "board_name": "TMDSCNCD28388D",
     "chip": "TMS320F28388D",
     "cpu_clock_hz": "200000000",
-    "cm_clock_hz": "125000000",
+    "cm_clock_hz": "120000000",
     "data_unit_bits": "16",
     "cpu1_role": "control and serial DL",
     "cpu2_role": "deterministic computation",

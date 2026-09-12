@@ -5,18 +5,56 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from apis import GmpDatalinkClient, ScopeConfiguration, ScopeTriggerMode
+from apis import (
+    GmpDatalinkClient,
+    ScopeConfiguration,
+    ScopeTriggerMode,
+    TcpDataLinkTransport,
+    UdpDataLinkTransport,
+)
 
 
 def main() -> None:
     """Discover resources, inspect target data, and acquire one waveform."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", required=True, help="Serial port, for example COM5")
+    parser.add_argument(
+        "--protocol", choices=("serial", "tcp", "udp"), default="serial"
+    )
+    parser.add_argument("--port", help="Serial port, for example COM5")
     parser.add_argument("--baudrate", type=int, default=921600)
+    parser.add_argument("--host", default="192.168.137.2")
+    parser.add_argument("--network-port", type=int)
+    parser.add_argument("--timeout", type=float, default=0.8)
+    parser.add_argument("--retries", type=int, default=2)
+    parser.add_argument(
+        "--skip-capture", action="store_true", help="Only discover DL facilities"
+    )
     parser.add_argument("--output", type=Path, default=Path("scope_frame.csv"))
     args = parser.parse_args()
 
-    with GmpDatalinkClient(args.port, args.baudrate) as client:
+    if args.protocol == "serial":
+        if not args.port:
+            parser.error("--port is required for the serial protocol")
+        client = GmpDatalinkClient(
+            args.port,
+            args.baudrate,
+            timeout=args.timeout,
+            retries=args.retries,
+        )
+    else:
+        default_port = 50001 if args.protocol == "tcp" else 50002
+        transport_type = (
+            TcpDataLinkTransport if args.protocol == "tcp" else UdpDataLinkTransport
+        )
+        transport = transport_type(
+            args.host,
+            args.network_port or default_port,
+            timeout=args.timeout,
+            retries=args.retries,
+        )
+        client = GmpDatalinkClient(transport=transport)
+
+    with client:
         parameters = client.tunables.discover()
         print("Tunable table:")
         for parameter in parameters:
@@ -37,8 +75,11 @@ def main() -> None:
             print("First 16 bytes:", client.memory.read_region(regions[0], byte_length=16).hex(" "))
 
         scopes = client.scope.discover()
-        if not scopes:
-            print("The target did not report a Scope resource.")
+        if not scopes or args.skip_capture:
+            if scopes:
+                print("Scope resources discovered; capture was skipped.")
+            else:
+                print("The target did not report a Scope resource.")
             return
         frame = client.scope.capture(
             scopes[0],

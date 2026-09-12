@@ -529,6 +529,8 @@ ctl/hardware_preset/mcu_board/nucleo_g431rb.h
 ctl/hardware_preset/mcu_board/nucleo_g474re.h
 ctl/hardware_preset/mcu_board/nucleo_g491re.h
 ctl/hardware_preset/mcu_board/nucleo_h533re.h
+# Nucleo-32 SDPE entity headers follow the same generated-source policy.
+ctl/hardware_preset/mcu_board/nucleo_g431kb.h
 
 # ignore meta folder
 **/.meta

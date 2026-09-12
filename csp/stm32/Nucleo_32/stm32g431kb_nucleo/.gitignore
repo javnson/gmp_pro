@@ -1,0 +1,17 @@
+# CubeMX and GMP derived outputs; keep the IOC and generator inputs authoritative.
+/Core/
+/Inc/
+/Src/
+/MXTmpFiles/
+/Drivers/
+/Middlewares/
+/build/
+/Debug/
+/Release/
+/gmp_inc/
+/gmp_src/
+/sdpe_mgr/ctrl_settings.h
+/sdpe_mgr/mcu_board/
+/.mxproject
+/MDK-ARM/
+/stm32g431kb_nucleo/

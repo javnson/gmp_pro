@@ -34,6 +34,7 @@
   "exports": {
     "board_name":{"macro":"{PREFIX}_BOARD_NAME","description":"Board name."},
     "cpu_clock_hz":{"macro":"{PREFIX}_CPU_CLOCK_HZ","description":"C28x clock."},
+    "cm_clock_hz":{"macro":"{PREFIX}_CM_CLOCK_HZ","description":"CM runtime clock after the USB PLL handoff."},
     "data_unit_bits":{"macro":"{PREFIX}_DATA_UNIT_BITS","description":"Shared GMP data width."},
     "serial_base":{"macro":"{PREFIX}_SERIAL_BASE","description":"Serial DL interface."},
     "serial_baudrate":{"macro":"{PREFIX}_SERIAL_BAUDRATE","description":"Serial DL baud rate."},

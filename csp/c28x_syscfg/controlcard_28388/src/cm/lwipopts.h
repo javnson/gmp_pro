@@ -44,7 +44,7 @@
 //*****************************************************************************
 //#define MEM_LIBC_MALLOC                 0
 #define MEM_ALIGNMENT                   4           // default is 1
-#define MEM_SIZE                        (4 * 1024)  // default is 1600, was 16K
+#define MEM_SIZE                        (8 * 1024)  // DL TCP needs queued COPY buffers
 //#define MEMP_OVERFLOW_CHECK             0
 //#define MEMP_SANITY_CHECK               0
 //#define MEM_USE_POOLS                   0
@@ -60,7 +60,7 @@
 #define MEMP_NUM_UDP_PCB                4
 #define MEMP_NUM_TCP_PCB                  12 //16    // Default 5, was 12
 //#define MEMP_NUM_TCP_PCB_LISTEN         8
-//#define MEMP_NUM_TCP_SEG                16
+#define MEMP_NUM_TCP_SEG                32
 //#define MEMP_NUM_REASSDATA              5
 //#define MEMP_NUM_ARP_QUEUE              30
 //#define MEMP_NUM_IGMP_GROUP             8
@@ -205,6 +205,7 @@
 //#define TCP_CALCULATE_EFF_SEND_MSS      1
 #define TCP_SND_BUF                     (4 * TCP_MSS)
                                                     // default is 256, was 6 *
+#define TCP_OVERSIZE                    0
 //#define TCP_SND_QUEUELEN                (4 * (TCP_SND_BUF/TCP_MSS))
 //#define TCP_SNDLOWAT                    (TCP_SND_BUF/2)
 //#define TCP_LISTEN_BACKLOG              0

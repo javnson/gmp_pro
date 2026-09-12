@@ -27,6 +27,8 @@ Python import path:
 cd tools/gmp_datalink/datalink_studio
 python -m pip install pyserial
 python -m apis.examples.ai_debug_session --port COM5 --baudrate 256000
+python -m apis.examples.ai_debug_session --protocol tcp --host 192.168.137.2
+python -m apis.examples.ai_debug_session --protocol udp --host 192.168.137.2
 ```
 
 Alternatively, add `tools/gmp_datalink/datalink_studio` to `PYTHONPATH`. The

@@ -4,6 +4,7 @@
  */
 
 #include <ctl/math_block/gmp_math.h>
+#include <limits.h>
 #ifndef SPECIFY_DISABLE_CSP
 // The DataLink bridge is platform-bound. Include the CSP inline critical
 // section implementation without pulling the complete GMP runtime into CTL.
@@ -13,6 +14,12 @@
 #include <core/base/gmp_base.h>
 
 #include <ctl/component/dsa/dsa_dl_scope.h>
+
+/* Scope metadata is expressed in 8-bit wire octets.  sizeof() is measured in
+ * 16-bit C bytes on C28x but in 8-bit C bytes on CM, even though both cores
+ * intentionally share the system-u16 Data Link model. */
+#define CTL_DSA_DL_SCOPE_OCTETS_PER_CTRL \
+    ((uint32_t)sizeof(ctrl_gt) * ((uint32_t)CHAR_BIT / 8U))
 
 /** @brief Return the wire sample type used by the configured control scalar. */
 static gmp_scope_sample_type_t ctl_dsa_dl_scope_sample_type(void)
@@ -166,7 +173,7 @@ void ctl_init_dsa_dl_scope(ctl_dsa_dl_scope_t* scope, gmp_datalink_t* dl,
     scope->resource.name = (name == NULL) ? "Control Scope" : name;
     scope->resource.buffer = buffer;
     scope->resource.byte_length = depth * CTL_DSA_DL_SCOPE_CHANNELS *
-                                  sizeof(ctrl_gt) * GMP_PORT_DATA_SIZE_PER_BYTES;
+                                  CTL_DSA_DL_SCOPE_OCTETS_PER_CTRL;
     scope->resource.sample_type = ctl_dsa_dl_scope_sample_type();
     scope->resource.layout = GMP_SCOPE_LAYOUT_SOA;
     scope->resource.channels = CTL_DSA_DL_SCOPE_CHANNELS;
@@ -206,8 +213,8 @@ fast_gt ctl_init_dsa_dl_scope_workspace(
     ctl_init_dsa_dl_scope(scope, dl, command, name, workspace,
                           workspace + half_elements, depth, sample_rate_hz);
     scope->resource.channels = channels;
-    scope->resource.byte_length = depth * channels * sizeof(ctrl_gt) *
-                                  GMP_PORT_DATA_SIZE_PER_BYTES;
+    scope->resource.byte_length = depth * channels *
+                                  CTL_DSA_DL_SCOPE_OCTETS_PER_CTRL;
     scope->recorder.mem.capacity = half_elements;
     ctl_config_dsa_scope(&scope->recorder, channels, 1U);
     return 1;

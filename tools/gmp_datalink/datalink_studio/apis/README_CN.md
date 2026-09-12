@@ -25,6 +25,8 @@ Python 接口，适用于测试脚本、自动化验证、实验室工具以及 
 cd tools/gmp_datalink/datalink_studio
 python -m pip install pyserial
 python -m apis.examples.ai_debug_session --port COM5 --baudrate 256000
+python -m apis.examples.ai_debug_session --protocol tcp --host 192.168.137.2
+python -m apis.examples.ai_debug_session --protocol udp --host 192.168.137.2
 ```
 
 也可以把 `tools/gmp_datalink/datalink_studio` 加入 `PYTHONPATH`。无界面 API

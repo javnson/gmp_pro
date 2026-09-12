@@ -8,13 +8,13 @@
 #include "driverlib.h"
 #include "tricore_shared.h"
 
-#pragma DATA_SECTION(cpu1_to_cpu2_command, "MSGRAM_CPU1_TO_CPU2")
+#pragma DATA_SECTION(cpu1_to_cpu2_command, "GMP_MSGRAM_CPU1_TO_CPU2")
 volatile gmp_wave_command_t cpu1_to_cpu2_command;
-#pragma DATA_SECTION(cm_to_cpu2_command, "MSGRAM_CM_TO_CPU")
+#pragma DATA_SECTION(cm_to_cpu2_command, "GMP_MSGRAM_CM_TO_CPU")
 volatile gmp_wave_command_t cm_to_cpu2_command;
-#pragma DATA_SECTION(cpu2_to_cpu1_snapshot, "MSGRAM_CPU2_TO_CPU1")
+#pragma DATA_SECTION(cpu2_to_cpu1_snapshot, "GMP_MSGRAM_CPU2_TO_CPU1")
 volatile gmp_wave_snapshot_t cpu2_to_cpu1_snapshot;
-#pragma DATA_SECTION(cpu2_to_cm_snapshot, "MSGRAM_CPU_TO_CM")
+#pragma DATA_SECTION(cpu2_to_cm_snapshot, "GMP_MSGRAM_CPU_TO_CM")
 volatile gmp_wave_snapshot_t cpu2_to_cm_snapshot;
 
 static gmp_scheduler_t cpu2_scheduler;

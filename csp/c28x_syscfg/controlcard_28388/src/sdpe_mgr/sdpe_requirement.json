@@ -11,6 +11,7 @@
   "requirements": [
     {"role":"Board Name","macro":"GMP_F28388D_BOARD_NAME","binding":{"export":"controlcard_f28388d.board_name"},"description":"Selected ControlCARD."},
     {"role":"C28x Clock","macro":"GMP_F28388D_CPU_CLOCK_HZ","binding":{"export":"controlcard_f28388d.cpu_clock_hz"},"description":"Shared CPU1/CPU2 clock contract."},
+    {"role":"CM Clock","macro":"GMP_F28388D_CM_CLOCK_HZ","binding":{"export":"controlcard_f28388d.cm_clock_hz"},"description":"CM runtime clock after USB PLL setup."},
     {"role":"Data Unit Width","macro":"GMP_F28388D_DATA_UNIT_BITS","binding":{"export":"controlcard_f28388d.data_unit_bits"},"description":"All three cores use the system-u16 Data Link model."},
     {"role":"Serial Peripheral","macro":"GMP_F28388D_SCI_BASE","binding":{"export":"controlcard_f28388d.serial_base"},"description":"CPU1 XDS virtual COM port."},
     {"role":"Serial Baud Rate","macro":"GMP_F28388D_SCI_BAUDRATE","binding":{"export":"controlcard_f28388d.serial_baudrate"},"description":"Serial GMP DL baud rate."},
@@ -35,7 +36,7 @@
     {"group":"CM Communication","macro":"GMP_F28388D_CM_ENABLE_ETHERCAT","enabled":true,"weak":false,"value":"","description":"Initialize EtherCAT ownership and ESC memory on CM."}
   ],
   "requirement_groups": [
-    {"name":"Core Contract","requirements":["Board Name","C28x Clock","Data Unit Width"]},
+    {"name":"Core Contract","requirements":["Board Name","C28x Clock","CM Clock","Data Unit Width"]},
     {"name":"Control Resources","requirements":["Serial Peripheral","Serial Baud Rate","PWM Frequency","QEP Peripheral","Feedback Count"]},
     {"name":"CM Communication","requirements":["USB Capability","Ethernet Capability","EtherCAT Capability","Ethernet IPv4","TCP Port","UDP Port"]}
   ],

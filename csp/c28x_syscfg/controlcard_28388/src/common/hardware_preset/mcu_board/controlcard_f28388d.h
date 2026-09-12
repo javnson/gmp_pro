@@ -52,7 +52,7 @@ extern "C"
  * @brief Communication Manager clock contract.
  * @unit Hz
  */
-#define CONTROLCARD_F28388D_CM_CLOCK_HZ (125000000UL)
+#define CONTROLCARD_F28388D_CM_CLOCK_HZ (120000000UL)
 
 /**
  * @brief GMP byte/data_gt width shared by all three cores.
@@ -160,6 +160,7 @@ extern "C"
 // Logical exports
 // board_name: CONTROLCARD_F28388D_BOARD_NAME
 // cpu_clock_hz: CONTROLCARD_F28388D_CPU_CLOCK_HZ
+// cm_clock_hz: CONTROLCARD_F28388D_CM_CLOCK_HZ
 // data_unit_bits: CONTROLCARD_F28388D_DATA_UNIT_BITS
 // serial_base: CONTROLCARD_F28388D_SERIAL_BASE
 // serial_baudrate: CONTROLCARD_F28388D_SERIAL_BAUDRATE

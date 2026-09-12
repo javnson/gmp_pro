@@ -54,7 +54,7 @@
 //
 //*****************************************************************************
 
-#define CM_CLK_FREQ       125000000U
+#define CM_CLK_FREQ       120000000U
 
 //*****************************************************************************
 //
@@ -88,6 +88,9 @@ extern uint16_t RamfuncsLoadSize;
 extern uint16_t RamfuncsRunStart;
 extern uint16_t RamfuncsRunEnd;
 extern uint16_t RamfuncsRunSize;
+extern uint16_t constLoadStart;
+extern uint16_t constLoadSize;
+extern uint16_t constRunStart;
 
 #define DEVICE_FLASH_WAITSTATES 2
 

@@ -10,6 +10,9 @@
             <instance XML_version="1.2" href="drivers/tixds100v2cs_dap.xml" id="drivers" xml="tixds100v2cs_dap.xml" xmlpath="drivers"/>
             <instance XML_version="1.2" href="drivers/tixds100v2cortexM.xml" id="drivers" xml="tixds100v2cortexM.xml" xmlpath="drivers"/>
             <instance XML_version="1.2" href="drivers/tixds510ajsm.xml" id="drivers" xml="tixds510ajsm.xml" xmlpath="drivers"/>
+            <!-- Use the conservative XDS100v2 clock for reliable ControlCARD
+                 connect/flash operation across USB cables and baseboards. -->
+            <property Type="choicelist" Value="2" id="The JTAG TCLK Frequency (MHz)"/>
             <platform XML_version="1.2" id="platform_0">
                 <instance XML_version="1.2" desc="TMS320F28388D_0" href="devices/f28388d.xml" id="TMS320F28388D_0" xml="f28388d.xml" xmlpath="devices"/>
                 <device HW_revision="1" XML_version="1.2" description="" id="TMS320F28388D_0" partnum="TMS320F28388D" simulation="no">
