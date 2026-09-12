@@ -2,9 +2,9 @@
 
 **English** | [简体中文](README_CN.md)
 
-Status: G431 configured baseline; G474RE, G491RE, H533RE, C092RC, and F411RE hardware baselines v0.7
+Status: G431 configured baseline; G474RE, G491RE, H533RE, C092RC, F411RE, and U083RC hardware baselines v0.8
 
-Date: 2026-09-11
+Date: 2026-09-12
 
 This document defines the directory layout, hardware-resource contract, SDPE
 board components, shared `user`/`xplt` boundary, generation workflow, and
@@ -71,6 +71,17 @@ linking, verified SWD programming, and complete GMP Data Link acceptance at
 register reads confirmed that all three complementary PWM pairs and MOE stayed
 disabled. STM32F411RE has neither on-chip DAC nor CAN/FDCAN; see
 `stm32f411re_nucleo/validation.md`.
+
+The NUCLEO-U083RC target is the STM32U0 low-power-family hardware baseline. It
+uses TIM1 TRGO2 to trigger a six-channel ADC1 regular sequence with circular
+DMA, and also configures three complementary TIM1 PWM pairs, TIM3 ABZ, USART2
+VCP, LD4, I2C1, DAC1, and SWD. A CubeMX load/save/regenerate cycle preserved
+the ADC, DMA, and pin configuration. GCC/CMake linking, verified SWD
+programming, and 27 consecutive complete GMP Data Link u8 acceptance runs at
+921600 baud passed. The control callback remained near 20 kHz, the UART error
+count stayed at zero, and PWM outputs stayed disabled. STM32U083 has no
+CAN/FDCAN; see `stm32u083rc_nucleo/validation.md` for the remaining external
+electrical tests.
 
 ## 1. Scope and principles
 
@@ -322,7 +333,8 @@ csp/stm32/Nucleo_64/
 ├── stm32g491re_nucleo/
 ├── stm32h533re_nucleo/
 ├── stm32c092rc_nucleo/
-└── stm32f411re_nucleo/
+├── stm32f411re_nucleo/
+└── stm32u083rc_nucleo/
 ```
 
 Each board maintains one preferred IOC. A suffixed IOC such as `*_tim8.ioc` or
@@ -431,9 +443,10 @@ a signal that the SDPE alias contract must be improved.
 ### E. Expand across families
 
 NUCLEO-H533RE is the validated STM32H5 golden board, NUCLEO-C092RC is the
-validated STM32C0 low-resource golden board, and NUCLEO-F411RE is the validated
-STM32F4 golden board. Continue with NUCLEO-U083RC, completing one golden board
-for each new STM32 family before adding further members.
+validated STM32C0 low-resource golden board, NUCLEO-F411RE is the validated
+STM32F4 golden board, and NUCLEO-U083RC is the validated STM32U0 low-power
+golden board. Complete one golden board for each new STM32 family before adding
+further members.
 
 ### F. Fleet validation and release
 
@@ -445,12 +458,12 @@ examples only after their replacements are validated.
 
 - approved bilingual specification;
 - `stm32_nucleo_64_board` SDPE schema;
-- G431RB, G474RE, G491RE, H533RE, C092RC, and F411RE board entities;
-- six preferred IOC files and six target SDPE projects;
+- G431RB, G474RE, G491RE, H533RE, C092RC, F411RE, and U083RC board entities;
+- seven preferred IOC files and seven target SDPE projects;
 - one shared `user`, `xplt`, and `gmp_src_mgr` implementation;
 - IOC/SDPE static validator;
 - headless CubeMX and batch CMake/GCC scripts;
-- six pin maps and validation records;
+- seven pin maps and validation records;
 - complete G431RB hardware validation, with accurate status for other boards.
 
 ## 12. Non-goals

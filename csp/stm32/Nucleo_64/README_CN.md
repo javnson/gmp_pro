@@ -2,9 +2,9 @@
 
 [English](README.md) | **简体中文**
 
-状态：G431 配置基线；G474RE、G491RE、H533RE、C092RC 与 F411RE 实板基线 v0.7
+状态：G431 配置基线；G474RE、G491RE、H533RE、C092RC、F411RE 与 U083RC 实板基线 v0.8
 
-日期：2026-09-11
+日期：2026-09-12
 
 本文规定 `csp/stm32/Nucleo_64` 的目录结构、硬件资源合同、SDPE 板卡元件、公共
 `user`/`xplt` 代码边界、生成流程和验证标准。目标是让一个控制应用只通过切换
@@ -54,6 +54,14 @@ TRGO/CC4，因此 IOC 使用 TIM1 OC4REF -> TIM2 ITR0/reset -> TIM2 update TRGO 
 GCC/CMake 链接、SWD 烧录回读和 921600 波特率完整 GMP Data Link 验收均已通过，
 控制回调实测 20.269 kHz；寄存器回读确认三相互补 PWM 与 MOE 保持关闭。F411RE 没有
 片内 DAC 和 CAN/FDCAN，详见 `stm32f411re_nucleo/validation.md`。
+
+NUCLEO-U083RC 已完成 STM32U0 低功耗系列实板基线。该工程使用 TIM1 TRGO2 直接
+触发 ADC1 六通道规则序列和循环 DMA，同时配置 TIM1 三对互补 PWM、TIM3 ABZ、
+USART2 VCP、LD4、I2C1、DAC1 与 SWD。IOC 经 CubeMX 加载、保存和再生成后完整保留
+ADC/DMA/引脚配置；GCC/CMake 链接、SWD 烧录回读和 921600 波特率下连续 27 轮完整
+GMP Data Link u8 验收均通过。控制回调保持约 20 kHz，UART 错误计数为 0，PWM 输出
+始终关闭。STM32U083 不含 CAN/FDCAN，外部电气测试范围见
+`stm32u083rc_nucleo/validation.md`。
 
 ## 1. 范围和设计原则
 
@@ -365,7 +373,8 @@ csp/stm32/Nucleo_64/
 ├── stm32g491re_nucleo/
 ├── stm32h533re_nucleo/
 ├── stm32c092rc_nucleo/
-└── stm32f411re_nucleo/
+├── stm32f411re_nucleo/
+└── stm32u083rc_nucleo/
 ```
 
 每个板卡目录只维护一个首选主 IOC。只有无法通过 SDPE 宏解决的真实引脚复用冲突，
@@ -529,7 +538,7 @@ C2000 遗留代码。
 
 1. NUCLEO-F411RE（已完成），作为 STM32F4 黄金板并验证 ADC 触发桥接；
 2. NUCLEO-C092RC（已完成），作为 STM32C0 低资源器件黄金板；
-3. NUCLEO-U083RC，继续评估低资源器件的完整 `control` 能力；
+3. NUCLEO-U083RC（已完成），作为 STM32U0 低功耗器件黄金板；
 4. NUCLEO-H533RE（已完成），作为 STM32H5/M33 黄金板；
 5. 根据实际板卡库存继续扩展。
 
@@ -549,12 +558,12 @@ C2000 遗留代码。
 
 - 本规格的审核版本；
 - 一个新的 Nucleo-64 SDPE schema；
-- G431RB、G474RE、G491RE、H533RE、C092RC、F411RE 六个板卡实体；
-- 六个主 IOC 和六个板卡 SDPE 工程；
+- G431RB、G474RE、G491RE、H533RE、C092RC、F411RE、U083RC 七个板卡实体；
+- 七个主 IOC 和七个板卡 SDPE 工程；
 - 一套公共 `user`、`xplt` 和 `gmp_src_mgr`；
 - IOC/SDPE 静态校验工具；
 - CubeMX 无界面生成和 GCC/CMake 批量构建脚本；
-- 六份引脚表和六份验证记录；
+- 七份引脚表和七份验证记录；
 - 至少 G431RB 完整实板验证，其他板卡按实际硬件状态准确标注。
 
 ## 13. 非目标

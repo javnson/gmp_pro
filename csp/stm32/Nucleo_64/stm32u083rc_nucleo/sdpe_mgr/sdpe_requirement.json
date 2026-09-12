@@ -1,0 +1,75 @@
+{
+  "id": "nucleo_64_stm32u083rc",
+  "macro_prefix": "GMP_NUCLEO_U083RC_TARGET",
+  "display_name": "GMP Nucleo-64 STM32U083RC Target",
+  "description": "Generic Nucleo-64 control-resource aliases for the NUCLEO-U083RC, including DAC1.",
+  "suite": "stm32_nucleo_64",
+  "version": "0.1.0",
+  "updated_at": "2026-09-12",
+  "output_header": "ctrl_settings.h",
+  "hardware": [
+    {"entity": "nucleo_u083rc"}
+  ],
+  "code_sections": {
+    "after_extern_open": "/* CubeMX handle declarations are emitted by the shared xplt after HAL types are available. */",
+    "before_footer": "/* Stable aliases consumed by the shared Nucleo-64 user/xplt sources. */\n#define GMP_NUCLEO_BOARD_ID NUCLEO_U083RC_BOARD\n#define GMP_NUCLEO_MCU_ID NUCLEO_U083RC_CHIP\n#define GMP_NUCLEO_SYSTEM_CLOCK_HZ NUCLEO_U083RC_SYSTEM_CLOCK_HZ\n#define GMP_NUCLEO_SYSTEM_TICK_HZ NUCLEO_U083RC_SYSTEM_TICK_HZ\n#define GMP_NUCLEO_PWM_TIMER_HANDLE NUCLEO_U083RC_PWM_TIM1_HANDLE\n#define GMP_NUCLEO_PWM_TIMER_SYMBOL NUCLEO_U083RC_PWM_TIM1_SYMBOL\n#define GMP_NUCLEO_PWM_TIMER_INSTANCE NUCLEO_U083RC_PWM_TIM1_INSTANCE\n#define GMP_NUCLEO_PWM_ADC_TRIGGER NUCLEO_U083RC_PWM_TIM1_ADC_TRIGGER\n#define GMP_NUCLEO_QEP_TIMER_HANDLE NUCLEO_U083RC_QEP_TIM3_HANDLE\n#define GMP_NUCLEO_QEP_TIMER_SYMBOL NUCLEO_U083RC_QEP_TIM3_SYMBOL\n#define GMP_NUCLEO_QEP_TIMER_INSTANCE NUCLEO_U083RC_QEP_TIM3_INSTANCE\n#define GMP_NUCLEO_QEP_Z_PORT NUCLEO_U083RC_QEP_TIM3_Z_PORT\n#define GMP_NUCLEO_QEP_Z_PIN NUCLEO_U083RC_QEP_TIM3_Z_PIN\n#define GMP_NUCLEO_QEP_SOFTWARE_INDEX NUCLEO_U083RC_QEP_SOFTWARE_INDEX\n#define GMP_NUCLEO_HAS_PWM_BREAK NUCLEO_U083RC_PWM_HAS_BREAK\n#define GMP_NUCLEO_ADC_REGULAR_DMA NUCLEO_U083RC_ADC_REGULAR_DMA\n#define GMP_NUCLEO_ADC_PRIMARY_HANDLE NUCLEO_U083RC_ADC_PRIMARY_HANDLE\n#define GMP_NUCLEO_ADC_PRIMARY_SYMBOL NUCLEO_U083RC_ADC_PRIMARY_SYMBOL\n#define GMP_NUCLEO_ADC_SECONDARY_HANDLE NUCLEO_U083RC_ADC_SECONDARY_HANDLE\n#define GMP_NUCLEO_ADC_SECONDARY_SYMBOL NUCLEO_U083RC_ADC_SECONDARY_SYMBOL\n#define GMP_NUCLEO_ADC_TRIGGER_MASK NUCLEO_U083RC_ADC_TRIGGER_MASK\n#define GMP_NUCLEO_ADC_TRIGGER_EDGE NUCLEO_U083RC_ADC_TRIGGER_EDGE\n#define GMP_NUCLEO_ADC_FB_COUNT NUCLEO_U083RC_ADC_FB_COUNT\n#define GMP_NUCLEO_ADC_FB0_HANDLE NUCLEO_U083RC_ADC_FB0_HANDLE\n#define GMP_NUCLEO_ADC_FB0_RANK NUCLEO_U083RC_ADC_FB0_RANK\n#define GMP_NUCLEO_ADC_FB1_HANDLE NUCLEO_U083RC_ADC_FB1_HANDLE\n#define GMP_NUCLEO_ADC_FB1_RANK NUCLEO_U083RC_ADC_FB1_RANK\n#define GMP_NUCLEO_ADC_FB2_HANDLE NUCLEO_U083RC_ADC_FB2_HANDLE\n#define GMP_NUCLEO_ADC_FB2_RANK NUCLEO_U083RC_ADC_FB2_RANK\n#define GMP_NUCLEO_ADC_FB3_HANDLE NUCLEO_U083RC_ADC_FB3_HANDLE\n#define GMP_NUCLEO_ADC_FB3_RANK NUCLEO_U083RC_ADC_FB3_RANK\n#define GMP_NUCLEO_ADC_FB4_HANDLE NUCLEO_U083RC_ADC_FB4_HANDLE\n#define GMP_NUCLEO_ADC_FB4_RANK NUCLEO_U083RC_ADC_FB4_RANK\n#define GMP_NUCLEO_ADC_FB5_HANDLE NUCLEO_U083RC_ADC_FB5_HANDLE\n#define GMP_NUCLEO_ADC_FB5_RANK NUCLEO_U083RC_ADC_FB5_RANK\n#define GMP_NUCLEO_DL_UART_HANDLE NUCLEO_U083RC_DL_UART_HANDLE\n#define GMP_NUCLEO_DL_UART_SYMBOL NUCLEO_U083RC_DL_UART_SYMBOL\n#define GMP_NUCLEO_DL_UART_INSTANCE NUCLEO_U083RC_DL_UART_INSTANCE\n#define GMP_NUCLEO_DL_RX_DMA_HANDLE NUCLEO_U083RC_DL_RX_DMA_HANDLE\n#define GMP_NUCLEO_STATUS_LED_PORT NUCLEO_U083RC_STATUS_LED_PORT\n#define GMP_NUCLEO_STATUS_LED_PIN NUCLEO_U083RC_STATUS_LED_PIN\n#define GMP_NUCLEO_STATUS_LED_ON NUCLEO_U083RC_STATUS_LED_ON\n#define GMP_NUCLEO_STATUS_LED_OFF NUCLEO_U083RC_STATUS_LED_OFF\n#define GMP_NUCLEO_I2C_HANDLE NUCLEO_U083RC_I2C_HANDLE\n#define GMP_NUCLEO_I2C_INSTANCE NUCLEO_U083RC_I2C_INSTANCE\n#define GMP_NUCLEO_HAS_DAC NUCLEO_U083RC_HAS_DAC\n#define GMP_NUCLEO_DAC_HANDLE NUCLEO_U083RC_DAC_HANDLE\n#define GMP_NUCLEO_DAC_SYMBOL NUCLEO_U083RC_DAC_SYMBOL\n#define GMP_NUCLEO_DAC_CHANNEL NUCLEO_U083RC_DAC_CHANNEL\n#define GMP_NUCLEO_HAS_CAN NUCLEO_U083RC_HAS_CAN\n#define GMP_NUCLEO_CAN_HANDLE NUCLEO_U083RC_CAN_HANDLE\n#define GMP_NUCLEO_CAN_INSTANCE NUCLEO_U083RC_CAN_INSTANCE\n#define GMP_NUCLEO_CAN_HAS_STBY NUCLEO_U083RC_CAN_HAS_STBY\n#define GMP_NUCLEO_CAN_STBY_PORT NUCLEO_U083RC_CAN_STBY_PORT\n#define GMP_NUCLEO_CAN_STBY_PIN NUCLEO_U083RC_CAN_STBY_PIN\n#define GMP_NUCLEO_CAN_STBY_ON NUCLEO_U083RC_CAN_STBY_ON\n#define GMP_NUCLEO_CAN_STBY_OFF NUCLEO_U083RC_CAN_STBY_OFF"
+  },
+  "feature_macros": [],
+  "option_macros": [
+    {
+      "group": "Board",
+      "macro": "GMP_NUCLEO_PWM_TIMER_SELECTION",
+      "enabled": true,
+      "value": "1",
+      "options_preset": "nucleo_u083rc.PWM_TIMER_SELECTION",
+      "options": [],
+      "description": "Advanced timer used for three-phase PWM and ADC triggering."
+    },
+    {
+      "group": "Board",
+      "macro": "GMP_NUCLEO_QEP_TIMER_SELECTION",
+      "enabled": true,
+      "value": "3",
+      "options_preset": "nucleo_u083rc.QEP_TIMER_SELECTION",
+      "options": [],
+      "description": "General-purpose timer used for ABZ position capture."
+    },
+    {
+      "group": "Datalink",
+      "macro": "GMP_NUCLEO_DL_BAUD_RATE",
+      "enabled": true,
+      "value": "921600",
+      "options_preset": "nucleo_u083rc.DL_BAUD_RATE",
+      "options": [],
+      "description": "ST-Link VCP baud rate validated on the NUCLEO-U083RC."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "PWM Period",
+      "macro": "GMP_NUCLEO_PWM_PERIOD",
+      "binding": {"number": "1199"},
+      "description": "PWM auto-reload value for the 20 kHz center-aligned baseline."
+    },
+    {
+      "role": "PWM Deadtime",
+      "macro": "GMP_NUCLEO_PWM_DEADTIME",
+      "binding": {"number": "24"},
+      "description": "Advanced-timer dead-time register value for this target."
+    },
+    {
+      "role": "UART RX Buffer Size",
+      "macro": "GMP_NUCLEO_DL_RX_BUFFER_SIZE",
+      "binding": {"number": "256"},
+      "description": "Circular UART receive DMA buffer size."
+    }
+  ],
+  "requirement_groups": [
+    {"name": "Control Timing", "requirements": ["PWM Period", "PWM Deadtime"]},
+    {"name": "Datalink", "requirements": ["UART RX Buffer Size"]}
+  ],
+  "common_requirements": [],
+  "feature_macro_groups": [],
+  "option_macro_groups": ["Board", "Datalink"]
+}
+

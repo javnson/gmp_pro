@@ -158,9 +158,29 @@ def check_adc_feedback(
                         f"FB{index} does not match the fixed ADC sequence at {signal}",
                     )
                 else:
+                    conversion_id = next(
+                        (
+                            match.group(1)
+                            for key, value in ioc.items()
+                            if (
+                                match := re.fullmatch(
+                                    rf"{adc}\.Channel-(.+?)(?:\\)?#ChannelRegularConversion",
+                                    key,
+                                )
+                            )
+                            and value == f"ADC_CHANNEL_{channel}"
+                        ),
+                        None,
+                    )
                     selected_rank = (
-                        ioc.get(f"{adc}.Rank-{channel}#ChannelRegularConversion")
-                        or ioc.get(f"{adc}.Rank-{channel}\\#ChannelRegularConversion")
+                        ioc.get(
+                            f"{adc}.Rank-{conversion_id}#ChannelRegularConversion"
+                        )
+                        or ioc.get(
+                            f"{adc}.Rank-{conversion_id}\\#ChannelRegularConversion"
+                        )
+                        if conversion_id is not None
+                        else None
                     )
                     report.require(
                         selected_rank == rank,

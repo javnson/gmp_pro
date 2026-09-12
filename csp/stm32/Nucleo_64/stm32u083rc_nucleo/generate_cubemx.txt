@@ -1,0 +1,3 @@
+config load stm32u083rc_nucleo.ioc
+project generate
+exit
