@@ -7,7 +7,11 @@ param(
     [int]$BaudRate = 115200,
     [string]$HostAddress = "192.168.137.2",
     [int]$NetworkPort = 0,
-    [switch]$CaptureScope
+    [switch]$CaptureScope,
+    [ValidateRange(0, 1000000)]
+    [int]$StressCaptures = 0,
+    [ValidateRange(0, 1000000)]
+    [int]$ReconnectCycles = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -34,6 +38,14 @@ try {
         if ($LASTEXITCODE -ne 0) {
             throw "Serial DL verification failed with exit code $LASTEXITCODE"
         }
+        if ($StressCaptures -gt 0) {
+            & $python (Join-Path $PSScriptRoot "stress_dl.py") `
+                --protocol serial --port $SerialPort --baudrate $BaudRate `
+                --captures $StressCaptures
+            if ($LASTEXITCODE -ne 0) {
+                throw "Serial DL stress test failed with exit code $LASTEXITCODE"
+            }
+        }
     }
 
     if ($Link -in @("Both", "Ethernet")) {
@@ -50,6 +62,15 @@ try {
         & $python @networkArguments
         if ($LASTEXITCODE -ne 0) {
             throw "Ethernet DL verification failed with exit code $LASTEXITCODE"
+        }
+        if (($StressCaptures -gt 0) -or ($ReconnectCycles -gt 0)) {
+            & $python (Join-Path $PSScriptRoot "stress_dl.py") `
+                --protocol $protocolName --host $HostAddress `
+                --network-port $NetworkPort --captures $StressCaptures `
+                --reconnect-cycles $ReconnectCycles
+            if ($LASTEXITCODE -ne 0) {
+                throw "Ethernet DL stress test failed with exit code $LASTEXITCODE"
+            }
         }
     }
 }

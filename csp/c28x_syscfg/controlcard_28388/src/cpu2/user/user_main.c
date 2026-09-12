@@ -1,21 +1,12 @@
-/** @file cpu2_app.c CPU2 scheduler and deterministic sine-wave computation. */
+/** @file user_main.c CPU2 scheduler and deterministic waveform application. */
 
 #include <gmp_core.h>
 #include <core/pm/function_scheduler/function_scheduler.h>
 #include <math.h>
 
-#include "device.h"
-#include "driverlib.h"
 #include "tricore_shared.h"
-
-#pragma DATA_SECTION(cpu1_to_cpu2_command, "GMP_MSGRAM_CPU1_TO_CPU2")
-volatile gmp_wave_command_t cpu1_to_cpu2_command;
-#pragma DATA_SECTION(cm_to_cpu2_command, "GMP_MSGRAM_CM_TO_CPU")
-volatile gmp_wave_command_t cm_to_cpu2_command;
-#pragma DATA_SECTION(cpu2_to_cpu1_snapshot, "GMP_MSGRAM_CPU2_TO_CPU1")
-volatile gmp_wave_snapshot_t cpu2_to_cpu1_snapshot;
-#pragma DATA_SECTION(cpu2_to_cm_snapshot, "GMP_MSGRAM_CPU_TO_CM")
-volatile gmp_wave_snapshot_t cpu2_to_cm_snapshot;
+#include "user_main.h"
+#include <xplt.peripheral.h>
 
 static gmp_scheduler_t cpu2_scheduler;
 static volatile float wave_sine;
@@ -32,12 +23,13 @@ static uint32_t cpu2_read_command(const volatile gmp_wave_command_t *command,
                                   float *frequency, float *gain, float *offset)
 {
     uint32_t begin = command->sequence_begin;
+    uint32_t magic = command->magic;
     float local_frequency = command->frequency_hz;
     float local_gain = command->gain;
     float local_offset = command->offset;
     uint32_t end = command->sequence_end;
     if ((begin != end) || ((begin & 1UL) != 0UL) ||
-        (command->magic != GMP_TRICORE_MAGIC))
+        (magic != GMP_TRICORE_MAGIC))
         return 0UL;
     *frequency = local_frequency;
     *gain = local_gain;
@@ -113,7 +105,7 @@ static void cpu2_publish(volatile gmp_wave_snapshot_t *snapshot,
     snapshot->sequence_begin = sequence;
 }
 
-__interrupt static void cpu2_timer_isr(void)
+void user_cpu2_control_step(void)
 {
     float sine = wave_sine;
     float cosine = wave_cosine;
@@ -128,25 +120,6 @@ __interrupt static void cpu2_timer_isr(void)
     cpu2_publish(&cpu2_to_cm_snapshot, sine, cosine,
                  sine * wave_gain + wave_offset,
                  cosine * wave_gain + wave_offset, count);
-    gmp_step_system_tick();
-    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
-}
-
-void setup_peripheral(void)
-{
-    CPUTimer_stopTimer(CPUTIMER0_BASE);
-    CPUTimer_setPreScaler(CPUTIMER0_BASE, 0U);
-    /* CPU1 owns the PLL setup. CPU2 consumes the shared 200 MHz board clock
-     * contract instead of asking its pin-free SysConfig context to emit a
-     * second, potentially divergent clock tree. */
-    CPUTimer_setPeriod(CPUTIMER0_BASE,
-                       (GMP_F28388D_CPU_CLOCK_HZ / 1000UL) - 1UL);
-    CPUTimer_reloadTimerCounter(CPUTIMER0_BASE);
-    CPUTimer_setEmulationMode(CPUTIMER0_BASE, CPUTIMER_EMULATIONMODE_RUNFREE);
-    CPUTimer_enableInterrupt(CPUTIMER0_BASE);
-    Interrupt_register(INT_TIMER0, &cpu2_timer_isr);
-    Interrupt_enable(INT_TIMER0);
-    CPUTimer_startTimer(CPUTIMER0_BASE);
 }
 
 void init(void)

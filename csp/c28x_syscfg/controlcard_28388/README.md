@@ -68,6 +68,21 @@ capture the resulting two-channel waveform.
   and CM; its compile-time checks compare bit sizes rather than C `sizeof`
   units.
 
+Each core follows the standard GMP application/platform split:
+
+```text
+src/<core>/user/user_main.c,h       # GMP facilities, tasks, portable algorithm
+src/<core>/xplt/xplt.config.h       # CSP selection and build configuration
+src/<core>/xplt/xplt.peripheral.c,h # registers, ISRs, pins, transport binding
+src/<core>/xplt/xplt.ctl_interface.h# CTL platform extension point
+```
+
+All three `user` layers enter GMP through the common
+`setup_peripheral -> init -> mainloop` lifecycle and do not access DriverLib,
+lwIP, or board registers. Project import preserves these as `src/user` and
+`src/xplt`, so the application layer has the same shape as other standard GMP
+targets.
+
 Run the supported build entry point from this directory:
 
 ```powershell
@@ -81,8 +96,10 @@ directory.
 
 ## Flash and verify
 
-Flash CM first, CPU2 second, and CPU1 last. Starting CPU1 last is important:
-CPU1 establishes shared ownership and then boots CPU2 and CM from flash.
+Flash CM first, CPU2 second, and CPU1 last. The script then resumes all three
+debug sessions, allowing CPU1 and CM to cross both IPC boot barriers before
+resuming CPU2. This preserves CPU1-owned peripheral initialization while
+removing ambiguity when UniFlash/GEL leaves a secondary boot ROM halted.
 
 ```powershell
 .\tools\flash.ps1 -EthernetProtocol Tcp
@@ -92,6 +109,18 @@ CPU1 establishes shared ownership and then boots CPU2 and CM from flash.
 For UDP, rebuild both variants once, then select `Udp` in both commands. Add
 `-CaptureScope` to the test command to acquire and save a waveform after the
 Tunable, Memory, and Scope discovery checks pass.
+
+Use the same entry point for sustained triggering and TCP resource-reclamation
+stress:
+
+```powershell
+.\tools\test_dl.ps1 -Link Ethernet -EthernetProtocol Tcp `
+    -StressCaptures 200 -ReconnectCycles 100
+```
+
+This repeatedly configures, arms, and downloads Scope on one connection while
+interleaving Tunable and Memory reads every ten frames, then creates fresh TCP
+connections to verify that the target continues accepting clients.
 
 ## Hardware validation
 
@@ -108,16 +137,31 @@ without an active DSS debug session.
 | CM Ethernet TCP system-u16 | Tunable discovery/readback, Memory discovery/readback, two-channel 400-sample Scope capture | Pass |
 | CM Ethernet UDP system-u16 | Tunable discovery/readback, Memory discovery/readback, two-channel 400-sample Scope capture | Pass |
 
-During the TCP run, CM completed 37 request/response frames with zero DL,
-FIFO, CRC, network, or lwIP `ERR_MEM` errors. Its TCP send queue returned to
-zero after the client disconnected. During the UDP/serial combined run, CPU2
-completed 63,242 sine/cosine updates while all three scheduler heartbeats kept
-advancing. The final image left on CM is the verified TCP system-u16 variant.
+The sustained regression completed 200 consecutive two-channel, 400-sample
+captures on one TCP connection, with generation advancing frame-by-frame to
+201. It then completed 20 connection changes; a separate rapid test
+completed 100/100 reconnects. CPU1 serial completed 50 captures and UDP
+completed 100 captures. Every generation was consecutive, including the
+interleaved Tunable and Memory reads. The final CM Flash image is the verified
+TCP system-u16 variant.
 
-The TI `NO_SYS` Ethernet port delivers received packets from the EMAC interrupt
-path, while GMP prepares replies in the CM scheduler. Calls into the lwIP raw
-TCP API from the scheduler are therefore protected with the port's
-`SYS_ARCH_PROTECT` primitive to prevent concurrent PCB send-queue mutation.
+The TI `NO_SYS` Ethernet port delivers packets from the EMAC interrupt path.
+Its callback now only copies network octets into a 2048-byte single-producer,
+single-consumer ring; the CM scheduler drains that ring into GMP DL, keeping
+the parser and response state machine in one execution context. Scheduler
+access to the lwIP raw API remains protected with the port's
+`SYS_ARCH_PROTECT` primitive. TCP close also detaches callbacks and explicitly
+aborts a PCB when `tcp_close` cannot reclaim it. If a new connection arrives
+before the old connection's FIN, the listener reclaims the stale PCB and
+adopts the newest client, preventing gradual resource loss during sustained
+captures or rapid reconnects.
+
+The original hang risk was concurrent mutation of one GMP DL parser/transmit
+state from the EMAC interrupt callback and the CM scheduler, not only
+concurrent lwIP PCB access. Scope `state/generation` readback is also protected
+by a critical section so a C28x interrupt cannot tear the 32-bit generation.
+CPU1/CM now consume a complete seqlock snapshot from CPU2, and parameter
+commands are published only when values change, reducing message-RAM traffic.
 
 ## Current protocol scope
 

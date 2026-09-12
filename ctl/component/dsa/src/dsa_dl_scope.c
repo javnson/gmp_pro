@@ -141,11 +141,15 @@ static gmp_scope_capture_state_t ctl_dsa_dl_scope_status(void* user_context,
                                                          uint32_t* generation)
 {
     ctl_dsa_dl_scope_t* scope = (ctl_dsa_dl_scope_t*)user_context;
+    gmp_scope_capture_state_t state;
     if (scope == NULL)
         return GMP_SCOPE_STATE_WAITING;
+    gmp_base_enter_critical();
     if (generation != NULL)
         *generation = scope->generation;
-    return scope->state;
+    state = scope->state;
+    gmp_base_leave_critical();
+    return state;
 }
 
 void ctl_init_dsa_dl_scope(ctl_dsa_dl_scope_t* scope, gmp_datalink_t* dl,

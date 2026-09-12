@@ -1,4 +1,4 @@
-/** @file cpu1_app.c CPU1 scheduler and native-u16 SCI Data Link endpoint. */
+/** @file user_main.c CPU1 application, scheduler and serial Data Link service. */
 
 #include <gmp_core.h>
 #include <core/dev/datalink/mem_presp.h>
@@ -6,10 +6,9 @@
 #include <core/pm/function_scheduler/function_scheduler.h>
 #include <ctl/component/dsa/dsa_dl_scope.h>
 
-#include "device.h"
-#include "driverlib.h"
-#include "board.h"
 #include "tricore_shared.h"
+#include "user_main.h"
+#include <xplt.peripheral.h>
 
 #if GMP_PORT_DATA_SIZE_PER_BYTES != 2
 #error "F28388D CPU1 must use the native C28x u16 Data Link backend"
@@ -21,11 +20,6 @@
 #define CPU1_SCOPE_DEPTH     (400UL)
 #define CPU1_SCOPE_CHANNELS  (2U)
 
-#pragma DATA_SECTION(cpu1_to_cpu2_command, "GMP_MSGRAM_CPU1_TO_CPU2")
-volatile gmp_wave_command_t cpu1_to_cpu2_command;
-#pragma DATA_SECTION(cpu2_to_cpu1_snapshot, "GMP_MSGRAM_CPU2_TO_CPU1")
-volatile gmp_wave_snapshot_t cpu2_to_cpu1_snapshot;
-
 static gmp_datalink_t cpu1_datalink;
 static gmp_param_tunable_t cpu1_tunable;
 static gmp_mem_persp_t cpu1_memory;
@@ -34,8 +28,6 @@ static ctrl_gt cpu1_scope_storage[
     CTL_DSA_DL_SCOPE_STORAGE_ELEMENTS(CPU1_SCOPE_CHANNELS, CPU1_SCOPE_DEPTH)];
 static byte_gt cpu1_scratch[64];
 static gmp_scheduler_t cpu1_scheduler;
-
-void cpu1_board_initialize_and_handoff(void);
 
 float cpu2_frequency_hz = GMP_TRICORE_DEFAULT_FREQ_HZ;
 float cpu2_gain = 1.0F;
@@ -60,7 +52,15 @@ static const gmp_mem_region_t cpu1_memory_regions[] = {
 
 static void cpu1_publish_command(void)
 {
-    uint32_t sequence = cpu1_to_cpu2_command.sequence_end + 2UL;
+    static float published_frequency;
+    static float published_gain;
+    static float published_offset;
+    static fast_gt initialized;
+    uint32_t sequence;
+    if (initialized && published_frequency == cpu2_frequency_hz &&
+        published_gain == cpu2_gain && published_offset == cpu2_offset)
+        return;
+    sequence = cpu1_to_cpu2_command.sequence_end + 2UL;
     cpu1_to_cpu2_command.sequence_begin = sequence | 1UL;
     cpu1_to_cpu2_command.magic = GMP_TRICORE_MAGIC;
     cpu1_to_cpu2_command.frequency_hz = cpu2_frequency_hz;
@@ -68,46 +68,29 @@ static void cpu1_publish_command(void)
     cpu1_to_cpu2_command.offset = cpu2_offset;
     cpu1_to_cpu2_command.sequence_end = sequence;
     cpu1_to_cpu2_command.sequence_begin = sequence;
-}
-
-static void cpu1_poll_sci(void)
-{
-    byte_gt buffer[16];
-    size_gt count = (size_gt)SCI_getRxFIFOStatus(SCIA_BASE);
-    size_gt index;
-    if (count > 16U)
-        count = 16U;
-    for (index = 0U; index < count; ++index)
-        buffer[index] = (byte_gt)(SCI_readCharNonBlocking(SCIA_BASE) & 0xFFU);
-    if (count != 0U)
-        gmp_dev_dl_push_str(&cpu1_datalink, buffer, count);
-}
-
-static void cpu1_send_frame(void)
-{
-    SCI_writeCharArray(SCIA_BASE,
-        (const uint16_t *)gmp_dev_dl_get_tx_hw_hdr_ptr(&cpu1_datalink),
-        (uint16_t)gmp_dev_dl_get_tx_hw_hdr_size(&cpu1_datalink));
-    if (gmp_dev_dl_get_tx_hw_pld_size(&cpu1_datalink) != 0U)
-        SCI_writeCharArray(SCIA_BASE,
-            (const uint16_t *)gmp_dev_dl_get_tx_hw_pld_ptr(&cpu1_datalink),
-            (uint16_t)gmp_dev_dl_get_tx_hw_pld_size(&cpu1_datalink));
-    while (SCI_isTransmitterBusy(SCIA_BASE))
-    {
-    }
-    gmp_dev_dl_tx_state_done(&cpu1_datalink);
+    published_frequency = cpu2_frequency_hz;
+    published_gain = cpu2_gain;
+    published_offset = cpu2_offset;
+    initialized = 1;
 }
 
 static gmp_task_status_t cpu1_dl_task(gmp_task_t *task)
 {
     gmp_dl_event_t event;
     GMP_UNUSED_VAR(task);
-    cpu1_poll_sci();
+    xplt_cpu1_dl_receive(&cpu1_datalink);
     event = gmp_dev_dl_loop_cb(&cpu1_datalink);
     if (event == GMP_DL_EVENT_TX_RDY)
-        cpu1_send_frame();
+    {
+        if (xplt_cpu1_dl_send(&cpu1_datalink))
+            gmp_dev_dl_tx_state_done(&cpu1_datalink);
+        else
+            cpu1_dl_errors++;
+    }
     else if (event == GMP_DL_EVENT_RX_OK)
+    {
         (void)gmp_dev_dl_dispatch_rx(&cpu1_datalink);
+    }
     cpu1_publish_command();
     return GMP_TASK_DONE;
 }
@@ -115,7 +98,7 @@ static gmp_task_status_t cpu1_dl_task(gmp_task_t *task)
 static gmp_task_status_t cpu1_led_task(gmp_task_t *task)
 {
     GMP_UNUSED_VAR(task);
-    GPIO_togglePin(LED1);
+    xplt_cpu1_toggle_status_led();
     return GMP_TASK_DONE;
 }
 
@@ -124,50 +107,16 @@ static gmp_task_t cpu1_tasks[] = {
     {"heartbeat", cpu1_led_task, 500U, 0U, 1, NULL}
 };
 
-__interrupt static void cpu1_timer_isr(void)
+void user_cpu1_control_step(void)
 {
+    gmp_wave_snapshot_t snapshot;
     cpu1_timer_ticks++;
-    gmp_step_system_tick();
-    if (gmp_wave_snapshot_valid(&cpu2_to_cpu1_snapshot))
+    if (gmp_wave_snapshot_read(&cpu2_to_cpu1_snapshot, &snapshot))
     {
         ctl_step_dsa_dl_scope_2ch(&cpu1_scope,
-            real2ctrl(cpu2_to_cpu1_snapshot.scaled_sine),
-            real2ctrl(cpu2_to_cpu1_snapshot.scaled_cosine));
+            real2ctrl(snapshot.scaled_sine), real2ctrl(snapshot.scaled_cosine));
         cpu1_snapshot_updates++;
     }
-    Interrupt_clearACKGroup(INTERRUPT_ACK_GROUP1);
-}
-
-static void cpu1_init_sci_transport(void)
-{
-    SCI_performSoftwareReset(SCIA_BASE);
-    SCI_setConfig(SCIA_BASE, DEVICE_LSPCLK_FREQ, GMP_F28388D_SCI_BAUDRATE,
-                  SCI_CONFIG_WLEN_8 | SCI_CONFIG_STOP_ONE | SCI_CONFIG_PAR_NONE);
-    SCI_resetChannels(SCIA_BASE);
-    SCI_enableFIFO(SCIA_BASE);
-    SCI_setFIFOInterruptLevel(SCIA_BASE, SCI_FIFO_TX0, SCI_FIFO_RX1);
-    SCI_enableModule(SCIA_BASE);
-    SCI_performSoftwareReset(SCIA_BASE);
-}
-
-static void cpu1_init_timer(void)
-{
-    CPUTimer_stopTimer(CPUTIMER0_BASE);
-    CPUTimer_setPreScaler(CPUTIMER0_BASE, 0U);
-    CPUTimer_setPeriod(CPUTIMER0_BASE, (DEVICE_SYSCLK_FREQ / 1000UL) - 1UL);
-    CPUTimer_reloadTimerCounter(CPUTIMER0_BASE);
-    CPUTimer_setEmulationMode(CPUTIMER0_BASE, CPUTIMER_EMULATIONMODE_RUNFREE);
-    CPUTimer_enableInterrupt(CPUTIMER0_BASE);
-    Interrupt_register(INT_TIMER0, &cpu1_timer_isr);
-    Interrupt_enable(INT_TIMER0);
-    CPUTimer_startTimer(CPUTIMER0_BASE);
-}
-
-void setup_peripheral(void)
-{
-    cpu1_board_initialize_and_handoff();
-    cpu1_init_sci_transport();
-    cpu1_init_timer();
 }
 
 void init(void)
@@ -198,12 +147,13 @@ void init(void)
 
     cpu1_publish_command();
     gmp_scheduler_init(&cpu1_scheduler);
-    for (task_index = 0U; task_index < sizeof(cpu1_tasks) / sizeof(cpu1_tasks[0]); ++task_index)
+    for (task_index = 0U;
+         task_index < sizeof(cpu1_tasks) / sizeof(cpu1_tasks[0]);
+         ++task_index)
         (void)gmp_scheduler_add_task(&cpu1_scheduler, &cpu1_tasks[task_index]);
 }
 
 void mainloop(void)
 {
-    cpu1_poll_sci();
     gmp_scheduler_dispatch(&cpu1_scheduler);
 }

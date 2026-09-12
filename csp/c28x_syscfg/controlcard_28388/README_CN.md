@@ -60,6 +60,19 @@ USB device 模式、EtherCAT ESC RAM 初始化和共享外设分配，然后才�
 - `src/common/tricore_shared.h` 定义三核消息 RAM ABI；静态检查按 bit 数比较，避免
   C28x 的 16-bit `CHAR_BIT` 和 CM 的 8-bit `CHAR_BIT` 造成误判。
 
+每个内核均使用 GMP 标准的应用/平台分层：
+
+```text
+src/<core>/user/user_main.c,h       # GMP 设施、调度任务和平台无关算法
+src/<core>/xplt/xplt.config.h       # CSP 选择与编译配置
+src/<core>/xplt/xplt.peripheral.c,h # 寄存器、ISR、引脚和通信适配
+src/<core>/xplt/xplt.ctl_interface.h# CTL 平台接口扩展点
+```
+
+三个 `user` 层统一通过 `setup_peripheral -> init -> mainloop` 生命周期进入 GMP，
+不直接访问 DriverLib、lwIP 或板级寄存器。导入 CCS 工程时，上述目录仍保持为
+`src/user` 和 `src/xplt`，便于与其他标准 GMP 工程互换应用层。
+
 在本目录运行统一构建入口：
 
 ```powershell
@@ -72,8 +85,9 @@ USB device 模式、EtherCAT ESC RAM 初始化和共享外设分配，然后才�
 
 ## 烧录和验证
 
-烧录顺序固定为 CM → CPU2 → CPU1，且最后启动 CPU1。这样 CPU1 先建立共享外设
-归属，再从 Flash 启动 CPU2 和 CM。
+烧录顺序固定为 CM → CPU2 → CPU1，且最后启动 CPU1。脚本随后恢复三个调试会话：
+先让 CPU1 和 CM 完成两道 IPC 启动屏障，再恢复 CPU2。这样既保证 CPU1 先建立共享
+外设归属，也消除了 UniFlash/GEL 偶尔把从核 boot ROM 留在暂停状态的歧义。
 
 ```powershell
 .\tools\flash.ps1 -EthernetProtocol Tcp
@@ -82,6 +96,16 @@ USB device 模式、EtherCAT ESC RAM 初始化和共享外设分配，然后才�
 
 验证 UDP 时把两个命令中的协议改为 `Udp`。在 DL 发现和读回通过后，可给测试命令
 增加 `-CaptureScope`，进一步采集一帧波形。
+
+持续触发与 TCP 连接回收使用同一个入口进行压力验证：
+
+```powershell
+.\tools\test_dl.ps1 -Link Ethernet -EthernetProtocol Tcp `
+    -StressCaptures 200 -ReconnectCycles 100
+```
+
+压力测试在同一连接中连续配置、触发并下载 Scope，同时每十帧穿插 Tunable 和
+Memory 读回；随后反复建立新连接，检查目标能否持续接受客户端。
 
 ## 实板验证结果
 
@@ -96,14 +120,23 @@ Flash 启动状态下，串口和 TCP 两行测试再次完整通过。
 | CM Ethernet TCP system-u16 | Tunable 发现/读回、Memory 发现/读回、双通道 400 点 Scope 采集 | 通过 |
 | CM Ethernet UDP system-u16 | Tunable 发现/读回、Memory 发现/读回、双通道 400 点 Scope 采集 | 通过 |
 
-TCP 测试期间 CM 完成 37 组请求/响应，DL、FIFO、CRC、网络和 lwIP `ERR_MEM` 错误
-均为 0，客户端断开后 TCP 发送队列回到 0。UDP 与串口联合测试期间，CPU2 完成
-63,242 次正弦/余弦更新，三个内核的调度器心跳均持续推进。当前留在 CM Flash 中的
-是已校验通过的 TCP system-u16 镜像。
+本轮压力回归在同一 TCP 连接上连续完成 200 次双通道 400 点采集，generation 逐帧
+连续推进到 201；随后完成 20 次连接切换，另一次快速重连测试完成 100/100 次。
+CPU1 串口连续完成 50 次采集，UDP 连续完成 100 次采集，所有代次均连续且期间穿插
+的 Tunable/Memory 读回均成功。最终留在 CM Flash 中的是已校验通过的 TCP
+system-u16 镜像。
 
-TI `NO_SYS` Ethernet 移植会在 EMAC 中断路径中提交接收报文，而 GMP 在 CM
-调度器中生成应答。为避免两个上下文并发修改 lwIP raw TCP PCB 的发送队列，调度器
-对 raw API 的访问使用该移植提供的 `SYS_ARCH_PROTECT` 原语保护。
+TI `NO_SYS` Ethernet 移植会在 EMAC 中断路径中提交接收报文。中断回调现在只把
+网络字节写入 2048-byte 单生产者/单消费者环形缓冲区，CM 调度器再把数据送入 GMP
+DL，因此 DL 解析器和应答状态机始终只在一个执行上下文中运行。调度器对 lwIP raw
+API 的访问仍使用该移植提供的 `SYS_ARCH_PROTECT` 原语保护；TCP 断开时会清理回调，
+并在 `tcp_close` 无法回收 PCB 时显式 abort；当新连接先于旧连接的 FIN 到达时，
+监听器会回收旧 PCB 并接管最新客户端，避免连续触发或快速重连后资源逐渐耗尽。
+
+原卡死风险来自 EMAC 中断回调和 CM 调度任务同时修改同一个 GMP DL 解析/发送状态，
+而不仅是 lwIP PCB 的并发访问。Scope 的 `state/generation` 读回也已纳入临界区，
+避免 C28x 上 32-bit generation 被中断写穿。CPU1/CM 与 CPU2 之间的波形快照改为
+完整 seqlock 复制后再使用，参数命令只在数值变化时发布，减少三核消息 RAM 竞争。
 
 ## 当前协议完成范围
 

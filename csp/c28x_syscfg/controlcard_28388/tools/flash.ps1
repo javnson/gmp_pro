@@ -2,6 +2,7 @@ param(
     [ValidateSet("Tcp", "Udp")]
     [string]$EthernetProtocol = "Tcp",
     [string]$UniFlashRoot = "C:\ti\uniflash_8.8.1",
+    [string]$CcsRoot = "C:\ti\ccs1281",
     [string]$ArtifactDirectory = "",
     [int]$TimeoutSeconds = 300,
     [switch]$ListCoresOnly
@@ -10,13 +11,14 @@ param(
 $ErrorActionPreference = "Stop"
 $targetRoot = Split-Path -Parent $PSScriptRoot
 $dslite = Join-Path $UniFlashRoot "dslite.bat"
+$dss = Join-Path $CcsRoot "ccs\ccs_base\scripting\bin\dss.bat"
 $ccxml = Join-Path $targetRoot `
     "C2000Lib_F28388D\targetConfigs\TMS320F28388D.ccxml"
 if (-not $ArtifactDirectory) {
     $ArtifactDirectory = Join-Path $targetRoot "artifacts"
 }
 
-foreach ($required in @($dslite, $ccxml)) {
+foreach ($required in @($dslite, $dss, $ccxml)) {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
         throw "Required file not found: $required"
     }
@@ -58,4 +60,14 @@ foreach ($image in $images) {
     }
 }
 
-Write-Host "F28388D images verified; CPU1 was started and will boot CPU2 and CM."
+Write-Host "Resuming CPU1, CM, and CPU2 through the two IPC boot barriers..."
+$cpu1Image = Join-Path $ArtifactDirectory "gmp_f28388d_controlcard_cpu1.out"
+$cpu2Image = Join-Path $ArtifactDirectory "gmp_f28388d_controlcard_cpu2.out"
+$cmImage = Join-Path $ArtifactDirectory "gmp_f28388d_controlcard_cm_${cmSuffix}_u16.out"
+& $dss (Join-Path $PSScriptRoot "resume_tricore.js") $ccxml `
+    $cpu1Image $cpu2Image $cmImage
+if ($LASTEXITCODE -ne 0) {
+    throw "Tri-core resume failed with exit code $LASTEXITCODE"
+}
+
+Write-Host "F28388D images verified; CPU1, CPU2, and CM were released."
