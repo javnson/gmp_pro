@@ -20,6 +20,12 @@
 
 // System Tick
 time_gt DSPC2000_SystemTick = 0;
+static volatile uint16_t gmp_csp_started = 0U;
+
+#if SPECIFY_GMP_OS_BACKEND == GMP_OS_BACKEND_FREERTOS
+/** RTOS project hook that creates tasks and starts the kernel. */
+extern void gmp_rtos_app_start(void);
+#endif
 
 // User should invoke this function to get time (system tick).
 time_gt gmp_base_get_system_tick(void)
@@ -44,6 +50,13 @@ void gmp_step_system_tick(void)
 // This function may be called and used to initialize all the peripheral.
 void gmp_csp_startup(void)
 {
+    /* RTOS projects bootstrap the device before starting the kernel.  The GMP
+     * service task later calls gmp_base_prepare(), so make this stage safely
+     * idempotent instead of initializing the PIE and SysConfig twice. */
+    if (gmp_csp_started != 0U)
+    {
+        return;
+    }
 
     // #ifndef _C2000_CSP_DISBALE_LINKER_CMD_TOOL_
     //     //
@@ -118,6 +131,7 @@ void gmp_csp_startup(void)
 
     // clear System tick counter
     DSPC2000_SystemTick = 0;
+    gmp_csp_started = 1U;
 }
 
 void gmp_csp_loop()
@@ -129,7 +143,9 @@ void gmp_csp_post_process()
     //
     // Enable Global Interrupts (INTM) and realtime interrupt (DGBM)
     //
+#if SPECIFY_GMP_OS_BACKEND != GMP_OS_BACKEND_FREERTOS
     EINT;
+#endif
     ERTM;
 }
 
@@ -164,5 +180,15 @@ size_gt gmp_base_print_c28xsyscfg(const char* p_fmt, ...)
 // main function, user no need for repeated definition.
 void main()
 {
+#if SPECIFY_GMP_OS_BACKEND == GMP_OS_BACKEND_FREERTOS
+    /* CPU Timer2/INT14 and context switching belong to the TI FreeRTOS port.
+     * Device/PIE/SysConfig setup must exist before the scheduler starts. */
+    gmp_csp_startup();
+    gmp_rtos_app_start();
+    for (;;)
+    {
+    }
+#else
     gmp_base_entry();
+#endif
 }

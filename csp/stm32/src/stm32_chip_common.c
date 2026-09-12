@@ -129,7 +129,8 @@ void gmp_port_system_stuck(void)
 }
 
 // This function would be called when all the initilization process happened.
-void gmp_csp_post_process(void)
+GMP_WEAK_FUNC_PREFIX
+void gmp_csp_post_process(void) GMP_WEAK_FUNC_SUFFIX
 {
 }
 

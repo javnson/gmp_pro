@@ -238,7 +238,7 @@ extern "C"
 /**
  * @brief FB0 injected rank or regular-DMA buffer index.
  */
-#define NUCLEO_H753ZI_ADC_FB0_RANK 0
+#define NUCLEO_H753ZI_ADC_FB0_RANK 5
 
 /**
  * @brief FB0 physical MCU pin.
@@ -268,7 +268,7 @@ extern "C"
 /**
  * @brief FB2 injected rank or regular-DMA buffer index.
  */
-#define NUCLEO_H753ZI_ADC_FB2_RANK 2
+#define NUCLEO_H753ZI_ADC_FB2_RANK 0
 
 /**
  * @brief FB2 physical MCU pin.
@@ -313,7 +313,7 @@ extern "C"
 /**
  * @brief FB5 injected rank or regular-DMA buffer index.
  */
-#define NUCLEO_H753ZI_ADC_FB5_RANK 5
+#define NUCLEO_H753ZI_ADC_FB5_RANK 2
 
 /**
  * @brief FB5 physical MCU pin.
@@ -369,6 +369,51 @@ extern "C"
  * @brief GPIO state that turns the LED off.
  */
 #define NUCLEO_H753ZI_STATUS_LED_OFF GPIO_PIN_RESET
+
+/**
+ * @brief Number of onboard user status LEDs.
+ */
+#define NUCLEO_H753ZI_STATUS_LED_COUNT (3U)
+
+/**
+ * @brief Second user LED GPIO port.
+ */
+#define NUCLEO_H753ZI_STATUS_LED2_PORT GPIOB
+
+/**
+ * @brief Second user LED GPIO pin mask.
+ */
+#define NUCLEO_H753ZI_STATUS_LED2_PIN GPIO_PIN_7
+
+/**
+ * @brief GPIO state that lights the second LED.
+ */
+#define NUCLEO_H753ZI_STATUS_LED2_ON GPIO_PIN_SET
+
+/**
+ * @brief GPIO state that turns the second LED off.
+ */
+#define NUCLEO_H753ZI_STATUS_LED2_OFF GPIO_PIN_RESET
+
+/**
+ * @brief Third user LED GPIO port.
+ */
+#define NUCLEO_H753ZI_STATUS_LED3_PORT GPIOB
+
+/**
+ * @brief Third user LED GPIO pin mask.
+ */
+#define NUCLEO_H753ZI_STATUS_LED3_PIN GPIO_PIN_14
+
+/**
+ * @brief GPIO state that lights the third LED.
+ */
+#define NUCLEO_H753ZI_STATUS_LED3_ON GPIO_PIN_SET
+
+/**
+ * @brief GPIO state that turns the third LED off.
+ */
+#define NUCLEO_H753ZI_STATUS_LED3_OFF GPIO_PIN_RESET
 
 /**
  * @brief Arduino I2C HAL handle.

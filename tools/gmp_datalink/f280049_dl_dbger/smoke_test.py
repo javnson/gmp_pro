@@ -103,6 +103,9 @@ def read_frame(port: serial.Serial, timeout: float = 1.0) -> Frame:
 
 def transact(port: serial.Serial, sequence: int, command: int, payload: bytes = b"") -> bytes:
     """Send one request and return its matching response payload."""
+    # Leave the XDS110 USB-to-UART bridge a short turnaround interval after
+    # the preceding response before starting another host-to-target burst.
+    time.sleep(0.002)
     port.write(encode_frame(sequence, command, payload))
     port.flush()
     while True:
@@ -130,33 +133,48 @@ def discover_port() -> str:
 def run_smoke_test(port_name: str, baudrate: int) -> None:
     """Validate SCI transport, discovery, read/write services, and Scope capture."""
     with serial.Serial(port_name, baudrate, timeout=0.05, write_timeout=1.0) as port:
+        # XDS110 can discard the first character while the Application/User
+        # UART endpoint settles immediately after opening the COM handle.
+        time.sleep(0.05)
         port.reset_input_buffer()
         sequence = 1
 
         info = transact(port, sequence, 0x02)
-        expected_info = bytes(
-            (3, 2, 1, 16, 4, 4, 0x10, 5, 1, 0x30, 2,
-             2, 0x50, 2, 3, 0x60, 1)
-        )
-        if info != expected_info:
+        if len(info) < 5 or info[:4] != bytes((3, 2, 1, 16)):
             raise AssertionError(f"Unexpected target info: {info.hex(' ')}")
+        facility_count = info[4]
+        if len(info) != 5 + facility_count * 3:
+            raise AssertionError(f"Malformed target facility list: {info.hex(' ')}")
+        facilities = {
+            tuple(info[offset:offset + 3])
+            for offset in range(5, len(info), 3)
+        }
+        required_facilities = {
+            (1, 0x30, 2),
+            (2, 0x50, 2),
+            (3, 0x60, 1),
+        }
+        if not required_facilities.issubset(facilities):
+            raise AssertionError(f"Required facilities are missing: {info.hex(' ')}")
+        pil_enabled = (4, 0x10, 5) in facilities
 
-        sequence += 1
-        pil_tx_mask = 0x00010001
-        pil_rx_mask = 0x01000001
-        pil_masks = transact(port, sequence, 0x11, struct.pack("<II", pil_tx_mask, pil_rx_mask))
-        if pil_masks != struct.pack("<II", pil_tx_mask, pil_rx_mask):
-            raise AssertionError(f"PIL mask synchronization failed: {pil_masks.hex(' ')}")
-        sequence += 1
-        pil_step = transact(
-            port, sequence, 0x12,
-            struct.pack("<IIHf", 1234, 0xA55A5AA5, 3210, 1.25),
-        )
-        if len(pil_step) != 10:
-            raise AssertionError(f"Unexpected PIL STEP length: {len(pil_step)}")
-        pil_digital, pil_pwm, pil_monitor = struct.unpack("<IHf", pil_step)
-        if (pil_digital, pil_pwm) != (0xA55A5AA5, 3210) or abs(pil_monitor - 1.25) > 1.0e-6:
-            raise AssertionError("PIL STEP did not preserve the selected inputs")
+        if pil_enabled:
+            sequence += 1
+            pil_tx_mask = 0x00010001
+            pil_rx_mask = 0x01000001
+            pil_masks = transact(port, sequence, 0x11, struct.pack("<II", pil_tx_mask, pil_rx_mask))
+            if pil_masks != struct.pack("<II", pil_tx_mask, pil_rx_mask):
+                raise AssertionError(f"PIL mask synchronization failed: {pil_masks.hex(' ')}")
+            sequence += 1
+            pil_step = transact(
+                port, sequence, 0x12,
+                struct.pack("<IIHf", 1234, 0xA55A5AA5, 3210, 1.25),
+            )
+            if len(pil_step) != 10:
+                raise AssertionError(f"Unexpected PIL STEP length: {len(pil_step)}")
+            pil_digital, pil_pwm, pil_monitor = struct.unpack("<IHf", pil_step)
+            if (pil_digital, pil_pwm) != (0xA55A5AA5, 3210) or abs(pil_monitor - 1.25) > 1.0e-6:
+                raise AssertionError("PIL STEP did not preserve the selected inputs")
 
         sequence += 1
         echo_payload = b"GMP-u16-{%}-\x00"
@@ -320,7 +338,10 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
 
     print(f"PASS: u16 Data Link validated on {port_name} at {baudrate} baud")
     print(f"      Memory discovery: {memory_name}, 0x{memory_address:08X}, {memory_length} bytes")
-    print(f"      PIL: mask synchronization and STEP loopback validated")
+    if pil_enabled:
+        print("      PIL: mask synchronization and STEP loopback validated")
+    else:
+        print("      PIL: not advertised (normal physical-control mode)")
     print(f"      Tunable discovery: {len(tunable_names)} physical signal parameters")
     print(
         f"      Scope: {scope_name}, generation {generation}, {depth} x {channels} float32, "

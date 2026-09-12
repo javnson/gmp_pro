@@ -9,6 +9,11 @@
 #define GMP_LOGO_MODE_LITE     ((0x01))
 #define GMP_LOGO_MODE_DISABLED ((0xFF))
 
+// GMP execution environment selections. The OS owns scheduling whenever an
+// RTOS backend is selected; GMP only contributes a non-blocking service task.
+#define GMP_OS_BACKEND_NONE     ((0x00))
+#define GMP_OS_BACKEND_FREERTOS ((0x01))
+
 // Selections of Memory controller functions
 #define USING_DEFAULT_SYSTEM_DEFAULT_FUNCTION ((0x01))
 #define USING_GMP_BLOCK_DEFAULT_FUNCTION      ((0x02))

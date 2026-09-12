@@ -11,6 +11,11 @@
 
 #include <csp.config.h>
 
+#if SPECIFY_GMP_OS_BACKEND == GMP_OS_BACKEND_FREERTOS
+#include <FreeRTOS.h>
+#include <task.h>
+#endif
+
 //
 // Instert a software breakpoint right here
 // GMP library Debug Software Break Point Macro
@@ -22,14 +27,39 @@
 /** @brief Enter a global interrupt critical section. */
 GMP_STATIC_INLINE void gmp_base_enter_critical(void)
 {
+#if SPECIFY_GMP_OS_BACKEND == GMP_OS_BACKEND_FREERTOS
+    taskENTER_CRITICAL();
+#else
     __disable_irq();
+#endif
 }
 
 /** @brief Leave a global interrupt critical section. */
 GMP_STATIC_INLINE void gmp_base_leave_critical(void)
 {
+#if SPECIFY_GMP_OS_BACKEND == GMP_OS_BACKEND_FREERTOS
+    taskEXIT_CRITICAL();
+#else
     __enable_irq();
+#endif
 }
+
+#if SPECIFY_GMP_OS_BACKEND == GMP_OS_BACKEND_FREERTOS
+/** Saved interrupt mask used by explicit ISR-side critical sections. */
+typedef UBaseType_t gmp_isr_critical_state_t;
+
+GMP_STATIC_INLINE gmp_isr_critical_state_t
+gmp_base_enter_critical_from_isr(void)
+{
+    return taskENTER_CRITICAL_FROM_ISR();
+}
+
+GMP_STATIC_INLINE void
+gmp_base_leave_critical_from_isr(gmp_isr_critical_state_t state)
+{
+    taskEXIT_CRITICAL_FROM_ISR(state);
+}
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 // Step II: Invoke all the STM32 general headers.

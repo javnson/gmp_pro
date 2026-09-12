@@ -1,0 +1,103 @@
+{
+  "id": "gmp_c2000_launchpad_reference",
+  "macro_prefix": "GMP_C2000_LAUNCHPAD",
+  "display_name": "GMP C2000 LaunchPad Reference Application",
+  "description": "Portable control-ready LaunchPad example with complete BOOSTXL ADC/DAC/PWM routing, Data Link and CAN.",
+  "suite": "c28x_syscfg_launchpad",
+  "version": "0.3.0",
+  "updated_at": "2026-08-16",
+  "output_header": "ctrl_settings.h",
+  "hardware": [],
+  "option_macros": [],
+  "feature_macros": [
+    {
+      "group": "Reference Features",
+      "macro": "LAUNCHPAD_ENABLE_ADC_TO_DAC",
+      "enabled": true,
+      "weak": false,
+      "value": "",
+      "description": "Mirror the normalized control ADC sample to an external DAC when the selected device provides one."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "PWM Switching Frequency",
+      "macro": "GMP_LAUNCHPAD_PWM_FREQUENCY_HZ",
+      "binding": { "number": "20000" },
+      "description": "Center-aligned switching and ADC control-interrupt frequency applied to all six BOOSTXL ePWM pairs during peripheral initialization."
+    },
+    {
+      "role": "UART Baud Rate",
+      "macro": "GMP_DL_UART_BAUDRATE",
+      "binding": { "number": "115200" },
+      "description": "XDS virtual COM Data Link baud rate."
+    },
+    {
+      "role": "CAN Nominal Baud Rate",
+      "macro": "GMP_CAN_NOMINAL_BAUDRATE",
+      "binding": { "number": "1000000" },
+      "description": "Classic CAN or MCAN nominal bit rate."
+    },
+    {
+      "role": "CAN Receive Identifier",
+      "macro": "GMP_CAN_RX_ID",
+      "binding": { "number": "0x101" },
+      "description": "Standard identifier accepted by the reference command object."
+    },
+    {
+      "role": "CAN Telemetry Identifier",
+      "macro": "GMP_CAN_TX_ID",
+      "binding": { "number": "0x201" },
+      "description": "Standard identifier used for ADC/PWM telemetry."
+    },
+    {
+      "role": "CAN Telemetry Period",
+      "macro": "GMP_CAN_TX_PERIOD_MS",
+      "binding": { "number": "100" },
+      "description": "Non-blocking CAN telemetry period."
+    },
+    {
+      "role": "Data Link Task Period",
+      "macro": "GMP_DATALINK_TASK_PERIOD_MS",
+      "binding": { "number": "2" },
+      "description": "Scheduler period for the serial Data Link service."
+    },
+    {
+      "role": "CAN Task Period",
+      "macro": "GMP_CAN_TASK_PERIOD_MS",
+      "binding": { "number": "2" },
+      "description": "Independent scheduler period for CAN or MCAN service."
+    },
+    {
+      "role": "Heartbeat Task Period",
+      "macro": "GMP_HEARTBEAT_TASK_PERIOD_MS",
+      "binding": { "number": "500" },
+      "description": "Scheduler period for the user LED task."
+    },
+    {
+      "role": "PIL Data Link Base Command",
+      "macro": "GMP_PIL_DL_BASE_COMMAND",
+      "binding": { "number": "16" },
+      "description": "Base command reserved for optional GMP PIL service."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Control Timing",
+      "requirements": ["PWM Switching Frequency"]
+    },
+    {
+      "name": "Communication",
+      "requirements": [
+        "UART Baud Rate", "CAN Nominal Baud Rate", "CAN Receive Identifier",
+        "CAN Telemetry Identifier", "CAN Telemetry Period", "PIL Data Link Base Command"
+      ]
+    },
+    {
+      "name": "Scheduler",
+      "requirements": ["Data Link Task Period", "CAN Task Period", "Heartbeat Task Period"]
+    }
+  ],
+  "feature_macro_groups": ["Reference Features"],
+  "option_macro_groups": []
+}

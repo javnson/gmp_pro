@@ -15,3 +15,10 @@
 /.mxproject
 /MDK-ARM/
 /stm32f411re_nucleo/
+/*.log
+/STM32CubeIDE/Debug/
+/STM32CubeIDE/Release/
+/STM32CubeIDE/CM4/Debug/
+/STM32CubeIDE/CM4/Release/
+/STM32CubeIDE/CM7/Debug/
+/STM32CubeIDE/CM7/Release/

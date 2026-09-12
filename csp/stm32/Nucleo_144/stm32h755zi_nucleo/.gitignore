@@ -14,4 +14,11 @@
 /sdpe_mgr/mcu_board/
 /.mxproject
 /MDK-ARM/
-/stm32h753zi_nucleo/
+/stm32h755zi_nucleo/
+/*.log
+/STM32CubeIDE/Debug/
+/STM32CubeIDE/Release/
+/STM32CubeIDE/CM4/Debug/
+/STM32CubeIDE/CM4/Release/
+/STM32CubeIDE/CM7/Debug/
+/STM32CubeIDE/CM7/Release/

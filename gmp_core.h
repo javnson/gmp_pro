@@ -93,6 +93,10 @@
 // Full GMP runtime entry and dispatch helpers.
 #include <core/rt/gmp_runtime.h>
 
+#if SPECIFY_GMP_OS_BACKEND != GMP_OS_BACKEND_NONE
+#include <core/rt/gmp_rtos.h>
+#endif
+
 // #ifdef __cplusplus
 // extern "C"
 //{

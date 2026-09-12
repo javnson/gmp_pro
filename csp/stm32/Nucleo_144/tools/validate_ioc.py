@@ -332,7 +332,10 @@ def check_target(root: Path, board: Path) -> Report:
     try:
         rx_desc = int(ioc.get("ETH.RxDescAddress", ""), 0)
         tx_desc = int(ioc.get("ETH.TxDescAddress", ""), 0)
-        rx_buffer = int(ioc.get("ETH.RxBufferAddress", ""), 0)
+        rx_buffer = int(
+            ioc.get("ETH.RxBuffAddress", ioc.get("ETH.RxBufferAddress", "")),
+            0,
+        )
     except ValueError:
         rx_desc = tx_desc = rx_buffer = -1
     report.require(

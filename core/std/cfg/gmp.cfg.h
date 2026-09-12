@@ -234,6 +234,12 @@
 #define SPECIFY_SYSTEM_TICK_FREQUENCY ((1000))
 #endif // SPECIFY_SYSTEM_TICK_FREQUENCY
 
+// Select the operating-system integration backend. NoRTOS remains the default
+// so existing bare-metal projects retain their current entry and loop model.
+#ifndef SPECIFY_GMP_OS_BACKEND
+#define SPECIFY_GMP_OS_BACKEND GMP_OS_BACKEND_NONE
+#endif // SPECIFY_GMP_OS_BACKEND
+
 //....................................................................//
 // Print function implement
 

@@ -769,8 +769,17 @@ void HAL_ETH_RxLinkCallback(void **pStart, void **pEnd, uint8_t *buff, uint16_t 
     p->tot_len += Length;
   }
 
-  /* Invalidate data cache because Rx DMA's writing to physical memory makes it stale. */
-  SCB_InvalidateDCache_by_Addr((uint32_t *)buff, Length);
+  /*
+   * CubeMX emits the cache maintenance call even when this project leaves the
+   * Cortex-M7 D-Cache disabled.  On STM32H753 that access faults as soon as the
+   * first Ethernet frame is linked into a pbuf.  Only maintain cache lines when
+   * D-Cache is actually enabled; the current non-cacheable execution path needs
+   * no maintenance.
+   */
+  if ((SCB->CCR & SCB_CCR_DC_Msk) != 0U)
+  {
+    SCB_InvalidateDCache_by_Addr((uint32_t *)buff, Length);
+  }
 
 /* USER CODE END HAL ETH RxLinkCallback */
 }

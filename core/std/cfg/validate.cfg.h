@@ -39,6 +39,13 @@ extern "C"
 #error "SPECIFY_REAL_GT_TYPE must select USING_DOUBLE_FPU or USING_LONG_DOUBLE."
 #endif
 
+// Validate the repository-wide execution backend selection before any CSP or
+// runtime code relies on it.
+#if (SPECIFY_GMP_OS_BACKEND != GMP_OS_BACKEND_NONE) && \
+    (SPECIFY_GMP_OS_BACKEND != GMP_OS_BACKEND_FREERTOS)
+#error "Unsupported SPECIFY_GMP_OS_BACKEND value"
+#endif
+
 	// To mark a unused param
 #ifndef UNUSED_PARAMETER
 #define UNUSED_PARAMETER(x) ((void)(x))

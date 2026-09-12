@@ -148,9 +148,116 @@ static void MX_ADC1_Init(void)
 
 """
 
+ETHERNET_CACHE_GUARD = """  /*
+   * CubeMX emits the cache maintenance call even when this project leaves the
+   * Cortex-M7 D-Cache disabled.  On STM32H753 that access faults as soon as the
+   * first Ethernet frame is linked into a pbuf.  Only maintain cache lines when
+   * D-Cache is actually enabled; the current non-cacheable execution path needs
+   * no maintenance.
+   */
+  if ((SCB->CCR & SCB_CCR_DC_Msk) != 0U)
+  {
+    SCB_InvalidateDCache_by_Addr((uint32_t *)buff, Length);
+  }"""
+
+ETHERNET_DMA_SECTIONS = """  /* Ethernet DMA memory specified by the IOC. */
+  .RxDescripSection 0x30040000 (NOLOAD) :
+  {
+    KEEP(*(.RxDescripSection))
+  } >RAM_D2
+
+  .TxDescripSection 0x30040060 (NOLOAD) :
+  {
+    KEEP(*(.TxDescripSection))
+  } >RAM_D2
+
+  .Rx_PoolSection 0x30040200 (NOLOAD) :
+  {
+    KEEP(*(.Rx_PoolSection))
+  } >RAM_D2
+
+"""
+
+
+def patch_ethernetif(path: Path) -> None:
+    text = path.read_text(encoding="utf-8")
+    if ETHERNET_CACHE_GUARD in text:
+        return
+    text = replace_once(
+        text,
+        "  SCB_InvalidateDCache_by_Addr((uint32_t *)buff, Length);",
+        ETHERNET_CACHE_GUARD,
+        "Ethernet D-Cache guard",
+    )
+    path.write_text(text, encoding="utf-8", newline="\n")
+
+
+def patch_linker_script(path: Path) -> None:
+    text = path.read_text(encoding="utf-8")
+    if ETHERNET_DMA_SECTIONS in text:
+        return
+    text = replace_once(
+        text,
+        "  /* Remove information from the standard libraries */",
+        ETHERNET_DMA_SECTIONS
+        + "  /* Remove information from the standard libraries */",
+        "Ethernet DMA linker sections",
+    )
+    path.write_text(text, encoding="utf-8", newline="\n")
+
 
 def patch_main(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
+    native_adc_dma = "* @brief ADC1 Initialization Function" in text
+
+    # CubeMX 6.17 generates ADC1/DMA directly from the current IOC.  Older
+    # CubeMX releases omitted them for this board-template IOC, which is why
+    # this script historically injected ADC_AND_DMA.  Remove a preserved old
+    # injection and de-duplicate its declarations/calls before proceeding.
+    if native_adc_dma:
+        text = text.replace(ADC_AND_DMA, "", 1)
+
+        variables_begin = text.index("/* Private variables")
+        variables_end = text.index("/* USER CODE BEGIN PV */", variables_begin)
+        variables = text[variables_begin:variables_end].splitlines(keepends=True)
+        seen_variables: set[str] = set()
+        variables = [
+            line
+            for line in variables
+            if not (line.strip() and line in seen_variables)
+            and not seen_variables.add(line)
+        ]
+        text = text[:variables_begin] + "".join(variables) + text[variables_end:]
+
+        prototypes_begin = text.index("/* Private function prototypes")
+        prototypes_end = text.index("/* USER CODE BEGIN PFP */", prototypes_begin)
+        prototypes = text[prototypes_begin:prototypes_end].splitlines(keepends=True)
+        seen_prototypes: set[str] = set()
+        prototypes = [
+            line
+            for line in prototypes
+            if not (line.strip() and line in seen_prototypes)
+            and not seen_prototypes.add(line)
+        ]
+        text = text[:prototypes_begin] + "".join(prototypes) + text[prototypes_end:]
+
+        init_begin = text.index("/* Initialize all configured peripherals */")
+        init_end = text.index("/* USER CODE BEGIN 2 */", init_begin)
+        init_lines = text[init_begin:init_end].splitlines(keepends=True)
+        seen_init_calls: set[str] = set()
+        init_lines = [
+            line
+            for line in init_lines
+            if not (
+                line.strip().startswith("MX_")
+                and line in seen_init_calls
+            )
+            and not (
+                line.strip().startswith("MX_")
+                and seen_init_calls.add(line)
+            )
+        ]
+        text = text[:init_begin] + "".join(init_lines) + text[init_end:]
     text = text.replace(
         "/* USER CODE BEGIN Includes */\n#include <gmp_core.h>\n\n/* USER CODE END Includes */",
         "/* USER CODE BEGIN Includes */\n\n/* USER CODE END Includes */",
@@ -162,42 +269,44 @@ def patch_main(path: Path) -> None:
         '#include "main.h"\n#include <gmp_core.h>\n#include "lwip.h"',
         "GMP include",
     )
-    text = replace_once(
-        text,
-        "UART_HandleTypeDef huart3;\n",
-        "UART_HandleTypeDef huart3;\n\n"
-        "ADC_HandleTypeDef hadc1;\n"
-        "DMA_HandleTypeDef hdma_adc1;\n"
-        "DMA_HandleTypeDef hdma_usart3_rx;\n"
-        "DMA_HandleTypeDef hdma_usart3_tx;\n",
-        "ADC/DMA handles",
-    )
-    text = replace_once(
-        text,
-        "static void MX_USART3_UART_Init(void);\n",
-        "static void MX_USART3_UART_Init(void);\n"
-        "static void MX_DMA_Init(void);\n"
-        "static void MX_ADC1_Init(void);\n",
-        "ADC/DMA prototypes",
-    )
-    text = replace_once(
-        text,
-        "  MX_GPIO_Init();\n",
-        "  MX_GPIO_Init();\n  MX_DMA_Init();\n  MX_ADC1_Init();\n",
-        "ADC/DMA initialization",
-    )
+    if not native_adc_dma:
+        text = replace_once(
+            text,
+            "UART_HandleTypeDef huart3;\n",
+            "UART_HandleTypeDef huart3;\n\n"
+            "ADC_HandleTypeDef hadc1;\n"
+            "DMA_HandleTypeDef hdma_adc1;\n"
+            "DMA_HandleTypeDef hdma_usart3_rx;\n"
+            "DMA_HandleTypeDef hdma_usart3_tx;\n",
+            "ADC/DMA handles",
+        )
+        text = replace_once(
+            text,
+            "static void MX_USART3_UART_Init(void);\n",
+            "static void MX_USART3_UART_Init(void);\n"
+            "static void MX_DMA_Init(void);\n"
+            "static void MX_ADC1_Init(void);\n",
+            "ADC/DMA prototypes",
+        )
+        text = replace_once(
+            text,
+            "  MX_GPIO_Init();\n",
+            "  MX_GPIO_Init();\n  MX_DMA_Init();\n  MX_ADC1_Init();\n",
+            "ADC/DMA initialization",
+        )
     text = replace_once(
         text,
         "  htim1.Init.Period = 65535;\n",
         "  htim1.Init.Period = 4999;\n",
         "TIM1 period",
     )
-    text = replace_once(
-        text,
-        "/**\n  * @brief I2C1 Initialization Function",
-        ADC_AND_DMA + "/**\n  * @brief I2C1 Initialization Function",
-        "ADC/DMA functions",
-    )
+    if not native_adc_dma:
+        text = replace_once(
+            text,
+            "/**\n  * @brief I2C1 Initialization Function",
+            ADC_AND_DMA + "/**\n  * @brief I2C1 Initialization Function",
+            "ADC/DMA functions",
+        )
     text = replace_once(
         text,
         "  /* USER CODE BEGIN 2 */\n\n  /* USER CODE END 2 */",
@@ -209,6 +318,9 @@ def patch_main(path: Path) -> None:
 
 def patch_msp(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
+    if "/* USART3 DMA Init */" in text:
+        path.write_text(text, encoding="utf-8", newline="\n")
+        return
     text = replace_once(
         text,
         "/* USER CODE BEGIN ExternalFunctions */\n\n/* USER CODE END ExternalFunctions */",
@@ -254,6 +366,9 @@ def patch_msp(path: Path) -> None:
 
 def patch_interrupts(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
+    if "void DMA1_Stream0_IRQHandler(void)" in text:
+        path.write_text(text, encoding="utf-8", newline="\n")
+        return
     text = replace_once(
         text,
         "extern UART_HandleTypeDef huart3;\n",
@@ -320,6 +435,14 @@ def main() -> None:
     patch_msp(core_src / "stm32h7xx_hal_msp.c")
     patch_interrupts(core_src / "stm32h7xx_it.c")
     patch_hal_config(core_src.parent / "Inc" / "stm32h7xx_hal_conf.h")
+    patch_ethernetif(project_root / "LWIP" / "Target" / "ethernetif.c")
+    cubeide_dir = project_root / "STM32CubeIDE"
+    for linker_script in (
+        cubeide_dir / "STM32H753ZITX_FLASH.ld",
+        cubeide_dir / "STM32H753ZITX_RAM.ld",
+    ):
+        if linker_script.is_file():
+            patch_linker_script(linker_script)
     print(f"patched H753ZI CubeMX output: {main_path.parent.parent}")
 
 

@@ -16,6 +16,11 @@
 //#include "device.h"
 #include "driverlib.h"
 
+#if SPECIFY_GMP_OS_BACKEND == GMP_OS_BACKEND_FREERTOS
+#include <FreeRTOS.h>
+#include <task.h>
+#endif
+
 //
 // ClockTree Tool
 //
@@ -87,12 +92,20 @@ extern uart_halt debug_uart;
 
 GMP_STATIC_INLINE void gmp_base_enter_critical()
 {
+#if SPECIFY_GMP_OS_BACKEND == GMP_OS_BACKEND_FREERTOS
+    taskENTER_CRITICAL();
+#else
     DINT;
+#endif
 }
 
 GMP_STATIC_INLINE void gmp_base_leave_critical()
 {
+#if SPECIFY_GMP_OS_BACKEND == GMP_OS_BACKEND_FREERTOS
+    taskEXIT_CRITICAL();
+#else
     EINT;
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////

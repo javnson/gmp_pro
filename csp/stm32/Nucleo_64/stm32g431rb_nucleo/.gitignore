@@ -12,3 +12,9 @@
 /gmp_src/
 /sdpe_mgr/ctrl_settings.h
 /sdpe_mgr/mcu_board/
+/.mxproject
+/MDK-ARM/
+/stm32g431rb_nucleo/
+/*.log
+/STM32CubeIDE/Debug/
+/STM32CubeIDE/Release/

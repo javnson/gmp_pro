@@ -43,4 +43,6 @@ $buildDir = Join-Path $boardDir ("build\" + $Configuration.ToLowerInvariant())
 cmake -S $boardDir -B $buildDir -G Ninja "-DCMAKE_TOOLCHAIN_FILE=$(Join-Path $boardDir 'cmake\gcc-arm-none-eabi.cmake')" "-DCMAKE_BUILD_TYPE=$Configuration" "-DGMP_DATALINK_TRANSPORT=$DatalinkTransport"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 cmake --build $buildDir
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+& (Join-Path $repoRoot "csp\stm32\common\tools\sync_project_ides.ps1") -BoardDir $boardDir -BuildDir $buildDir
 exit $LASTEXITCODE

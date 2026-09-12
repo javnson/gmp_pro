@@ -30,11 +30,11 @@ fast_gt ctl_ready_mainloop(void);
 
 // extern ctl_object_nano_t *ctl_nano_handle;
 
-// This function is the basic init part of GMP entry.
-// User may call this function to init GMP library.
-// If you need GMP to manage the function call you may not call this function.
+// Prepare GMP-owned state without committing the application to an execution
+// model. RTOS ports call this from their service task; the legacy bare-metal
+// entry calls it immediately before activation.
 GMP_STATIC_INLINE
-void gmp_base_init(void)
+void gmp_base_prepare(void)
 {
 
 #ifndef SPECIFY_DISABLE_CSP
@@ -79,17 +79,37 @@ void gmp_base_init(void)
     //
     init();
 
+}
+
+// Activate platform work only after GMP state has been prepared. On an RTOS
+// backend this runs in the GMP service task, after the kernel has started.
+GMP_STATIC_INLINE
+void gmp_base_activate(void)
+{
 #ifndef SPECIFY_DISABLE_CSP
-    // latest function before Main loop, CSP may use this function to enable interrupt.
-    //
+#if defined SPECIFY_ENABLE_CSP_RUNTIME_EXIT
+    if (gmp_csp_should_exit())
+    {
+        return;
+    }
+#endif
     gmp_csp_post_process();
 #endif // SPECIFY_DISABLE_CSP
 
 #if !defined SPECIFY_DISABLE_GMP_CTL
 #ifdef SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
     ctl_fm_controller_inspection(ctl_nano_handle);
-#endif // SPECIFY_ENABLE_CTL_FRAMEWORK_NANO
-#endif // SPECIFY_DISABLE_GMP_CTL
+#endif
+#endif
+}
+
+// Backward-compatible initialization entry used by existing bare-metal and
+// hosted projects.
+GMP_STATIC_INLINE
+void gmp_base_init(void)
+{
+    gmp_base_prepare();
+    gmp_base_activate();
 }
 
 // This is the loop part of GMP library.

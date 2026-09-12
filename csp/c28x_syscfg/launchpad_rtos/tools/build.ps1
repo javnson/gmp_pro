@@ -1,0 +1,63 @@
+param(
+    [ValidateSet("F280049C")]
+    [string]$Board = "F280049C",
+    [string]$CcsRoot = "C:\ti\ccs1281\ccs",
+    [ValidateSet("Debug", "Release", "All")]
+    [string]$Mode = "All",
+    [switch]$GenerateSdpe,
+    [switch]$GenerateGmpSources
+)
+
+$ErrorActionPreference = "Stop"
+$projectRoot = Split-Path -Parent $PSScriptRoot
+$productRoot = Split-Path -Parent $projectRoot
+$repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $projectRoot "..\..\..")).Path
+$eclipse = Join-Path $CcsRoot "eclipse\eclipsec.exe"
+if (-not (Test-Path -LiteralPath $eclipse -PathType Leaf)) {
+    throw "CCS headless executable not found: $eclipse"
+}
+
+# Generate before project import so managed-build sees source-manager changes
+# to the set of .c files in this same headless build invocation.
+if ($GenerateSdpe -or $GenerateGmpSources) {
+    $prebuild = Join-Path $PSScriptRoot 'ccs_prebuild.bat'
+    $sdpeSwitch = if ($GenerateSdpe) { '1' } else { '0' }
+    $sourceSwitch = if ($GenerateGmpSources) { '1' } else { '0' }
+    & $prebuild "${Board}_Debug" $productRoot $sdpeSwitch $sourceSwitch
+    if ($LASTEXITCODE -ne 0) {
+        throw "GMP pre-build generation failed with exit code $LASTEXITCODE"
+    }
+}
+
+$workspaceRoot = Join-Path $repositoryRoot "tmp\csp\c28x_syscfg\launchpad_rtos\ccs_workspace"
+$workspace = Join-Path $workspaceRoot ([guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Force -Path $workspace | Out-Null
+$workspaceArg = $workspace.Replace("\", "/")
+$projectArg = $projectRoot.Replace("\", "/")
+
+$importCommand = '""{0}" -noSplash -data "{1}" -application com.ti.ccstudio.apps.projectImport -ccs.location "{2}""' -f $eclipse, $workspaceArg, $projectArg
+& cmd.exe /d /s /c $importCommand
+if ($LASTEXITCODE -ne 0) {
+    throw "CCS project import failed with exit code $LASTEXITCODE"
+}
+
+$configurations = switch ($Mode) {
+    "Debug"   { @("${Board}_Debug") }
+    "Release" { @("${Board}_Release") }
+    default   { @("${Board}_Debug", "${Board}_Release") }
+}
+
+foreach ($configuration in $configurations) {
+    $buildCommand = '""{0}" -noSplash -data "{1}" -application com.ti.ccstudio.apps.projectBuild -ccs.projects GMP_C2000_LAUNCHPAD_FREERTOS -ccs.configuration {2} -ccs.buildType full -ccs.listProblems"' -f $eclipse, $workspaceArg, $configuration
+    & cmd.exe /d /s /c $buildCommand
+    if ($LASTEXITCODE -ne 0) {
+        throw "CCS build failed for $configuration with exit code $LASTEXITCODE"
+    }
+
+    $image = Join-Path $projectRoot "$configuration\GMP_C2000_LAUNCHPAD_FREERTOS.out"
+    if (-not (Test-Path -LiteralPath $image -PathType Leaf)) {
+        throw "Expected image was not produced: $image"
+    }
+}
+
+Write-Host "CCS build passed: $($configurations -join ', ')"
