@@ -2,9 +2,9 @@
 
 [English](README.md) | **简体中文**
 
-状态：G431 配置基线；G474RE、G491RE、H533RE、C092RC、F411RE 与 U083RC 实板基线 v0.8
+状态：G431 编译基线；G474RE、G491RE、H533RE、C092RC、F411RE、U083RC 与 F302R8 实板基线 v0.9
 
-日期：2026-09-12
+日期：2026-09-14
 
 本文规定 `csp/stm32/Nucleo_64` 的目录结构、硬件资源合同、SDPE 板卡元件、公共
 `user`/`xplt` 代码边界、生成流程和验证标准。目标是让一个控制应用只通过切换
@@ -14,9 +14,9 @@ SDPE 板卡元件，就能在不同 Nucleo-64 板卡之间迁移，而不修改�
 
 当前已落地 G431 第一阶段基线：通用 SDPE schema、`nucleo_g431rb` 板卡实体、
 可切换 TIM1/TIM8 与 TIM3/TIM4 的目标绑定、G431RB IOC、共享 user/xplt 源、共享
-source-manager 配置和 IOC 静态校验器。该目标当前状态为 `configured`；SDPE 校验、
-目标生成、IOC 校验和共享源语法检查已通过，但尚未执行 CubeMX 再生成、完整链接或
-实板测试，详见 `stm32g431rb_nucleo/validation.md`。
+source-manager 配置和 IOC 静态校验器。该目标当前状态为 `compiled`；SDPE 校验、
+目标生成、IOC 校验、CubeMX 再生成和 GCC/CMake Release 完整链接已通过，实板测试
+仍待完成，详见 `stm32g431rb_nucleo/validation.md`。
 
 NUCLEO-G474RE 现已成为首个完成实板验收的目标。可复现流程覆盖 CubeMX 生成、
 SDPE/source-manager 生成、GCC/CMake 完整链接、ST-Link 烧录与回读校验，以及
@@ -63,6 +63,18 @@ GMP Data Link u8 验收均通过。控制回调保持约 20 kHz，UART 错误计
 始终关闭。STM32U083 不含 CAN/FDCAN，外部电气测试范围见
 `stm32u083rc_nucleo/validation.md`。
 
+NUCLEO-F302R8 已完成 STM32F3 控制系列实板基线。该工程使用 TIM1 产生三对互补
+PWM 并触发 ADC；由于该 MCU 没有 TIM3/TIM4，QEP 使用 TIM2；其余资源包括 ADC1
+六通道规则组 DMA、USART2 VCP、I2C1、DAC1、经典 CAN、LD2 和 SWD。IOC 经 CubeMX
+重复保存与再生成后字节不变，Release/Debug 构建、SWD 烧录校验及 921600 波特率下
+连续 21 轮完整 DL 验收均通过。控制回调约为 20 kHz，寄存器回读确认
+`CCER=0x1555`，MOE 与死区均已生效。
+
+v0.9 调整了公共测试固件的 PWM 策略：复位与早期外设初始化仍保持输出关闭；控制器
+先写入半周期安全比较值，随后公共 `init()` 启用三对互补通道与 MOE。既有验证记录中
+“PWM 保持关闭”的结论描述的是各自测试日期对应的旧固件；这些板卡已记录 v0.9 编译
+回归，但仍需重新连接实板完成新策略下的硬件复测。
+
 ## 1. 范围和设计原则
 
 本目录面向采用 64 引脚 STM32、兼容 Arduino Uno V3 和/或 ST Morpho 连接器的
@@ -108,6 +120,8 @@ Nucleo-64 板卡。板卡进入目录不代表其自动满足完整控制能力�
 - 支持死区、输出极性和空闲状态配置；
 - 为控制 ADC 采样产生硬件触发信号；
 - 上电和初始化阶段保持功率输出关闭；
+- 控制器写入安全比较值后，正常运行阶段必须启用 CH1/CH1N、CH2/CH2N、CH3/CH3N
+  与 MOE；
 - 若 Break 引脚可以外引，应配置为硬件保护输入并声明 `pwm_break` 能力。
 
 TIM1 与 TIM8 的选择由板卡 SDPE 参数完成。公共 `xplt` 不得用板卡 ID 分支选择
@@ -128,7 +142,8 @@ PWM 频率、死区时间、输出极性和采样点必须由目标工程 SDPE �
 
 ### 3.2 QEP ABZ 定时器
 
-板卡必须选择 TIM3 或 TIM4 作为 QEP 定时器：
+板卡应优先选择 TIM3 或 TIM4 作为 QEP 定时器；若目标 MCU 没有 TIM3 与 TIM4，
+允许使用 TIM2：
 
 - A、B 分别连接定时器 CH1、CH2，并使用 Encoder Mode；
 - Z 连接一个支持 EXTI 的 GPIO；
@@ -309,7 +324,8 @@ MATLAB 初始化文件可以忽略；导出为独立工程时再一并提交生�
 - `user_main.c/.h`：调度器、LED 心跳、DL 后台服务和可选 CAN 服务；
 - `user_dl.c/.h`：GMP Data Link 实例和设施注册；
 - `ctl_main.c/.h`：安全的测试控制器和可观察变量；
-- 默认不使能功率输出；只有显式测试状态才允许启动 PWM；
+- `ctl_init()` 先写入半周期安全比较值，外设与控制器初始化完成后由正常 `init()`
+  启用 PWM；
 - 不直接包含某个 STM32 系列的 HAL 头文件；
 - 不直接引用板卡专用句柄或 GPIO。
 
@@ -374,6 +390,7 @@ csp/stm32/Nucleo_64/
 ├── stm32h533re_nucleo/
 ├── stm32c092rc_nucleo/
 ├── stm32f411re_nucleo/
+├── stm32f302r8_nucleo/
 └── stm32u083rc_nucleo/
 ```
 
@@ -420,7 +437,7 @@ csp/stm32/Nucleo_64/
 3. 三对互补 PWM 信号完整且没有复用冲突；
 4. FB0 至 FB5 六路 ADC 都有唯一物理引脚、ADC 实例和转换 rank；
 5. ADC 外部触发来自所选 TIM1/TIM8；
-6. QEP A/B 属于同一个 TIM3/TIM4 的 CH1/CH2，Z 具有 EXTI；
+6. QEP A/B 属于同一个 TIM2/TIM3/TIM4 的 CH1/CH2，Z 具有 EXTI；
 7. DL 串口引脚与板载 ST-Link VCP 设计一致；
 8. UART RX DMA 为循环模式；
 9. LED、I2C、DAC、CAN 和 Break 能力与 IOC 实现一致；
@@ -435,13 +452,13 @@ csp/stm32/Nucleo_64/
 
 公共测试固件分阶段启用功能：
 
-1. 启动后立即保持 PWM 输出关闭；
+1. 复位和早期外设初始化阶段保持 PWM 输出关闭；
 2. LED 显示启动状态，然后进入固定心跳；
 3. 启动 DL RX DMA 并提供板卡信息、回环和变量观察；
 4. 启动 QEP 计数，但不影响输出；
 5. 启动 ADC 触发采样并允许读取六路原始值；
-6. 只有收到显式测试命令后才输出受限占空比 PWM；
-7. 超时、故障或通信失效后立即关闭输出；
+6. `ctl_init()` 写入半周期安全比较值后，正常 `init()` 启用三对互补 PWM 与 MOE；
+7. 显式关闭和故障路径立即关闭输出；通信看门狗策略由上层应用按场景增加；
 8. 可选 DAC 输出选定观察量；
 9. 可选 CAN 先进行内部回环，再进行外部总线测试。
 
@@ -540,7 +557,8 @@ C2000 遗留代码。
 2. NUCLEO-C092RC（已完成），作为 STM32C0 低资源器件黄金板；
 3. NUCLEO-U083RC（已完成），作为 STM32U0 低功耗器件黄金板；
 4. NUCLEO-H533RE（已完成），作为 STM32H5/M33 黄金板；
-5. 根据实际板卡库存继续扩展。
+5. NUCLEO-F302R8（已完成），作为 STM32F3 控制系列黄金板；
+6. 根据实际板卡库存继续扩展。
 
 每进入一个新的 STM32 系列，先完成一块黄金板和实板验证，再批量扩展同系列。
 
@@ -558,12 +576,12 @@ C2000 遗留代码。
 
 - 本规格的审核版本；
 - 一个新的 Nucleo-64 SDPE schema；
-- G431RB、G474RE、G491RE、H533RE、C092RC、F411RE、U083RC 七个板卡实体；
-- 七个主 IOC 和七个板卡 SDPE 工程；
+- G431RB、G474RE、G491RE、H533RE、C092RC、F411RE、U083RC、F302R8 八个板卡实体；
+- 八个主 IOC 和八个板卡 SDPE 工程；
 - 一套公共 `user`、`xplt` 和 `gmp_src_mgr`；
 - IOC/SDPE 静态校验工具；
 - CubeMX 无界面生成和 GCC/CMake 批量构建脚本；
-- 七份引脚表和七份验证记录；
+- 八份引脚表和八份验证记录；
 - 至少 G431RB 完整实板验证，其他板卡按实际硬件状态准确标注。
 
 ## 13. 非目标

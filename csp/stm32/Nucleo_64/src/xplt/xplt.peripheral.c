@@ -95,8 +95,14 @@ void setup_peripheral(void)
 
 #if GMP_NUCLEO_ADC_REGULAR_DMA
 #if GMP_NUCLEO_ADC_HAS_CALIBRATION
+#if GMP_NUCLEO_ADC_CALIBRATION_WITH_INPUT_MODE
+    if (HAL_ADCEx_Calibration_Start(GMP_NUCLEO_ADC_PRIMARY_HANDLE,
+                                    ADC_SINGLE_ENDED) != HAL_OK)
+        Error_Handler();
+#else
     if (HAL_ADCEx_Calibration_Start(GMP_NUCLEO_ADC_PRIMARY_HANDLE) != HAL_OK)
         Error_Handler();
+#endif
 #endif
     if (HAL_ADC_Start_DMA(GMP_NUCLEO_ADC_PRIMARY_HANDLE,
                           (uint32_t*)adc_regular_dma_buffer,

@@ -156,9 +156,39 @@ extern "C"
 #define NUCLEO_C092RC_QEP_SOFTWARE_INDEX (1U)
 
 /**
+ * @brief One when the target HAL reports GPIO interrupts through HAL_GPIO_EXTI_Callback.
+ */
+#define NUCLEO_C092RC_QEP_LEGACY_EXTI_CALLBACK (0U)
+
+/**
  * @brief One when a timer-triggered regular ADC scan with circular DMA drives the control step.
  */
 #define NUCLEO_C092RC_ADC_REGULAR_DMA (1U)
+
+/**
+ * @brief One when the target HAL exposes an ADC self-calibration operation.
+ */
+#define NUCLEO_C092RC_ADC_HAS_CALIBRATION (1U)
+
+/**
+ * @brief One when an internal timer relays the PWM timer trigger to the ADC.
+ */
+#define NUCLEO_C092RC_ADC_TRIGGER_BRIDGE (0U)
+
+/**
+ * @brief HAL handle for the internal ADC trigger bridge timer.
+ */
+#define NUCLEO_C092RC_ADC_TRIGGER_TIMER_HANDLE NULL
+
+/**
+ * @brief CubeMX symbol for the internal ADC trigger bridge timer.
+ */
+#define NUCLEO_C092RC_ADC_TRIGGER_TIMER_SYMBOL unused_adc_trigger_timer
+
+/**
+ * @brief Peripheral instance for the internal ADC trigger bridge timer.
+ */
+#define NUCLEO_C092RC_ADC_TRIGGER_TIMER_INSTANCE 0U
 
 /**
  * @brief ADC handle whose conversion completion drives the control step.

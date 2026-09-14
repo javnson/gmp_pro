@@ -67,7 +67,7 @@ static const gmp_mem_region_t memory_regions[] = {
     {(void*)&gmp_nucleo_qep_count, sizeof(gmp_nucleo_qep_count),
      GMP_MEM_PERM_RO, "QEP Count"},
     {(void*)gmp_nucleo_pwm_compare, sizeof(gmp_nucleo_pwm_compare),
-     GMP_MEM_PERM_RW, "PWM Compare (outputs remain disabled)"},
+     GMP_MEM_PERM_RW, "PWM Compare (outputs enabled)"},
     {(void*)gmp_nucleo_platform_diag, sizeof(gmp_nucleo_platform_diag),
      GMP_MEM_PERM_RO, "Platform Diagnostics"},
 };

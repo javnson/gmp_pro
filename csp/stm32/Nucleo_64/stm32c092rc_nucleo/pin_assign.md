@@ -1,6 +1,6 @@
 # NUCLEO-C092RC GMP pin assignment
 
-This target uses the STM32C092RCT6 on the NUCLEO-C092RC (MB2046). PWM outputs are configured by CubeMX but remain disabled after reset until `xplt_pwm_enable()` is called explicitly.
+This target uses the STM32C092RCT6 on the NUCLEO-C092RC (MB2046). Reset and early peripheral setup keep PWM disabled; after safe half-period compare values are installed, the common GMP startup calls `xplt_pwm_enable()` and enables all three complementary pairs plus MOE.
 
 | Resource | MCU pin(s) | Configuration |
 | --- | --- | --- |

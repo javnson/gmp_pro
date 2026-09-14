@@ -247,7 +247,7 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
         expected_regions = (
             ("ADC Feedback Raw", 24),
             ("QEP Count", 4),
-            ("PWM Compare (outputs remain disabled)", 12),
+            ("PWM Compare (outputs enabled)", 12),
             ("Platform Diagnostics", 28),
         )
         discovered_regions = {}
@@ -290,7 +290,7 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
             raise AssertionError("Read-only ADC region accepted a write")
 
         pwm_address, pwm_length = discovered_regions[
-            "PWM Compare (outputs remain disabled)"
+            "PWM Compare (outputs enabled)"
         ]
         sequence += 1
         pwm_original = transact(
@@ -347,8 +347,8 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
             raise AssertionError(
                 f"TIM/ADC control ISR rate is {control_isr_rate:.1f} Hz"
             )
-        if diagnostics[1] != 0:
-            raise AssertionError(f"PWM outputs unexpectedly enabled: 0x{diagnostics[1]:08X}")
+        if diagnostics[1] != 0x80000555:
+            raise AssertionError(f"PWM outputs not fully enabled: 0x{diagnostics[1]:08X}")
         if diagnostics[2] == 0 or diagnostics[3] == 0:
             raise AssertionError("UART DMA RX/TX callbacks were not observed")
         if diagnostics[4] != diagnostics_first[4]:
@@ -370,12 +370,12 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
         channels, depth, sample_rate, scope_bytes, scope_name_length = fields[7:]
         scope_name = scope_descriptor[descriptor_format.size:descriptor_format.size + scope_name_length].decode("ascii")
         if (channels, depth, sample_rate, scope_bytes, scope_name) != (
-            2, 400, 1000, 3200, "Sine and Cosine Scope"
+            2, 400, 20000, 3200, "Sine and Cosine Scope"
         ):
             raise AssertionError("Unexpected Scope resource metadata")
 
         sequence += 1
-        config = struct.pack("<BBBBHfIH", 1, 0, 1, 0, 250, test_settings[2], 1000, 0)
+        config = struct.pack("<BBBBHfIH", 1, 0, 1, 0, 250, test_settings[2], 1000, 19)
         if transact(port, sequence, 0x60, config) != bytes((1, 0, 0)):
             raise AssertionError("Scope configuration failed")
         sequence += 1
@@ -447,7 +447,7 @@ def run_smoke_test(port_name: str, baudrate: int) -> None:
         f"      Platform: ISR={diagnostics[0]} ({control_isr_rate:.1f} Hz), "
         f"RX={diagnostics[2]}, "
         f"TX={diagnostics[3]}, UART error baseline={diagnostics[4]}, "
-        f"LED toggles={diagnostics[6]}, PWM output state=0"
+        f"LED toggles={diagnostics[6]}, PWM output state=0x{diagnostics[1]:08X}"
     )
     print(f"      Tunable discovery: {len(tunable_names)} physical signal parameters")
     print(

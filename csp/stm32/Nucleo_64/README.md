@@ -2,9 +2,9 @@
 
 **English** | [简体中文](README_CN.md)
 
-Status: G431 configured baseline; G474RE, G491RE, H533RE, C092RC, F411RE, and U083RC hardware baselines v0.8
+Status: G431 compiled baseline; G474RE, G491RE, H533RE, C092RC, F411RE, U083RC, and F302R8 hardware baselines v0.9
 
-Date: 2026-09-12
+Date: 2026-09-14
 
 This document defines the directory layout, hardware-resource contract, SDPE
 board components, shared `user`/`xplt` boundary, generation workflow, and
@@ -17,9 +17,9 @@ The words MUST, SHOULD, and MAY are normative.
 The first G431 baseline now includes the generic SDPE schema, the
 `nucleo_g431rb` board entity, selectable TIM1/TIM8 and TIM3/TIM4 bindings, a
 G431RB IOC, shared user/xplt sources, the shared source-manager configuration,
-and an IOC consistency checker. Its support state is `configured`: SDPE
-validation and generation, IOC checks, and shared-source syntax checks pass,
-while CubeMX regeneration, a complete link, and hardware tests remain pending.
+and an IOC consistency checker. Its support state is `compiled`: SDPE
+validation and generation, IOC checks, CubeMX regeneration, and a complete
+GCC/CMake Release link pass, while hardware tests remain pending.
 See `stm32g431rb_nucleo/validation.md` for the exact evidence.
 
 The NUCLEO-G474RE target is now the first hardware-validated target. Its
@@ -83,6 +83,21 @@ count stayed at zero, and PWM outputs stayed disabled. STM32U083 has no
 CAN/FDCAN; see `stm32u083rc_nucleo/validation.md` for the remaining external
 electrical tests.
 
+The NUCLEO-F302R8 target is the STM32F3 control-family hardware baseline. It
+uses TIM1 for three complementary PWM pairs and ADC triggering, TIM2 for QEP
+because this MCU has no TIM3/TIM4, six-channel ADC1 regular DMA, USART2 VCP,
+I2C1, DAC1, classic CAN, LD2, and SWD. CubeMX save/regeneration is byte-stable,
+Release and Debug builds pass, verified SWD programming passes, and 21 complete
+Data Link acceptance runs pass at 921600 baud. The control callback remains at
+about 20 kHz; register reads confirm `CCER=0x1555` and active MOE with dead time.
+
+Version 0.9 changes the shared smoke-runtime policy: reset and early peripheral
+setup remain output-safe, the controller first installs half-period compare
+values, and normal GMP startup then enables all three complementary PWM pairs
+and MOE. Disabled-output statements in older board validation records describe
+the firmware tested on their recorded dates; those boards require a hardware
+retest under v0.9, while their v0.9 build regression is recorded separately.
+
 ## 1. Scope and principles
 
 This catalog targets Nucleo-64 boards whose STM32 devices use 64-pin packages
@@ -132,6 +147,8 @@ The board MUST select TIM1 or TIM8 and provide:
 - dead-time, polarity, and idle-state configuration;
 - a hardware trigger for control-path ADC acquisition;
 - disabled power outputs during reset and initialization;
+- enabled CH1/CH1N, CH2/CH2N, CH3/CH3N and MOE during normal application
+  operation, after safe compare values have been installed;
 - a declared `pwm_break` capability when a break signal is available externally.
 
 The SDPE project selects TIM1 or TIM8. Shared `xplt` code MUST NOT branch on a
@@ -151,7 +168,8 @@ the IOC topology.
 
 ### 3.2 QEP ABZ
 
-TIM3 or TIM4 MUST operate in encoder mode:
+TIM3 or TIM4 SHOULD operate in encoder mode. TIM2 MAY be used when the selected
+MCU does not implement TIM3 or TIM4:
 
 - A and B use CH1 and CH2;
 - Z uses an EXTI-capable GPIO;
@@ -278,9 +296,10 @@ when a project is exported as a standalone repository.
 ### `src/user`
 
 The shared application provides the scheduler, LED heartbeat, Data Link service,
-optional CAN service, and a safe test controller. PWM remains disabled until an
-explicit test state requests it. User code does not name HAL handles or board
-GPIOs directly.
+optional CAN service, and a safe test controller. It installs safe half-period
+compare values during `ctl_init()`, then enables PWM in normal `init()` after
+peripheral setup and controller initialization are complete. User code does not
+name HAL handles or board GPIOs directly.
 
 ### `src/xplt`
 
@@ -334,6 +353,7 @@ csp/stm32/Nucleo_64/
 ├── stm32h533re_nucleo/
 ├── stm32c092rc_nucleo/
 ├── stm32f411re_nucleo/
+├── stm32f302r8_nucleo/
 └── stm32u083rc_nucleo/
 ```
 
@@ -376,7 +396,7 @@ relative to the project.
 3. three complete complementary PWM pairs without pin conflicts;
 4. unique physical pins, ADC instances, and ranks for FB0 through FB5;
 5. an ADC trigger from the selected TIM1/TIM8;
-6. QEP A/B on one TIM3/TIM4 CH1/CH2 pair and an EXTI-capable Z input;
+6. QEP A/B on one TIM2/TIM3/TIM4 CH1/CH2 pair and an EXTI-capable Z input;
 7. DL routing to the actual on-board ST-Link VCP;
 8. circular UART RX DMA;
 9. consistency of LED, I2C, DAC, CAN, and break capability declarations;
@@ -389,11 +409,12 @@ Board wiring that an IOC cannot prove is reviewed in the SDPE preset and
 
 ## 9. Safety and hardware validation
 
-The shared smoke firmware starts with PWM disabled, then enables LED heartbeat,
-Data Link, QEP, and ADC observation. PWM only starts after an explicit test
-command and uses a bounded duty cycle. Timeout, fault, or communication loss
-shuts it down. Safe compare values are written before every enable, and fast
-disable removes advanced-timer outputs before slow logging or state work.
+The shared smoke firmware keeps PWM disabled through reset and early peripheral
+setup, starts the timer/ADC sampling path, installs half-period compare values
+in `ctl_init()`, and enables all three complementary pairs plus MOE in normal
+`init()`. Explicit disable and fault paths still remove advanced-timer outputs
+before slow logging or state work. Applications that require a communication
+watchdog add their own timeout policy above this platform contract.
 
 A board is accepted only when applicable checks pass:
 
@@ -445,7 +466,8 @@ a signal that the SDPE alias contract must be improved.
 NUCLEO-H533RE is the validated STM32H5 golden board, NUCLEO-C092RC is the
 validated STM32C0 low-resource golden board, NUCLEO-F411RE is the validated
 STM32F4 golden board, and NUCLEO-U083RC is the validated STM32U0 low-power
-golden board. Complete one golden board for each new STM32 family before adding
+golden board. NUCLEO-F302R8 is the validated STM32F3 control-family golden
+board. Complete one golden board for each new STM32 family before adding
 further members.
 
 ### F. Fleet validation and release
@@ -458,12 +480,12 @@ examples only after their replacements are validated.
 
 - approved bilingual specification;
 - `stm32_nucleo_64_board` SDPE schema;
-- G431RB, G474RE, G491RE, H533RE, C092RC, F411RE, and U083RC board entities;
-- seven preferred IOC files and seven target SDPE projects;
+- G431RB, G474RE, G491RE, H533RE, C092RC, F411RE, U083RC, and F302R8 board entities;
+- eight preferred IOC files and eight target SDPE projects;
 - one shared `user`, `xplt`, and `gmp_src_mgr` implementation;
 - IOC/SDPE static validator;
 - headless CubeMX and batch CMake/GCC scripts;
-- seven pin maps and validation records;
+- eight pin maps and validation records;
 - complete G431RB hardware validation, with accurate status for other boards.
 
 ## 12. Non-goals

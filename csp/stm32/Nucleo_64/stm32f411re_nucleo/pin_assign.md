@@ -1,6 +1,6 @@
 # NUCLEO-F411RE GMP pin assignment
 
-This target uses the STM32F411RET6 on the NUCLEO-F411RE (MB1136). PWM outputs are configured by CubeMX but remain disabled after reset until `xplt_pwm_enable()` is called explicitly.
+This target uses the STM32F411RET6 on the NUCLEO-F411RE (MB1136). Reset and early peripheral setup keep PWM disabled; after safe half-period compare values are installed, the common GMP startup calls `xplt_pwm_enable()` and enables all three complementary pairs plus MOE.
 
 | Resource | MCU pin(s) | Configuration |
 | --- | --- | --- |

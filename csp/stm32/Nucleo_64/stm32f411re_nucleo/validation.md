@@ -1,5 +1,10 @@
 # NUCLEO-F411RE validation
 
+Policy migration note (2026-09-14): the v0.9 shared runtime now enables all
+three complementary pairs and MOE after installing safe half-period compares.
+The Release regression build passes. The disabled-output evidence below is the
+historical hardware result from 2026-09-11; v0.9 hardware retest is pending.
+
 ## Safety boundary
 
 - TIM1 CH1/CH2/CH3 and complementary outputs are configured, but CCER output enables and BDTR.MOE remain cleared during validation.

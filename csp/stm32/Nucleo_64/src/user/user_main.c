@@ -30,6 +30,8 @@ void init(void)
     for (index = 0U; index < sizeof(tasks) / sizeof(tasks[0]); ++index)
         (void)gmp_scheduler_add_task(&scheduler, &tasks[index]);
     user_dl_init();
+    /* ctl_init() has already installed the neutral half-period compares. */
+    xplt_pwm_enable();
 }
 
 void mainloop(void)

@@ -1,6 +1,6 @@
 # NUCLEO-U083RC GMP pin assignment
 
-This target uses the STM32U083RCT6 on the NUCLEO-U083RC (MB1932). PWM outputs are configured by CubeMX but remain disabled after reset until `xplt_pwm_enable()` is called explicitly.
+This target uses the STM32U083RCT6 on the NUCLEO-U083RC (MB1932). Reset and early peripheral setup keep PWM disabled; after safe half-period compare values are installed, the common GMP startup calls `xplt_pwm_enable()` and enables all three complementary pairs plus MOE.
 
 | Resource | MCU pin(s) | Configuration |
 | --- | --- | --- |

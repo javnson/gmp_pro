@@ -47,6 +47,8 @@ def load_ioc(path: Path) -> dict[str, str]:
         if "=" not in line:
             raise ValueError(f"{path}:{line_number}: invalid IOC setting")
         key, value = line.split("=", 1)
+        if key in settings:
+            raise ValueError(f"{path}:{line_number}: duplicate IOC setting {key}")
         settings[key] = value
     return settings
 
@@ -226,6 +228,7 @@ def check_target(repo: Path, board_dir: Path) -> Report:
     entity = load_json(entity_path)
     parameters = entity["parameters"]
     regular_dma = bool(int(parameters.get("adc_regular_dma", "0")))
+    fixed_sequence = regular_dma and ioc.get("ADC1.Sequencer") == "NOT_FULLY_CONFIGURABLE"
     trigger_bridge = bool(int(parameters.get("adc_trigger_bridge", "0")))
     pin_doc_path = board_dir / "pin_assign.md"
     report.require(pin_doc_path.is_file(), "missing pin_assign.md")
@@ -255,7 +258,32 @@ def check_target(repo: Path, board_dir: Path) -> Report:
     pwm_selection = selected_option(requirement, "GMP_NUCLEO_PWM_TIMER_SELECTION")
     qep_selection = selected_option(requirement, "GMP_NUCLEO_QEP_TIMER_SELECTION")
     report.require(pwm_selection in {"1", "8"}, "PWM timer selection must be 1 or 8")
-    report.require(qep_selection in {"3", "4"}, "QEP timer selection must be 3 or 4")
+    report.require(qep_selection in {"2", "3", "4"}, "QEP timer selection must be 2, 3, or 4")
+    function_list = ioc.get("ProjectManager.functionlistsort", "")
+    required_initializers = {
+        "MX_ADC1_Init",
+        "MX_I2C1_Init",
+        "MX_USART2_UART_Init",
+        f"MX_TIM{pwm_selection}_Init",
+        f"MX_TIM{qep_selection}_Init",
+    }
+    required_initializers.add(
+        "MX_GPDMA1_Init" if ioc.get("Mcu.Family") == "STM32H5" else "MX_DMA_Init"
+    )
+    if int(parameters["has_can"]):
+        required_initializers.add(
+            "MX_CAN_Init" if parameters["can_type"] == "CAN" else "MX_FDCAN1_Init"
+        )
+    for initializer in sorted(required_initializers):
+        report.require(
+            initializer in function_list,
+            f"CubeMX function list is missing {initializer}",
+        )
+    if int(parameters["has_dac"]):
+        report.require(
+            "MX_DAC_Init" in function_list or "MX_DAC1_Init" in function_list,
+            "CubeMX function list is missing the DAC initializer",
+        )
     check_pwm(report, ioc, f"TIM{pwm_selection}")
     # Validate every timer that the board entity advertises as switchable. Some
     # LQFP64 families cannot route both complete advanced timers concurrently.
@@ -270,6 +298,10 @@ def check_target(repo: Path, board_dir: Path) -> Report:
                 value.startswith(f"TIM{qep_selection}_CH{channel},Encoder_Interface")
                 for key, value in ioc.items()
                 if key.startswith(f"SH.S_TIM{qep_selection}_CH{channel}.")
+                or (
+                    channel == 1
+                    and key.startswith(f"SH.S_TIM{qep_selection}_CH1_ETR.")
+                )
             ),
             f"TIM{qep_selection} CH{channel} is not an encoder input",
         )
@@ -306,6 +338,11 @@ def check_target(repo: Path, board_dir: Path) -> Report:
         repo / "csp/stm32/Nucleo_64/src/xplt/xplt.peripheral.c"
     ).read_text(encoding="utf-8")
     if regular_dma:
+        if not fixed_sequence and ioc.get("Mcu.Family") in {"STM32F3", "STM32F4"}:
+            report.require(
+                ioc.get("ADC1.ScanConvMode") in {"ENABLE", "ADC_SCAN_ENABLE"},
+                "ADC1 regular multi-channel scan is not enabled",
+            )
         report.require(
             ioc.get("ADC1.ExternalTrigConv") == expected_trigger,
             "ADC1 regular scan is not triggered by the selected PWM timer",
@@ -397,19 +434,38 @@ def check_target(repo: Path, board_dir: Path) -> Report:
         pin_signal(ioc, i2c_sda_pin) == "I2C1_SDA",
         f"I2C SDA is not {i2c_sda_pin}",
     )
-    report.require(pin_signal(ioc, "PA5") == "GPIO_Output", "status LED is not on PA5")
+    led_port = parameters["status_led_port"]
+    led_number = parameters["status_led_pin"].removeprefix("GPIO_PIN_")
+    led_pin = f"P{led_port[-1]}{led_number}"
+    report.require(
+        pin_signal(ioc, led_pin) == "GPIO_Output",
+        f"status LED is not a GPIO output on {led_pin}",
+    )
 
     if int(parameters["has_dac"]):
-        report.require("DAC1" in ips and pin_signal(ioc, "PA4") == "COMP_DAC11_group", "DAC capability mismatch")
+        report.require(
+            ({"DAC", "DAC1"} & ips)
+            and pin_signal(ioc, parameters["dac_pin"])
+            in {"DAC_OUT1", "COMP_DAC1_group", "COMP_DAC11_group"},
+            "DAC capability mismatch",
+        )
     if int(parameters["has_can"]):
         can_rx_pin = parameters["can_rx_pin"]
         can_tx_pin = parameters["can_tx_pin"]
-        report.require(
-            "FDCAN1" in ips
-            and pin_signal(ioc, can_rx_pin) == "FDCAN1_RX"
-            and pin_signal(ioc, can_tx_pin) == "FDCAN1_TX",
-            "FDCAN capability mismatch",
-        )
+        if parameters["can_type"] == "CAN":
+            report.require(
+                "CAN" in ips
+                and pin_signal(ioc, can_rx_pin) == "CAN_RX"
+                and pin_signal(ioc, can_tx_pin) == "CAN_TX",
+                "classic CAN capability mismatch",
+            )
+        else:
+            report.require(
+                "FDCAN1" in ips
+                and pin_signal(ioc, can_rx_pin) == "FDCAN1_RX"
+                and pin_signal(ioc, can_tx_pin) == "FDCAN1_TX",
+                "FDCAN capability mismatch",
+            )
         if int(parameters.get("can_has_stby", "0")):
             can_stby_port = parameters["can_stby_port"]
             can_stby_number = parameters["can_stby_pin"].removeprefix("GPIO_PIN_")
@@ -420,7 +476,7 @@ def check_target(repo: Path, board_dir: Path) -> Report:
             )
 
     documented_pins = {
-        "PA2", "PA3", "PA5", i2c_scl_pin, i2c_sda_pin,
+        "PA2", "PA3", led_pin, i2c_scl_pin, i2c_sda_pin,
     }
     if int(parameters["has_dac"]):
         documented_pins.add(parameters["dac_pin"])
