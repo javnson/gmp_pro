@@ -2,7 +2,7 @@
 
 [English](README.md) | **简体中文**
 
-状态：G431 编译基线；G474RE、G491RE、H533RE、C092RC、F411RE、U083RC 与 F302R8 实板基线 v0.9
+状态：G431 编译基线；G474RE、G491RE、H533RE、C092RC、F411RE、U083RC 与 F302R8 实板基线 v0.9；F103RB 实板基线 v1.0
 
 日期：2026-09-14
 
@@ -70,10 +70,20 @@ PWM 并触发 ADC；由于该 MCU 没有 TIM3/TIM4，QEP 使用 TIM2；其余资
 连续 21 轮完整 DL 验收均通过。控制回调约为 20 kHz，寄存器回读确认
 `CCER=0x1555`，MOE 与死区均已生效。
 
+NUCLEO-F103RB 已完成 STM32F1 经典控制系列实板基线。TIM1 产生三对互补 PWM，
+并通过不占用引脚的 TIM3 硬件桥触发 ADC1；TIM4 实现 ABZ，USART2 VCP 使用兼容
+F1 HAL 的循环 DMA + UART IDLE 接收路径。CubeMX 重复保存与再生成、Release/Debug
+构建、SWD 烧录校验、921600 波特率下连续 25 轮完整 DL 验收以及再生成后的最终复测
+全部通过。寄存器回读确认 `CCER=0x1555`、MOE、36 tick 死区和 ADC DMA/触发均已
+生效，详见 `stm32f103rb_nucleo/validation.md`。
+
 v0.9 调整了公共测试固件的 PWM 策略：复位与早期外设初始化仍保持输出关闭；控制器
 先写入半周期安全比较值，随后公共 `init()` 启用三对互补通道与 MOE。既有验证记录中
 “PWM 保持关闭”的结论描述的是各自测试日期对应的旧固件；这些板卡已记录 v0.9 编译
 回归，但仍需重新连接实板完成新策略下的硬件复测。
+
+v1.0 将 PWM/ADC 控制触发的启动延后到 GMP 完成 `ctl_init()` 与 `init()` 之后的
+post-prepare 阶段，消除了 20 kHz 中断访问尚未初始化完毕的用户设施这一竞态条件。
 
 ## 1. 范围和设计原则
 
@@ -390,6 +400,7 @@ csp/stm32/Nucleo_64/
 ├── stm32h533re_nucleo/
 ├── stm32c092rc_nucleo/
 ├── stm32f411re_nucleo/
+├── stm32f103rb_nucleo/
 ├── stm32f302r8_nucleo/
 └── stm32u083rc_nucleo/
 ```
@@ -558,7 +569,8 @@ C2000 遗留代码。
 3. NUCLEO-U083RC（已完成），作为 STM32U0 低功耗器件黄金板；
 4. NUCLEO-H533RE（已完成），作为 STM32H5/M33 黄金板；
 5. NUCLEO-F302R8（已完成），作为 STM32F3 控制系列黄金板；
-6. 根据实际板卡库存继续扩展。
+6. NUCLEO-F103RB（已完成），作为 STM32F1 经典控制系列黄金板；
+7. 根据实际板卡库存继续扩展。
 
 每进入一个新的 STM32 系列，先完成一块黄金板和实板验证，再批量扩展同系列。
 
@@ -576,12 +588,12 @@ C2000 遗留代码。
 
 - 本规格的审核版本；
 - 一个新的 Nucleo-64 SDPE schema；
-- G431RB、G474RE、G491RE、H533RE、C092RC、F411RE、U083RC、F302R8 八个板卡实体；
-- 八个主 IOC 和八个板卡 SDPE 工程；
+- G431RB、G474RE、G491RE、H533RE、C092RC、F411RE、U083RC、F302R8、F103RB 九个板卡实体；
+- 九个主 IOC 和九个板卡 SDPE 工程；
 - 一套公共 `user`、`xplt` 和 `gmp_src_mgr`；
 - IOC/SDPE 静态校验工具；
 - CubeMX 无界面生成和 GCC/CMake 批量构建脚本；
-- 八份引脚表和八份验证记录；
+- 九份引脚表和九份验证记录；
 - 至少 G431RB 完整实板验证，其他板卡按实际硬件状态准确标注。
 
 ## 13. 非目标

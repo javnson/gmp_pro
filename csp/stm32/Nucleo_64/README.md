@@ -2,7 +2,7 @@
 
 **English** | [简体中文](README_CN.md)
 
-Status: G431 compiled baseline; G474RE, G491RE, H533RE, C092RC, F411RE, U083RC, and F302R8 hardware baselines v0.9
+Status: G431 compiled baseline; G474RE, G491RE, H533RE, C092RC, F411RE, U083RC, and F302R8 hardware baselines v0.9; F103RB hardware baseline v1.0
 
 Date: 2026-09-14
 
@@ -91,12 +91,25 @@ Release and Debug builds pass, verified SWD programming passes, and 21 complete
 Data Link acceptance runs pass at 921600 baud. The control callback remains at
 about 20 kHz; register reads confirm `CCER=0x1555` and active MOE with dead time.
 
+The NUCLEO-F103RB target is the STM32F1 legacy control-family hardware
+baseline. TIM1 produces three complementary PWM pairs and feeds ADC1 through a
+pin-free TIM3 trigger bridge; TIM4 provides ABZ, while USART2 VCP uses the F1
+compatible circular-DMA plus UART-IDLE receive path. CubeMX repeat-save and
+regeneration, Release/Debug builds, verified SWD programming, 25 consecutive
+complete DL runs at 921600 baud and a final post-regeneration run passed.
+Register reads confirmed `CCER=0x1555`, active MOE, 36-tick dead time and ADC
+DMA/trigger operation; see `stm32f103rb_nucleo/validation.md`.
+
 Version 0.9 changes the shared smoke-runtime policy: reset and early peripheral
 setup remain output-safe, the controller first installs half-period compare
 values, and normal GMP startup then enables all three complementary PWM pairs
 and MOE. Disabled-output statements in older board validation records describe
 the firmware tested on their recorded dates; those boards require a hardware
 retest under v0.9, while their v0.9 build regression is recorded separately.
+
+Version 1.0 starts the PWM/ADC control trigger only from the GMP post-prepare
+hook, after `ctl_init()` and `init()` complete. This removes an initialization
+race between the 20 kHz callback and partially initialized user facilities.
 
 ## 1. Scope and principles
 
@@ -353,6 +366,7 @@ csp/stm32/Nucleo_64/
 ├── stm32h533re_nucleo/
 ├── stm32c092rc_nucleo/
 ├── stm32f411re_nucleo/
+├── stm32f103rb_nucleo/
 ├── stm32f302r8_nucleo/
 └── stm32u083rc_nucleo/
 ```
@@ -467,7 +481,8 @@ NUCLEO-H533RE is the validated STM32H5 golden board, NUCLEO-C092RC is the
 validated STM32C0 low-resource golden board, NUCLEO-F411RE is the validated
 STM32F4 golden board, and NUCLEO-U083RC is the validated STM32U0 low-power
 golden board. NUCLEO-F302R8 is the validated STM32F3 control-family golden
-board. Complete one golden board for each new STM32 family before adding
+board, and NUCLEO-F103RB is the validated STM32F1 legacy-family golden board.
+Complete one golden board for each new STM32 family before adding
 further members.
 
 ### F. Fleet validation and release
@@ -480,12 +495,12 @@ examples only after their replacements are validated.
 
 - approved bilingual specification;
 - `stm32_nucleo_64_board` SDPE schema;
-- G431RB, G474RE, G491RE, H533RE, C092RC, F411RE, U083RC, and F302R8 board entities;
-- eight preferred IOC files and eight target SDPE projects;
+- G431RB, G474RE, G491RE, H533RE, C092RC, F411RE, U083RC, F302R8, and F103RB board entities;
+- nine preferred IOC files and nine target SDPE projects;
 - one shared `user`, `xplt`, and `gmp_src_mgr` implementation;
 - IOC/SDPE static validator;
 - headless CubeMX and batch CMake/GCC scripts;
-- eight pin maps and validation records;
+- nine pin maps and validation records;
 - complete G431RB hardware validation, with accurate status for other boards.
 
 ## 12. Non-goals

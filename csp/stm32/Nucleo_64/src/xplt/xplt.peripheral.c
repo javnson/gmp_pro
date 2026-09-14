@@ -31,6 +31,7 @@ static gmp_datalink_t* bound_datalink;
 static byte_gt uart_rx_dma_buffer[GMP_NUCLEO_DL_RX_BUFFER_SIZE];
 static volatile uint16_t uart_rx_dma_position;
 static volatile fast_gt status_led_on;
+static fast_gt control_started;
 #if GMP_NUCLEO_ADC_REGULAR_DMA
 static uint16_t adc_regular_dma_buffer[GMP_NUCLEO_ADC_FB_COUNT];
 #endif
@@ -48,10 +49,44 @@ static volatile xplt_dl_uart_tx_phase_t uart_tx_phase;
 static void xplt_dl_arm_rx(void)
 {
     uart_rx_dma_position = 0U;
+#if GMP_NUCLEO_DL_UART_RECEIVE_TO_IDLE
     if (HAL_UARTEx_ReceiveToIdle_DMA(
             GMP_NUCLEO_DL_UART_HANDLE, uart_rx_dma_buffer,
             (uint16_t)GMP_NUCLEO_DL_RX_BUFFER_SIZE) != HAL_OK)
         Error_Handler();
+#else
+    if (HAL_UART_Receive_DMA(GMP_NUCLEO_DL_UART_HANDLE, uart_rx_dma_buffer,
+                             (uint16_t)GMP_NUCLEO_DL_RX_BUFFER_SIZE) != HAL_OK)
+        Error_Handler();
+    __HAL_UART_ENABLE_IT(GMP_NUCLEO_DL_UART_HANDLE, UART_IT_IDLE);
+#endif
+}
+
+static void xplt_dl_process_rx_position(uint16_t position)
+{
+    uint16_t previous;
+
+    if (bound_datalink == NULL || position > GMP_NUCLEO_DL_RX_BUFFER_SIZE)
+        return;
+    previous = uart_rx_dma_position;
+    if (position == previous)
+        return;
+    gmp_nucleo_platform_diag[2]++;
+    if (position > previous)
+    {
+        gmp_dev_dl_push_str(bound_datalink, &uart_rx_dma_buffer[previous],
+                            (size_gt)(position - previous));
+    }
+    else
+    {
+        if (previous < GMP_NUCLEO_DL_RX_BUFFER_SIZE)
+            gmp_dev_dl_push_str(
+                bound_datalink, &uart_rx_dma_buffer[previous],
+                (size_gt)(GMP_NUCLEO_DL_RX_BUFFER_SIZE - previous));
+        if (position > 0U)
+            gmp_dev_dl_push_str(bound_datalink, uart_rx_dma_buffer, position);
+    }
+    uart_rx_dma_position = position;
 }
 
 #if !GMP_NUCLEO_ADC_REGULAR_DMA
@@ -79,6 +114,7 @@ void setup_peripheral(void)
     HAL_GPIO_WritePin(GMP_NUCLEO_STATUS_LED_PORT, GMP_NUCLEO_STATUS_LED_PIN,
                       GMP_NUCLEO_STATUS_LED_OFF);
     status_led_on = 0;
+    control_started = 0;
     bound_datalink = NULL;
     uart_tx_phase = XPLT_DL_UART_TX_IDLE;
     xplt_dl_arm_rx();
@@ -104,10 +140,6 @@ void setup_peripheral(void)
         Error_Handler();
 #endif
 #endif
-    if (HAL_ADC_Start_DMA(GMP_NUCLEO_ADC_PRIMARY_HANDLE,
-                          (uint32_t*)adc_regular_dma_buffer,
-                          GMP_NUCLEO_ADC_FB_COUNT) != HAL_OK)
-        Error_Handler();
 #else
     if (HAL_ADCEx_Calibration_Start(GMP_NUCLEO_ADC_SECONDARY_HANDLE,
                                     ADC_SINGLE_ENDED) != HAL_OK ||
@@ -125,9 +157,6 @@ void setup_peripheral(void)
     if (HAL_TIM_Base_Start(GMP_NUCLEO_ADC_TRIGGER_TIMER_HANDLE) != HAL_OK)
         Error_Handler();
 #endif
-    if (HAL_TIM_Base_Start(GMP_NUCLEO_PWM_TIMER_HANDLE) != HAL_OK)
-        Error_Handler();
-
 #if GMP_NUCLEO_CAN_HAS_STBY
     HAL_GPIO_WritePin(GMP_NUCLEO_CAN_STBY_PORT, GMP_NUCLEO_CAN_STBY_PIN,
                       GMP_NUCLEO_CAN_STBY_OFF);
@@ -137,6 +166,25 @@ void setup_peripheral(void)
     if (HAL_DAC_Start(GMP_NUCLEO_DAC_HANDLE, GMP_NUCLEO_DAC_CHANNEL) != HAL_OK)
         Error_Handler();
 #endif
+}
+
+void gmp_csp_post_process(void)
+{
+    if (control_started)
+        return;
+
+    /* setup_peripheral() runs before ctl_init() and init().  Arm the regular
+     * ADC DMA and start the PWM trigger only after those layers have finished,
+     * so the 20 kHz callback cannot observe partially initialized user state. */
+#if GMP_NUCLEO_ADC_REGULAR_DMA
+    if (HAL_ADC_Start_DMA(GMP_NUCLEO_ADC_PRIMARY_HANDLE,
+                          (uint32_t*)adc_regular_dma_buffer,
+                          GMP_NUCLEO_ADC_FB_COUNT) != HAL_OK)
+        Error_Handler();
+#endif
+    if (HAL_TIM_Base_Start(GMP_NUCLEO_PWM_TIMER_HANDLE) != HAL_OK)
+        Error_Handler();
+    control_started = 1;
 }
 
 void xplt_pwm_enable(void)
@@ -226,13 +274,30 @@ void xplt_dl_bind(gmp_datalink_t* datalink)
     bound_datalink = datalink;
 }
 
+void xplt_dl_uart_irq(void)
+{
+#if !GMP_NUCLEO_DL_UART_RECEIVE_TO_IDLE
+    UART_HandleTypeDef* uart = GMP_NUCLEO_DL_UART_HANDLE;
+
+    if (__HAL_UART_GET_FLAG(uart, UART_FLAG_IDLE) != RESET &&
+        __HAL_UART_GET_IT_SOURCE(uart, UART_IT_IDLE) != RESET)
+    {
+        uint16_t position;
+        __HAL_UART_CLEAR_IDLEFLAG(uart);
+        position = (uint16_t)(GMP_NUCLEO_DL_RX_BUFFER_SIZE -
+                              __HAL_DMA_GET_COUNTER(uart->hdmarx));
+        xplt_dl_process_rx_position(position);
+    }
+#endif
+}
+
 void xplt_dl_start_tx(gmp_datalink_t* datalink)
 {
     bound_datalink = datalink;
     uart_tx_phase = XPLT_DL_UART_TX_HEADER;
     if (HAL_UART_Transmit_DMA(
             GMP_NUCLEO_DL_UART_HANDLE,
-            (const uint8_t*)gmp_dev_dl_get_tx_hw_hdr_ptr(datalink),
+            (uint8_t*)gmp_dev_dl_get_tx_hw_hdr_ptr(datalink),
             (uint16_t)gmp_dev_dl_get_tx_hw_hdr_size(datalink)) != HAL_OK)
     {
         uart_tx_phase = XPLT_DL_UART_TX_IDLE;
@@ -278,26 +343,22 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t pin)
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* uart, uint16_t size)
 {
     if (uart == GMP_NUCLEO_DL_UART_HANDLE && bound_datalink != NULL)
-    {
-        gmp_nucleo_platform_diag[2]++;
-        uint16_t previous = uart_rx_dma_position;
-        if (size > previous)
-        {
-            gmp_dev_dl_push_str(bound_datalink, &uart_rx_dma_buffer[previous],
-                                (size_gt)(size - previous));
-        }
-        else if (size < previous)
-        {
-            if (previous < GMP_NUCLEO_DL_RX_BUFFER_SIZE)
-                gmp_dev_dl_push_str(
-                    bound_datalink, &uart_rx_dma_buffer[previous],
-                    (size_gt)(GMP_NUCLEO_DL_RX_BUFFER_SIZE - previous));
-            if (size > 0U)
-                gmp_dev_dl_push_str(bound_datalink, uart_rx_dma_buffer, size);
-        }
-        uart_rx_dma_position = size;
-    }
+        xplt_dl_process_rx_position(size);
 }
+
+#if !GMP_NUCLEO_DL_UART_RECEIVE_TO_IDLE
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef* uart)
+{
+    if (uart == GMP_NUCLEO_DL_UART_HANDLE)
+        xplt_dl_process_rx_position(GMP_NUCLEO_DL_RX_BUFFER_SIZE / 2U);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef* uart)
+{
+    if (uart == GMP_NUCLEO_DL_UART_HANDLE)
+        xplt_dl_process_rx_position(GMP_NUCLEO_DL_RX_BUFFER_SIZE);
+}
+#endif
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef* uart)
 {
@@ -311,7 +372,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef* uart)
         uart_tx_phase = XPLT_DL_UART_TX_PAYLOAD;
         if (HAL_UART_Transmit_DMA(
                 GMP_NUCLEO_DL_UART_HANDLE,
-                (const uint8_t*)gmp_dev_dl_get_tx_hw_pld_ptr(bound_datalink),
+                (uint8_t*)gmp_dev_dl_get_tx_hw_pld_ptr(bound_datalink),
                 (uint16_t)gmp_dev_dl_get_tx_hw_pld_size(bound_datalink)) ==
             HAL_OK)
             return;

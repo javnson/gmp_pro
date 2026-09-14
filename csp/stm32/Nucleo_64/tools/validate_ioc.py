@@ -338,7 +338,7 @@ def check_target(repo: Path, board_dir: Path) -> Report:
         repo / "csp/stm32/Nucleo_64/src/xplt/xplt.peripheral.c"
     ).read_text(encoding="utf-8")
     if regular_dma:
-        if not fixed_sequence and ioc.get("Mcu.Family") in {"STM32F3", "STM32F4"}:
+        if not fixed_sequence and ioc.get("Mcu.Family") in {"STM32F1", "STM32F3", "STM32F4"}:
             report.require(
                 ioc.get("ADC1.ScanConvMode") in {"ENABLE", "ADC_SCAN_ENABLE"},
                 "ADC1 regular multi-channel scan is not enabled",
@@ -347,9 +347,13 @@ def check_target(repo: Path, board_dir: Path) -> Report:
             ioc.get("ADC1.ExternalTrigConv") == expected_trigger,
             "ADC1 regular scan is not triggered by the selected PWM timer",
         )
+        adc_dma_enabled = ioc.get("ADC1.DMAContinuousRequests") == "ENABLE"
+        if ioc.get("Mcu.Family") == "STM32F1":
+            adc_dma_enabled = "ADC1" in {
+                value for key, value in ioc.items() if key.startswith("Dma.Request")
+            }
         report.require(
-            ioc.get("ADC1.DMAContinuousRequests") == "ENABLE"
-            and ioc.get("Dma.ADC1.0.Mode") == "DMA_CIRCULAR",
+            adc_dma_enabled and ioc.get("Dma.ADC1.0.Mode") == "DMA_CIRCULAR",
             "ADC1 regular scan DMA is not continuous and circular",
         )
         if trigger_bridge:

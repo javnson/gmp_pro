@@ -121,9 +121,6 @@ void user_dl_init(void)
 {
     size_gt index;
 
-    for (index = 0U; index < sizeof(memory_window); ++index)
-        memory_window[index] = (byte_gt)index;
-
     gmp_nucleo_dl_facility_init_errors = 0U;
     gmp_dev_dl_init(&datalink);
     gmp_pil_sim_init(&pil, &datalink, USER_DL_PIL_COMMAND);
@@ -154,6 +151,9 @@ void user_dl_init(void)
     oscillator_cosine = real2ctrl(1.0F);
     oscillator_index = 0U;
     user_dl_apply_signal_parameters();
+    /* Install the deterministic memory-service pattern after its facilities. */
+    for (index = 0U; index < sizeof(memory_window); ++index)
+        memory_window[index] = (byte_gt)index;
     xplt_dl_bind(&datalink);
 }
 
