@@ -1,0 +1,60 @@
+INV_WEAK (TINA Netlist Editor format)
+**************************************
+**  This file was created by TINA   **
+**         www.tina.com             ** 
+**      (c) DesignSoft, Inc.        **          
+**     www.designsoftware.com       **
+**************************************
+.LIB "<TINADIR>\EXAMPLES\SPICE\TSPICE.LIB"
+.LIB "<TINADIR>\SPICELIB\Operational Amplifiers.LIB"
+.TEMP 27
+.AC DEC 20 10 1MEG
+.TRAN 2N 1U
+.DC LIN VG3 0 1 10M
+
+.PROBE I(VAM6) I(VAM5) I(VAM4) I(VAM3) I(VAM2)
+.PROBE I(VAM1) V(7,5) V(9,5) V(11,5)
+
+VG3         1 2 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VG2         3 2 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VG1         4 2 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VAM6        6 7 ; Current Arrow
+VAM5        8 9 ; Current Arrow
+VAM4        10 11 ; Current Arrow
+VGridC      12 13 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VGridB      14 13 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VGridA      15 13 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VAM3        1 20 ; Current Arrow
+VAM2        3 21 ; Current Arrow
+VAM1        4 22 ; Current Arrow
+R3          2 0 1MEG 
+R5          5 0 1MEG 
+L6          16 12 1M IC=0 
+R15         7 16 50M 
+L5          17 14 1M IC=0 
+R14         9 17 50M 
+L4          18 15 1M IC=0 
+R13         11 18 50M 
+R12         13 0 1MEG 
+R11         19 0 1MEG 
+R10         10 19 1MEG 
+R9          8 19 1MEG 
+R8          6 19 1MEG 
+C5          6 19 5U 
+C4          8 19 5U 
+C3          10 19 5U 
+L3          23 6 1M IC=0 
+R4          20 23 50M 
+L2          24 8 1M IC=0 
+R2          21 24 50M 
+L1          25 10 1M IC=0 
+R1          22 25 50M 
+
+
+.END
