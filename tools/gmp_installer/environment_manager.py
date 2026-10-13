@@ -10,6 +10,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 import urllib.parse
 import urllib.request
 import zipfile
@@ -209,7 +210,18 @@ def extract_zip(archive: Path, destination: Path, strip_single_root: bool) -> No
 
         if destination.exists():
             shutil.rmtree(destination)
-        staging.replace(destination)
+        for attempt in range(10):
+            try:
+                staging.replace(destination)
+                break
+            except PermissionError as error:
+                if attempt == 9:
+                    raise EnvironmentError(
+                        f"Cannot install {destination}: directory rename remains blocked after 10 attempts. "
+                        f"Close programs using this directory, check its permissions, and retry. Original error: {error}"
+                    ) from error
+                print(f"[RETRY] Directory rename was denied; waiting before retry {attempt + 1}/9: {destination}")
+                time.sleep(0.5)
     except Exception:
         if staging.exists():
             shutil.rmtree(staging)
@@ -385,8 +397,13 @@ def private_environment() -> dict[str, str]:
             "GMP_ENV_ACTIVE": str(GMP_ROOT),
             "GMP_ENV_MODE": "virtual",
             "PYTHONHOME": str(BIN_DIR / "python"),
+            "PYTHONPATH": "",
             "PYTHONNOUSERSITE": "1",
             "PYTHONUTF8": "1",
+            "PIP_CONFIG_FILE": os.devnull,
+            "PIP_TARGET": "",
+            "PIP_PREFIX": "",
+            "PIP_USER": "0",
             "PIP_DISABLE_PIP_VERSION_CHECK": "1",
             "VCPKG_ROOT": str(BIN_DIR / "vcpkg"),
             "VCPKG_DOWNLOADS": str(BIN_DIR / "cache" / "vcpkg-downloads"),
@@ -512,8 +529,13 @@ def visual_studio_environment(base_env: dict[str, str]) -> dict[str, str]:
         "GMP_ENV_ACTIVE",
         "GMP_ENV_MODE",
         "PYTHONHOME",
+        "PYTHONPATH",
         "PYTHONNOUSERSITE",
         "PYTHONUTF8",
+        "PIP_CONFIG_FILE",
+        "PIP_TARGET",
+        "PIP_PREFIX",
+        "PIP_USER",
         "PIP_DISABLE_PIP_VERSION_CHECK",
         "VCPKG_ROOT",
         "VCPKG_DOWNLOADS",

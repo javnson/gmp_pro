@@ -1,8 +1,10 @@
 {
   "schema_version": 1,
-  "environment_version": "1.4.1",
+  "environment_version": "1.4.2",
   "python": {
     "version": "3.12.10",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20250409/cpython-3.12.10%2B20250409-x86_64-pc-windows-msvc-install_only.tar.gz",
+    "sha256": "5ac66ae49a2104efeba985c1dc1cb40987757ee81cc6c7f218d10b801f3276ed",
     "requirements": "requirements-gmp.txt",
     "imports": [
       "PyQt5",
@@ -13,7 +15,8 @@
       "numpy",
       "matplotlib",
       "jinja2",
-      "symengine"
+      "symengine",
+      "tkinter"
     ]
   },
   "applications": [

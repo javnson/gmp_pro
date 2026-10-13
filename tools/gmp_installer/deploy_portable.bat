@@ -30,5 +30,9 @@ if not exist "%PYTHON_EXE%" (
 call "%GMP_ROOT%\tools\gmp_installer\configure_proxy.bat"
 if errorlevel 1 exit /b 1
 
+set "PYTHONHOME=%GMP_ROOT%\bin\python"
+set "PYTHONPATH="
+set "PYTHONNOUSERSITE=1"
+set "PYTHONUTF8=1"
 "%PYTHON_EXE%" "%~dp0environment_manager.py" deploy %*
 exit /b %ERRORLEVEL%

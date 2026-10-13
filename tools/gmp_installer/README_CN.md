@@ -60,6 +60,17 @@ bash install_gmp_virtual_env.sh
 install_gmp_virtual_env.bat
 ```
 
+Windows 安装器按 `environment_manifest.json` 中固定的版本、下载地址和 SHA-256
+解压独立的 Python 3.12.10 到 `bin/python`，包含 pip 和 Tkinter。它不调用普通
+Python EXE 安装程序，不复用或升级本机 Python，也不注册 Python 或修改永久 PATH。
+首次安装需要 Windows 自带的 `curl.exe`、`tar.exe` 和 PowerShell。
+
+GMP 工具一律使用私有 Python。私有环境缺失或安装未完成时，工具会报错并提示重新
+安装，不再自动使用系统 Python。激活时会清除外部 `PYTHONPATH` 和 pip 安装目标，
+禁用用户包目录及 pip 配置文件；代理和通过环境变量指定的下载镜像仍可使用。
+
+本次修改的原因、文件清单和验证范围见 [私有 Python 修改摘要](SUMMARY_PRIVATE_PYTHON.md)。
+
 安装器会询问是否使用代理。检测到系统代理时会显示地址并要求确认；没有检测到代理时，选择 `Y` 后可以手动输入地址，例如：
 
 ```text

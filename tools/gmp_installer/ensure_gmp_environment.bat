@@ -5,12 +5,14 @@ if not defined GMP_PRO_LOCATION goto :MISSING_ROOT
 for %%I in ("%GMP_PRO_LOCATION%") do set "GMP_ENV_GUARD_ROOT=%%~fI"
 if not exist "%GMP_ENV_GUARD_ROOT%\tools\gmp_installer\activate_env.bat" goto :INVALID_ROOT
 
-if /i "%GMP_ENV_ACTIVE%"=="%GMP_ENV_GUARD_ROOT%" goto :ALREADY_ACTIVE
-
 set "GMP_ENV_GUARD_STATE=%GMP_ENV_GUARD_ROOT%\bin\gmp_virtual_env_installed.flag"
 set "GMP_ENV_GUARD_PYTHON=%GMP_ENV_GUARD_ROOT%\bin\python\python.exe"
+if not exist "%GMP_ENV_GUARD_PYTHON%" goto :CORRUPT_VIRTUAL
+if /i "%GMP_ENV_ACTIVE%"=="%GMP_ENV_GUARD_ROOT%" goto :ACTIVATE_VIRTUAL
 if exist "%GMP_ENV_GUARD_STATE%" goto :ACTIVATE_VIRTUAL
-goto :USE_SYSTEM
+echo [ERROR] The GMP private environment installation is incomplete.
+echo         Run install_gmp_virtual_env.bat or tools\gmp_installer\utilities\deploy_gmp_env.bat.
+goto :FAILURE
 
 :ACTIVATE_VIRTUAL
 if not exist "%GMP_ENV_GUARD_PYTHON%" goto :CORRUPT_VIRTUAL
@@ -22,21 +24,9 @@ if not "%GMP_ENV_GUARD_RESULT%"=="0" goto :ACTIVATION_FAILED
 set "GMP_ENV_MODE=virtual"
 goto :SUCCESS
 
-:ALREADY_ACTIVE
-set "GMP_ENV_MODE=virtual"
-goto :SUCCESS
-
-:USE_SYSTEM
-if exist "%GMP_ENV_GUARD_PYTHON%" echo [WARN] Private Python exists without a completed GMP environment marker; using the system environment.
-if /i not "%GMP_ENV_MODE%"=="system" echo [GMP] No completed virtual environment detected; using the system environment.
-set "GMP_ENV_MODE=system"
-set "GMP_ENV_ACTIVE="
-goto :SUCCESS
-
 :MISSING_ROOT
 echo [ERROR] GMP_PRO_LOCATION is not defined.
-echo         Run install_gmp_virtual_env.bat or, for legacy system mode,
-echo         tools\gmp_installer\utilities\install_gmp.bat first.
+echo         Run install_gmp_virtual_env.bat first.
 exit /b 1
 
 :INVALID_ROOT
@@ -45,7 +35,7 @@ echo         %GMP_ENV_GUARD_ROOT%
 goto :FAILURE
 
 :CORRUPT_VIRTUAL
-echo [ERROR] The GMP virtual environment marker exists, but private Python is missing.
+echo [ERROR] GMP private Python is missing.
 echo         Re-run install_gmp_virtual_env.bat or
 echo         tools\gmp_installer\utilities\deploy_gmp_env.bat.
 goto :FAILURE

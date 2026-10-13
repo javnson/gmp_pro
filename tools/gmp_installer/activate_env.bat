@@ -61,11 +61,23 @@ if not "%GMP_ENV_ACTIVE%"=="%GMP_PRO_LOCATION%" (
     set "PATH=%GMP_BIN%\python;%GMP_BIN%\python\Scripts;%GMP_BIN%\apps\git\cmd;%GMP_BIN%\apps\git\mingw64\bin;%GMP_BIN%\apps\cmake\bin;%GMP_BIN%\apps\ninja;%GMP_BIN%\apps\doxygen;%GMP_BIN%\apps\graphviz\bin;%GMP_BIN%\vcpkg;%PATH%"
 )
 set "GMP_ENV_MODE=virtual"
+rem Reassert Python isolation even when this environment is already active.
+set "PYTHONHOME=%GMP_BIN%\python"
+set "PYTHONPATH="
+set "PYTHONNOUSERSITE=1"
+set "PYTHONUTF8=1"
+set "PIP_CONFIG_FILE=nul"
+set "PIP_TARGET="
+set "PIP_PREFIX="
+set "PIP_USER=0"
 
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if exist "%VSWHERE%" if not defined VSCMD_VER for /f "usebackq tokens=*" %%I in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do if exist "%%I\Common7\Tools\VsDevCmd.bat" call "%%I\Common7\Tools\VsDevCmd.bat" -no_logo -arch=x64 -host_arch=x64
 
 rem VsDevCmd may select Visual Studio's bundled vcpkg. Reassert GMP ownership.
+for /f "tokens=1 delims=;" %%I in ("%PATH%") do set "GMP_FIRST_PATH=%%~I"
+if /i not "%GMP_FIRST_PATH%"=="%GMP_BIN%\python" set "PATH=%GMP_BIN%\python;%GMP_BIN%\python\Scripts;%PATH%"
+set "GMP_FIRST_PATH="
 set "VCPKG_ROOT=%GMP_BIN%\vcpkg"
 set "VCPKG_DOWNLOADS=%GMP_BIN%\cache\vcpkg-downloads"
 set "VCPKG_DEFAULT_BINARY_CACHE=%GMP_BIN%\cache\vcpkg-archives"

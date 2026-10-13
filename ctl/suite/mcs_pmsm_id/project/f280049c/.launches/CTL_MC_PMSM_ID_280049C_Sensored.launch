@@ -15,6 +15,7 @@
     <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROJECT.TMS320F280049C.ccxml.Texas Instruments XDS110 USB Debug Probe_0/C28xx_CPU1" value="CTL_MC_PMSM_ID_280049C_Sensored"/>
     <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROJECT.TMS320F280049C_LaunchPad.ccxml.Texas Instruments XDS110 USB Debug Probe_0/C28xx_CPU1" value="CTL_MC_PMSM_ID_280049C_Sensored"/>
     <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_TARGET_CONFIG" value="${target_config_active_default:CTL_MC_PMSM_ID_280049C_Sensored}"/>
+    <stringAttribute key="com.ti.ccstudio.debug.debugModel.MRU_PROGRAM.TMS320F280049C.ccxml.Texas Instruments XDS110 USB Debug Probe_0/C28xx_CPU1" value="${build_artifact:CTL_MC_PMSM_ID_280049C_Sensored}"/>
     <stringAttribute key="com.ti.ccstudio.debug.debugModel.MRU_PROGRAM.TMS320F280049C_LaunchPad.ccxml.Texas Instruments XDS110 USB Debug Probe_0/C28xx_CPU1" value="${build_artifact:CTL_MC_PMSM_ID_280049C_Sensored}"/>
     <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
         <listEntry value="/CTL_MC_PMSM_ID_280049C_Sensored"/>

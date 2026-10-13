@@ -15,6 +15,14 @@ user-wide vcpkg integration. The private mode keeps GMP-managed tools under
 `gmp_pro/bin`; it does not install Scoop, change the persistent user `PATH`, or
 run user-wide `vcpkg integrate install`.
 
+The Windows private installer extracts a pinned
+[python-build-standalone archive](https://github.com/astral-sh/python-build-standalone/releases/tag/20250409)
+into `bin/python`, including pip and Tkinter. Its version, URL and SHA-256 are
+defined in `environment_manifest.json`. Bootstrap requires Windows PowerShell,
+`curl.exe` and `tar.exe`; it never runs the normal Python EXE installer, reuses
+system Python, or registers Python in Windows. Ordinary GMP tool launchers
+require this private environment and fail if it is missing or incomplete.
+
 Before either installer downloads anything, it checks existing
 `HTTPS_PROXY`/`HTTP_PROXY`/`ALL_PROXY` variables and the enabled Windows user
 proxy setting. When a proxy is found, the installer displays its address and
@@ -333,7 +341,7 @@ must select the installed environment through the common guard.
 | Change | Authoritative file | Other files that normally need review |
 | --- | --- | --- |
 | Add or update a Python package | `tools/gmp_installer/requirements-gmp.txt` | `environment_manifest.json` (`python.imports`) |
-| Change the private Python version | `environment_manifest.json` (`python.version`) | `install_online.bat` (`PYTHON_VERSION` and download URL) |
+| Change the private Python version | `environment_manifest.json` (`python.version`, `python.url`, `python.sha256`) | `bootstrap_private_python.ps1`, Python package compatibility |
 | Add or update a portable executable | `environment_manifest.json` (`applications`) | `activate_env.bat`, `environment_manager.py`, `install_system.bat` |
 | Add a C/C++ package to an existing project | That project's `vcpkg.json` | `environment_manifest.json` only if a new project is introduced |
 | Add a GMP BAT entry point | The owning tool directory | `audit_env_guards.py` scope, when a new managed directory is introduced |
@@ -381,10 +389,9 @@ installs it under `bin/python`. Therefore:
 - Before pinning a version, verify that it supplies a Windows x64 wheel for the
   private Python version. Packages that unexpectedly build native extensions
   can turn a normal install into a Visual Studio/compiler-dependent install.
-- If the private Python version changes, update both
-  `environment_manifest.json` and `install_online.bat`, then retest every pinned
-  package. Changing only one file makes the bootstrap interpreter disagree with
-  the declared environment.
+- If the private Python version changes, update its version, standalone archive
+  URL and SHA-256 in `environment_manifest.json`, then retest every pinned
+  package. The bootstrap reads all three values from that manifest.
 
 After changing Python dependencies, rebuild both a private environment and a
 classic environment. At minimum, run:
@@ -522,10 +529,13 @@ call "%GMP_PRO_LOCATION%\tools\gmp_installer\ensure_gmp_environment.bat"
 if errorlevel 1 exit /b 1
 ```
 
-The guard selects the completed private environment when
-`bin/gmp_virtual_env_installed.flag` exists; otherwise it leaves the script in
-classic/system mode. It also avoids repeated activation and preserves the
-caller's working directory. Scripts must follow these rules:
+The guard requires private Python and a completed environment marker. Missing or
+incomplete installations fail with instructions to run the private installer;
+ordinary GMP launchers never fall back to system Python. Installer child scripts
+may reuse an already active private environment before its marker is written.
+Activation clears inherited Python module paths and external pip install targets,
+disables user packages and pip configuration files, and preserves the caller's
+working directory. Scripts must follow these rules:
 
 - Resolve repository files from `%GMP_PRO_LOCATION%`; never assume a drive
   letter or derive the repository root from a chain such as `..\..\..`.
