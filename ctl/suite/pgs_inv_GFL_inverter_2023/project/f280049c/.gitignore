@@ -1,0 +1,79 @@
+# BEGIN GMP MANAGED PROJECT IGNORE RULES
+# This block is distributed from tools/gmp_installer/project_gitignore.template.
+# Keep project-specific rules outside the managed block.
+
+# User and editor state
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+*.uvguix.*
+
+# Build output
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+build/
+RTE/
+*.crf
+*.o
+*.obj
+*.d
+*.mk
+*.lnp
+*.map
+*.dep
+*.ilk
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.rsp
+*.tmp
+*.log
+*.binlog
+*.prefs
+
+# Generated STM32/Keil content
+Drivers/
+MDK-ARM/**/*.htm
+
+# Generated GMP source-management content
+gmp_src/
+gmp_inc/
+gmp_peripheral_src/
+include_paths.txt
+gmp_compiler_includes.txt
+include_headers.inl
+
+# Simulink and vcpkg output
+slprj/
+*.slxc
+*.asv
+*.autosave
+*.bak
+vcpkg_installed/
+
+# Miscellaneous generated files
+__pycache__/
+*.pyc
+*.crt_bin
+.meta/
+.metadata/
+.DS_Store
+*~
+# END GMP MANAGED PROJECT IGNORE RULES

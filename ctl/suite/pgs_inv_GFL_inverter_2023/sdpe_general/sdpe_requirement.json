@@ -1,0 +1,304 @@
+{
+  "id": "pgs_inv_gfl_common",
+  "macro_prefix": "PGS_INV_GFL_COMMON",
+  "display_name": "PGS Grid-Following Inverter Common Settings",
+  "description": "Platform-independent control contract shared by all pgs_inv_GFL_inverter projects. Hardware timing, sensing, board resources and BUILD_LEVEL selection remain in each platform requirement.",
+  "suite": "pgs_inv_GFL_inverter",
+  "version": "1.0.0",
+  "updated_at": "2026-07-15",
+  "output_header": "sdpe_pgs_inv_gfl_common_settings.h",
+  "hardware": [],
+  "code_sections": {
+    "after_extern_open": "/* Platform-independent GFL controller settings. */",
+    "before_footer": "/* Accept the historical PIL spelling while new projects use the canonical switch. */\n#if defined ENBALE_GMP_DL_PIL_SIM && !defined ENABLE_GMP_DL_PIL_SIM\n#define ENABLE_GMP_DL_PIL_SIM\n#endif"
+  },
+  "feature_macros": [
+    {
+      "group": "Control Algorithm",
+      "macro": "_USE_DEBUG_DISCRETE_PID",
+      "enabled": true,
+      "value": "",
+      "description": "Enable the existing discrete PID anti-saturation path."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "USING_DSOGI_PLL",
+      "enabled": false,
+      "value": "",
+      "description": "Use DSOGI PLL instead of the default SRF PLL."
+    },
+    {
+      "group": "Control Algorithm",
+      "macro": "USING_NPC_MODULATOR",
+      "enabled": false,
+      "value": "",
+      "description": "Use the three-level NPC modulator instead of the two-level SPWM modulator."
+    },
+    {
+      "group": "Runtime",
+      "macro": "SPECIFY_ENABLE_ADC_CALIBRATE",
+      "enabled": false,
+      "value": "",
+      "description": "Enable startup ADC offset calibration. Only enable while all calibrated power inputs are in a known zero state."
+    },
+    {
+      "group": "Runtime",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
+      "enabled": false,
+      "value": "",
+      "description": "Enable processor-in-the-loop input/output handling."
+    },
+    {
+      "group": "Runtime",
+      "macro": "GMP_CTL_FM_CONFIG_ENABLE_DEBUG_INFO",
+      "enabled": false,
+      "value": "",
+      "description": "Enable CiA402/GMP framework debug information."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Sampling",
+      "macro": "GFL_CAPACITOR_CURRENT_CALCULATE_MODE",
+      "enabled": true,
+      "value": "(3)",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)"
+      ],
+      "description": "Capacitor-current source: direct measurement, current difference, or capacitor-voltage derivative."
+    }
+  ],
+  "requirements": [
+    {
+      "role": "grid_voltage_pu",
+      "macro": "GFL_GRID_VOLTAGE_PU",
+      "binding": {
+        "float": "0.33"
+      },
+      "description": "Nominal grid phase-voltage magnitude in controller per unit."
+    },
+    {
+      "role": "grid_frequency",
+      "macro": "GFL_GRID_FREQUENCY_HZ",
+      "binding": {
+        "float": "50.0"
+      },
+      "description": "Nominal grid frequency in hertz."
+    },
+    {
+      "role": "pq_loop_frequency",
+      "macro": "GFL_PQ_LOOP_FREQUENCY_HZ",
+      "binding": {
+        "float": "1000.0"
+      },
+      "description": "P/Q outer-loop execution frequency in hertz."
+    },
+    {
+      "role": "pq_loop_divider",
+      "macro": "GFL_PQ_LOOP_DIVIDER",
+      "binding": {
+        "literal": "((uint32_t)(CONTROLLER_FREQUENCY / GFL_PQ_LOOP_FREQUENCY_HZ))"
+      },
+      "description": "Current-ISR to P/Q-loop execution divider."
+    },
+    {
+      "role": "pq_active_kp",
+      "macro": "GFL_PQ_ACTIVE_KP",
+      "binding": {
+        "float": "0.75"
+      },
+      "description": "Active-power loop proportional gain from P error PU to d-axis current PU."
+    },
+    {
+      "role": "pq_active_ki",
+      "macro": "GFL_PQ_ACTIVE_KI",
+      "binding": {
+        "float": "0.001"
+      },
+      "description": "Active-power loop integral gain in inverse seconds."
+    },
+    {
+      "role": "pq_reactive_kp",
+      "macro": "GFL_PQ_REACTIVE_KP",
+      "binding": {
+        "float": "0.75"
+      },
+      "description": "Reactive-power loop proportional gain from Q error PU to q-axis current PU."
+    },
+    {
+      "role": "pq_reactive_ki",
+      "macro": "GFL_PQ_REACTIVE_KI",
+      "binding": {
+        "float": "0.001"
+      },
+      "description": "Reactive-power loop integral gain in inverse seconds."
+    },
+    {
+      "role": "pq_current_limit",
+      "macro": "GFL_PQ_CURRENT_LIMIT_PU",
+      "binding": {
+        "float": "1.0"
+      },
+      "description": "Circular magnitude limit applied to the d/q current reference produced by the P/Q loop."
+    },
+    {
+      "role": "active_power_ref",
+      "macro": "GFL_ACTIVE_POWER_REF_PU",
+      "binding": {
+        "float": "0.1"
+      },
+      "description": "Default active-power reference. Positive power exports energy to the grid."
+    },
+    {
+      "role": "reactive_power_ref",
+      "macro": "GFL_REACTIVE_POWER_REF_PU",
+      "binding": {
+        "float": "0.0"
+      },
+      "description": "Default reactive-power reference using Q = vq*id - vd*iq."
+    },
+    {
+      "role": "open_loop_vd",
+      "macro": "GFL_OPEN_LOOP_VD_PU",
+      "binding": {
+        "float": "0.6"
+      },
+      "description": "BUILD_LEVEL 1 d-axis open-loop voltage command."
+    },
+    {
+      "role": "open_loop_vq",
+      "macro": "GFL_OPEN_LOOP_VQ_PU",
+      "binding": {
+        "float": "0.6"
+      },
+      "description": "BUILD_LEVEL 1 q-axis open-loop voltage command."
+    },
+    {
+      "role": "level2_id",
+      "macro": "GFL_CURRENT_LEVEL2_ID_PU",
+      "binding": {
+        "float": "0.1"
+      },
+      "description": "BUILD_LEVEL 2 d-axis current command."
+    },
+    {
+      "role": "level2_iq",
+      "macro": "GFL_CURRENT_LEVEL2_IQ_PU",
+      "binding": {
+        "float": "0.1"
+      },
+      "description": "BUILD_LEVEL 2 q-axis current command."
+    },
+    {
+      "role": "level3_id",
+      "macro": "GFL_CURRENT_LEVEL3_ID_PU",
+      "binding": {
+        "float": "0.1"
+      },
+      "description": "BUILD_LEVEL 3 grid-connected d-axis current command."
+    },
+    {
+      "role": "level3_iq",
+      "macro": "GFL_CURRENT_LEVEL3_IQ_PU",
+      "binding": {
+        "float": "0.0"
+      },
+      "description": "BUILD_LEVEL 3 grid-connected q-axis current command."
+    },
+    {
+      "role": "level4_id",
+      "macro": "GFL_CURRENT_LEVEL4_ID_PU",
+      "binding": {
+        "float": "0.6"
+      },
+      "description": "BUILD_LEVEL 4 d-axis current command."
+    },
+    {
+      "role": "level4_iq",
+      "macro": "GFL_CURRENT_LEVEL4_IQ_PU",
+      "binding": {
+        "float": "0.6"
+      },
+      "description": "BUILD_LEVEL 4 q-axis current command."
+    },
+    {
+      "role": "adc_calibrator_cutoff",
+      "macro": "GFL_ADC_CALIBRATOR_FC_HZ",
+      "binding": {
+        "float": "20.0"
+      },
+      "description": "ADC offset calibrator filter cutoff frequency."
+    },
+    {
+      "role": "adc_calibrator_q",
+      "macro": "GFL_ADC_CALIBRATOR_Q",
+      "binding": {
+        "float": "0.707"
+      },
+      "description": "ADC offset calibrator second-order filter quality factor."
+    },
+    {
+      "role": "cia402_enable_delay",
+      "macro": "GFL_CIA402_OPERATION_ENABLE_DELAY_MS",
+      "binding": {
+        "number": "100"
+      },
+      "description": "Minimum CiA402 delay before Operation Enabled."
+    },
+    {
+      "role": "pll_lock_epsilon",
+      "macro": "CTRL_SPLL_EPSILON",
+      "binding": {
+        "literal": "((float2ctrl(0.005)))"
+      },
+      "description": "PLL lock-error threshold in controller per unit."
+    }
+  ],
+  "requirement_groups": [
+    {
+      "name": "Control Loop Parameters",
+      "requirements": [
+        "grid_voltage_pu",
+        "pq_loop_frequency",
+        "pq_loop_divider",
+        "pq_active_kp",
+        "pq_active_ki",
+        "pq_reactive_kp",
+        "pq_reactive_ki",
+        "pq_current_limit",
+        "open_loop_vd",
+        "open_loop_vq",
+        "pll_lock_epsilon"
+      ]
+    },
+    {
+      "name": "Commissioning Defaults",
+      "requirements": [
+        "active_power_ref",
+        "reactive_power_ref",
+        "level2_id",
+        "level2_iq",
+        "level3_id",
+        "level3_iq",
+        "level4_id",
+        "level4_iq"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "adc_calibrator_cutoff",
+        "adc_calibrator_q",
+        "cia402_enable_delay"
+      ]
+    },
+    {
+      "name": "Default Parameters",
+      "requirements": [
+        "grid_frequency"
+      ]
+    }
+  ]
+}
