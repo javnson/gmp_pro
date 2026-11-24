@@ -1,4 +1,5 @@
 # Runtime packages imported by GMP repository tools.
+# Update requirements-gmp-windows.lock when changing the Windows installer dependencies.
 # GMP Debugger u8/u16 directly requires PyQt5, pyserial, pyqtgraph, and numpy.
 PyQt5==5.15.11
 PyQt6==6.9.1

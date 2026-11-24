@@ -67,7 +67,7 @@ set "GMP_PROXY_CONFIRMED=1"
 
 if "!GMP_PROXY_CANDIDATE:://=!"=="!GMP_PROXY_CANDIDATE!" set "GMP_PROXY_CANDIDATE=http://!GMP_PROXY_CANDIDATE!"
 
-echo [PROXY] Detected !GMP_PROXY_SOURCE!: !GMP_PROXY_CANDIDATE!
+echo [PROXY] Proxy candidate from !GMP_PROXY_SOURCE!.
 if "!GMP_PROXY_CONFIRMED!"=="1" goto :USE_PROXY
 if /i "!GMP_INSTALLER_PROXY_CHOICE!"=="Y" goto :USE_PROXY
 if /i "!GMP_INSTALLER_PROXY_CHOICE!"=="N" goto :SKIP_PROXY
@@ -82,7 +82,7 @@ exit /b 0
 
 :USE_DIRECT_NO_PROXY
 echo [PROXY] No enabled manual proxy was detected. Using a direct connection.
-endlocal & set "GMP_INSTALLER_PROXY_MODE=direct" & set "GMP_INSTALLER_PROXY_URL="
+endlocal & set "GMP_INSTALLER_PROXY_MODE=direct" & set "GMP_INSTALLER_PROXY_URL=" & set "HTTP_PROXY=" & set "HTTPS_PROXY=" & set "ALL_PROXY=" & set "NO_PROXY=*"
 exit /b 0
 
 :SKIP_PROXY

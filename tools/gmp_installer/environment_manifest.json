@@ -1,9 +1,13 @@
 {
   "schema_version": 1,
-  "environment_version": "1.4.0",
+  "environment_version": "1.5.0",
   "python": {
     "version": "3.12.10",
-    "requirements": "requirements-gmp.txt",
+    "lock": "requirements-gmp-windows.lock",
+    "installer": {
+      "url": "https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.exe",
+      "sha256": "67b5635e80ea51072b87941312d00ec8927c4db9ba18938f7ad2d27b328b95fb"
+    },
     "imports": [
       "PyQt5",
       "PyQt6",
@@ -13,14 +17,16 @@
       "numpy",
       "matplotlib",
       "jinja2",
-      "symengine"
+      "symengine",
+      "tkinter"
     ]
   },
   "applications": [
     {
       "name": "git",
-      "version": "2.47.1",
+      "version": "2.47.1.windows.1",
       "url": "https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/MinGit-2.47.1-64-bit.zip",
+      "sha256": "50b04b55425b5c465d076cdb184f63a0cd0f86f6ec8bb4d5860114a713d2c29a",
       "destination": "apps/git",
       "strip_single_root": false,
       "executables": ["cmd/git.exe"]
@@ -29,6 +35,7 @@
       "name": "cmake",
       "version": "3.31.6",
       "url": "https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-windows-x86_64.zip",
+      "sha256": "d163cd3ab4959b0a53fa8988f2ddbd2e6c501658201e6a154386bad9dbe4f836",
       "destination": "apps/cmake",
       "strip_single_root": true,
       "executables": ["bin/cmake.exe"]
@@ -37,6 +44,7 @@
       "name": "ninja",
       "version": "1.12.1",
       "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip",
+      "sha256": "f550fec705b6d6ff58f2db3c374c2277a37691678d6aba463adcbb129108467a",
       "destination": "apps/ninja",
       "strip_single_root": false,
       "executables": ["ninja.exe"]
@@ -44,7 +52,9 @@
     {
       "name": "doxygen",
       "version": "1.13.2",
-      "url": "https://www.doxygen.nl/files/doxygen-1.13.2.windows.x64.bin.zip",
+      "url": "https://github.com/doxygen/doxygen/releases/download/Release_1_13_2/doxygen-1.13.2.windows.x64.bin.zip",
+      "asset_api": "https://api.github.com/repos/doxygen/doxygen/releases/assets/219228640?download=1",
+      "sha256": "dedbcf1d05911afc003989d33194ab95539e2ef4535cc00143b5917c22614406",
       "destination": "apps/doxygen",
       "strip_single_root": false,
       "executables": ["doxygen.exe"]
@@ -53,6 +63,8 @@
       "name": "graphviz",
       "version": "12.2.1",
       "url": "https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/12.2.1/windows_10_cmake_Release_Graphviz-12.2.1-win64.zip",
+      "sha256": "82c34e6a73b8158bee357d1c51aac08925edc8f4a9f517f591fb8df989405ad4",
+      "version_arg": "-V",
       "destination": "apps/graphviz",
       "strip_single_root": true,
       "executables": ["bin/dot.exe"]
@@ -60,7 +72,18 @@
   ],
   "vcpkg": {
     "repository_version": "2026.04.27",
-    "repository_url": "https://github.com/microsoft/vcpkg/archive/refs/tags/2026.04.27.zip",
+    "repository": {
+      "url": "https://codeload.github.com/microsoft/vcpkg/zip/refs/tags/2026.04.27",
+      "file": "vcpkg-2026.04.27.zip",
+      "sha256": "a6b19adc997806d91557c1dbb61cd4b916d88059d86e5eebd6b84da4e7f80e15"
+    },
+    "tool_version": "2026-04-08",
+    "tool": {
+      "url": "https://github.com/microsoft/vcpkg-tool/releases/download/2026-04-08/vcpkg.exe",
+      "asset_api": "https://api.github.com/repos/microsoft/vcpkg-tool/releases/assets/391825061?download=1",
+      "file": "vcpkg-2026-04-08.exe",
+      "sha256": "f1edbf3a39de350e2bb065214fdc057111aa87a2e2ed9a7dcb8ddc86e17751b9"
+    },
     "triplet": "x64-windows",
     "projects": [
       "slib/simulink_lib_src"

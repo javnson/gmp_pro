@@ -15,6 +15,8 @@ if not errorlevel 1 (
     exit /b 1
 )
 
+if /i "%~1"=="--process-only" goto :REGISTER_PROCESS
+
 echo [GMP] Registering GMP_PRO_LOCATION=%GMP_CANDIDATE_ROOT%
 %SystemRoot%\System32\setx.exe GMP_PRO_LOCATION "%GMP_CANDIDATE_ROOT%" >nul
 if errorlevel 1 (
@@ -22,7 +24,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
+:REGISTER_PROCESS
 set "GMP_PRO_LOCATION=%GMP_CANDIDATE_ROOT%"
 set "GMP_CANDIDATE_ROOT="
+if /i "%~1"=="--process-only" exit /b 0
 echo [GMP] GMP_PRO_LOCATION is available to this installer and future processes.
 exit /b 0

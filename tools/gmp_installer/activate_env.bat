@@ -13,6 +13,17 @@ if not exist "%GMP_PRO_LOCATION%\tools\gmp_installer\environment_manifest.json" 
 for %%I in ("%GMP_PRO_LOCATION%") do set "GMP_PRO_LOCATION=%%~fI"
 set "GMP_BIN=%GMP_PRO_LOCATION%\bin"
 
+set "GMP_ENV_REQUESTED=virtual"
+set "GMP_ENV_REQUIRED_MARKER=%GMP_BIN%\gmp_virtual_env_installed.flag"
+if /i "%~1"=="--system" (
+    set "GMP_ENV_REQUESTED=system"
+    set "GMP_ENV_REQUIRED_MARKER=%GMP_BIN%\gmp_system_env_installed.flag"
+)
+if not exist "%GMP_ENV_REQUIRED_MARKER%" (
+    echo [ERROR] GMP %GMP_ENV_REQUESTED% setup has not completed. Run the full installer first.
+    exit /b 1
+)
+
 if not exist "%GMP_BIN%\python\python.exe" (
     echo [ERROR] GMP private environment is not installed at "%GMP_BIN%".
     echo         Run install_gmp_virtual_env.bat or copy bin and run deploy_gmp_env.bat first.
@@ -42,9 +53,8 @@ if exist "%GMP_BIN%\gmp_proxy_env.bat" (
     )
 )
 
-if not "%GMP_ENV_ACTIVE%"=="%GMP_PRO_LOCATION%" (
+if /i not "%GMP_ENV_ACTIVE%"=="%GMP_PRO_LOCATION%" (
     set "GMP_ENV_ACTIVE=%GMP_PRO_LOCATION%"
-    set "GMP_ENV_MODE=virtual"
     set "PYTHONHOME=%GMP_BIN%\python"
     set "PYTHONNOUSERSITE=1"
     set "PYTHONUTF8=1"
@@ -58,7 +68,9 @@ if not "%GMP_ENV_ACTIVE%"=="%GMP_PRO_LOCATION%" (
     set "CMAKE_TOOLCHAIN_FILE=%GMP_BIN%\vcpkg\scripts\buildsystems\vcpkg.cmake"
     set "PATH=%GMP_BIN%\python;%GMP_BIN%\python\Scripts;%GMP_BIN%\apps\git\cmd;%GMP_BIN%\apps\git\mingw64\bin;%GMP_BIN%\apps\cmake\bin;%GMP_BIN%\apps\ninja;%GMP_BIN%\apps\doxygen;%GMP_BIN%\apps\graphviz\bin;%GMP_BIN%\vcpkg;%PATH%"
 )
-set "GMP_ENV_MODE=virtual"
+set "GMP_ENV_MODE=%GMP_ENV_REQUESTED%"
+set "GMP_ENV_REQUESTED="
+set "GMP_ENV_REQUIRED_MARKER="
 
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if exist "%VSWHERE%" if not defined VSCMD_VER for /f "usebackq tokens=*" %%I in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do if exist "%%I\Common7\Tools\VsDevCmd.bat" call "%%I\Common7\Tools\VsDevCmd.bat" -no_logo -arch=x64 -host_arch=x64
@@ -74,7 +86,7 @@ set "CMAKE_TOOLCHAIN_FILE=%GMP_BIN%\vcpkg\scripts\buildsystems\vcpkg.cmake"
 
 cd /d "%GMP_PRO_LOCATION%"
 echo.
-echo [GMP] Private development environment activated.
+echo [GMP] %GMP_ENV_MODE% development environment activated.
 echo [GMP] Root   : %GMP_PRO_LOCATION%
 echo [GMP] Python : %GMP_BIN%\python\python.exe
 echo [GMP] vcpkg  : %VCPKG_ROOT%\vcpkg.exe

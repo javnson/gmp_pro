@@ -1,221 +1,25 @@
-# GMP Pro development environment installers
+# GMP installer maintenance
 
 **English** | [简体中文](README_CN.md)
 
-GMP Pro provides two compatible installation modes. Both first validate the
-repository path and register the user environment variable
-`GMP_PRO_LOCATION=<gmp_pro root>`. The variable is also set immediately for the
-current installer process, so no new command prompt is needed during setup.
+See the [GMP installation guide](../../manual/Install%20GMP.md) for the commands,
+installer actions, and Windows settings each mode writes.
 
-The classic system mode installs user-scoped applications with Scoop and enables
-user-wide vcpkg integration. The private mode keeps GMP-managed tools under
-`gmp_pro/bin`; it does not install Scoop, change the persistent user `PATH`, or
-run user-wide `vcpkg integrate install`.
+Both online modes prepare and hash-check all locked artifacts before installing
+the same tools under `bin`. The system entry also publishes the pinned tools
+on the user PATH and runs user-wide vcpkg integration if Visual Studio C++ is
+present. Existing Scoop installs are managed separately.
 
-Before either installer downloads anything, it checks existing
-`HTTPS_PROXY`/`HTTP_PROXY`/`ALL_PROXY` variables and the enabled Windows user
-proxy setting. When a proxy is found, the installer displays its address and
-asks `Y/N` whether it should be used. The answer affects only that installation
-process and its child tools; it does not rewrite the Windows proxy setting. For
-a private online installation, the installer always asks whether a proxy should
-be used. If no proxy was detected and the user selects `Y`, it asks for a proxy
-URL such as `http://127.0.0.1:7890`. The choice is additionally stored under `bin` and loaded
-by later GMP prompts and the GMP Visual Studio launcher. Copied-bin deployment
-asks again and replaces the source computer's choice. For unattended
-installation, set `GMP_INSTALLER_PROXY_CHOICE=Y` or `N` before launching the
-installer; interactive runs leave this variable unset.
+`environment_manifest.json` defines the Windows installer, ZIP and vcpkg
+artifacts. `requirements-gmp-windows.lock` defines the Windows x64 wheels and
+pip. `--plan` previews actions without writes. `--download-only` verifies and
+prepares the cache without installing.
 
-The root installation/deployment launchers pause after both success and failure
-so a window opened by double-click remains visible. Automated callers can
-disable this final pause by setting `GMP_INSTALLER_NO_PAUSE=1`; the original
-exit code is preserved in both cases.
-
-Visual Studio is an optional capability, not an installation prerequisite.
-Hardware/CCS workflows, private Python, documentation, source-management, and
-SDPE tools install and run on a computer without Visual Studio. When the
-installer detects Visual Studio with the Desktop development with C++ workload,
-it also restores the suite simulation vcpkg packages. Otherwise it prints an
-`[OPTIONAL]` warning, skips only that step, and still creates the private
-environment completion marker. Visual Studio itself is intentionally not copied
-into `bin`; its licensing and installer servicing model do not support treating
-an existing VS installation as a portable repository tool. After Visual Studio
-is installed later, run `repair_gmp_vcpkg.bat` for a private environment or
-rerun `install_gmp.bat` for the classic environment to add simulation support.
-
-## Layout
-
-```text
-bin/
-  python/                  private Python 3.12 and site-packages
-  apps/
-    git/                   portable MinGit
-    cmake/
-    ninja/
-    doxygen/
-    graphviz/
-  vcpkg/                   pinned vcpkg registry and executable
-  vcpkg_installed/         shared manifest installation tree
-  cache/                   downloads and vcpkg binary/download caches
-  gmp_proxy.json           private proxy/direct mode selected on this computer
-  gmp_proxy_env.bat        generated activation settings for child processes
-  gmp_environment.json     generated inventory (contains no absolute root path)
-```
-
-The complete `bin/` folder is ignored by Git.
-
-## 1. Install the classic system environment
-
-For maximum compatibility with the historical GMP setup, run:
-
-```bat
-install_gmp.bat
-```
-
-This installs or verifies Scoop-managed Git, Python, CMake, Ninja, Doxygen,
-Graphviz, and vcpkg; installs the shared Python requirement set; and runs the
-complete repository setup, including CCS product registration. It runs
-`vcpkg integrate install` and restores every suite simulation manifest only when
-the Visual Studio x64 C++ workload is detected.
-
-## 2. Build a private environment from zero
-
-Run from the repository root:
-
-```bat
-install_gmp_virtual_env.bat
-```
-
-The initial Python installer is downloaded with Windows `curl.exe`. All later
-downloads and extraction are performed by the private Python interpreter. The
-selected proxy is inherited by curl, Python/pip, vcpkg, Git, and Scoop.
-
-When Visual Studio C++ is available, the default installation automatically
-restores every vcpkg manifest matching:
-
-```text
-ctl/suite/*/project/simulate/vcpkg.json
-```
-
-Any `simulate` directory containing a `.sln` or `.vcxproj` is a managed Visual
-Studio simulation project and must contain `vcpkg.json`. This convention means
-a new suite receives installation support without another installer edit.
-
-and runs CCS product registration plus the facilities/source-manager repository
-setup. Useful diagnostic
-options are:
-
-```bat
-install_gmp_virtual_env.bat --skip-vcpkg-packages
-install_gmp_virtual_env.bat --skip-project-setup
-```
-
-These options are intended for installer debugging; they produce an incomplete
-environment and should not be used when preparing a `bin` folder for others.
-
-## 3. Deploy a copied private environment
-
-Copy a fully prepared `bin` folder beside `install_gmp.bat`, then run:
-
-```bat
-deploy_gmp_env.bat
-```
-
-This mode performs no downloads and no package installations. It validates the
-Python version and imports, portable applications, and the vcpkg executable. If
-Visual Studio C++ is present, it additionally requires the copied `bin` to
-contain the required `asio`, `fmt`, and `nlohmann-json` package trees; without
-Visual Studio those optional package trees are not required. It then runs only
-the CCS registration and repository configuration/generation steps. The generated environment
-inventory deliberately stores versions rather than the original absolute path,
-so moving the repository does not require rewriting it.
-
-For validation without repository generation:
-
-```bat
-deploy_gmp_env.bat --skip-project-setup
-```
-
-## 4. Enter the private environment
-
-Double-click or run:
-
-```bat
-gmp_env.bat
-```
-
-This opens a new GMP developer prompt. It prepends private tools to `PATH`,
-reads the registered `GMP_PRO_LOCATION`, isolates Python from user site-packages, configures the
-vcpkg caches/toolchain, and imports Visual Studio's x64 developer environment
-when it is available. Without Visual Studio it prints a warning and leaves all
-non-Visual-Studio GMP tools active.
-It does not persist any additional user or machine environment variables.
-
-A single command can also be run without opening an interactive prompt:
-
-```bat
-gmp_env.bat python --version
-gmp_env.bat cmake --version
-gmp_env.bat msbuild ctl\suite\mcs_pmsm\project\simulate\motor_control_simulink.vcxproj /p:Platform=x64
-```
-
-Visual Studio must inherit the GMP environment if its MSBuild-driven vcpkg
-restore may need the private proxy. Close an older Visual Studio instance and
-launch the solution through:
-
-```bat
-gmp_vs.bat ctl\suite\dps_fsbb\project\simulate\GMP_Motor_Control_simulink.sln
-```
-
-To change only the private proxy choice, or to repair/pre-download vcpkg tools
-and all discovered project dependencies without reinstalling Python and other
-applications, use:
-
-```bat
-configure_gmp_proxy.bat
-repair_gmp_vcpkg.bat
-```
-
-`repair_gmp_vcpkg.bat` requires Visual Studio C++ and does not create the
-installation completion marker. It
-uses the saved proxy to obtain vcpkg's auxiliary CMake/7zip/7zr tools and then
-restores every discovered suite manifest.
-
-Scripts that need to activate the environment in an existing command prompt can
-use:
-
-```bat
-call tools\gmp_installer\activate_env.bat
-```
-
-## Automatic environment guard for repository batch files
-
-Repository BAT entry points that can use GMP-managed tools carry this marker:
-
-```bat
-rem [GMP_ENV_GUARD] Prefer the GMP virtual environment when installed.
-call "%GMP_PRO_LOCATION%\tools\gmp_installer\ensure_gmp_environment.bat"
-if errorlevel 1 exit /b 1
-```
-
-`ensure_gmp_environment.bat` treats `bin/gmp_virtual_env_installed.flag` as the
-single installation-completion marker and additionally checks that private
-Python exists. Both online installation and copied-bin deployment delete any old
-flag before doing work and create it atomically only after every required setup
-and validation step succeeds. `gmp_environment.json` remains an inventory file;
-it is not an installation marker. The guard exports
-`GMP_ENV_MODE=virtual` after automatic activation, or `GMP_ENV_MODE=system` when
-no completed private environment exists. `GMP_ENV_ACTIVE` records the activated
-repository root and prevents repeated activation. The guard preserves the
-caller's working directory.
-
-The marker is currently required on the CTL Doxygen generator, SDPE v2 BAT
-entry points, GMP Debugger v2 launchers, and source-manager BAT templates.
-Search for `GMP_ENV_GUARD` when auditing new or renamed scripts. The coverage
-audit can also be run directly:
-
-```bat
-python tools\gmp_installer\audit_env_guards.py
-```
+The common environment guard checks the private or system completion marker
+before selecting a managed environment. It also checks that the pinned Python
+executable is present, preserves the caller's directory and avoids reactivation
+in an existing GMP shell. To audit marker coverage, run
+`python tools/gmp_installer/audit_env_guards.py`.
 
 ## Maintainer guide
 
@@ -265,23 +69,11 @@ always identical: `pyserial` is imported as `serial`, and `Jinja2` is imported
 as `jinja2`. The doctor and copied-environment deployment validate the import
 names, not the pip distribution names.
 
-The same requirements file is consumed by both installation modes. The classic
-installer installs it into system/user Python, while the private installer
-installs it under `bin/python`. Therefore:
-
-- Do not put `pip install` in `install_env.bat`, a service BAT, or an individual
-  Python tool.
-- Invoke pip as `python -m pip`, so it always targets the Python selected by the
-  environment guard.
-- Prefer invoking a Python CLI as `python -m package` rather than relying on a
-  user-global `Scripts` wrapper.
-- Before pinning a version, verify that it supplies a Windows x64 wheel for the
-  private Python version. Packages that unexpectedly build native extensions
-  can turn a normal install into a Visual Studio/compiler-dependent install.
-- If the private Python version changes, update both
-  `environment_manifest.json` and `install_online.bat`, then retest every pinned
-  package. Changing only one file makes the bootstrap interpreter disagree with
-  the declared environment.
+Both Windows installers consume `requirements-gmp-windows.lock`. When changing
+Python or adding packages, regenerate the lock with the Windows x64 wheel URL
+and SHA-256 for pip, direct dependencies and transitive dependencies. Update
+the Python version and installer artifact in `environment_manifest.json` if
+Python itself changes.
 
 After changing Python dependencies, rebuild both a private environment and a
 classic environment. At minimum, run:
@@ -316,28 +108,12 @@ environment is declared in the `applications` array of
 }
 ```
 
-The current generic application installer accepts ZIP archives. It downloads
-the archive into `bin/cache/downloads`, extracts it into
-`bin/<destination>`, optionally removes one common top-level archive directory,
-and verifies every path listed in `executables`. Use an HTTPS vendor/release
-URL, pin the version, and provide the vendor-published SHA-256 whenever one is
-available. Inspect the archive layout before choosing `strip_single_root`.
-
-Adding the manifest entry installs and validates the application, but does not
-by itself make its command visible everywhere. Complete all of these steps:
-
-1. Add the executable directory to the `PATH` assembled by
-   `tools/gmp_installer/activate_env.bat`.
-2. Add the same directory to `private_environment()` in
-   `tools/gmp_installer/environment_manager.py`. Repository setup and doctor
-   subprocesses use this Python-built environment rather than the BAT file.
-3. If classic installation must support the application, add its Scoop package
-   name to the install/verification loop in `install_system.bat`.
-4. Update the `--plan` output in the relevant installer BAT files so dry-run
-   output continues to describe what will actually be installed.
-5. Add a version smoke test and, for a required application, keep at least one
-   executable path in the manifest so copied-bin deployment can reject an
-   incomplete archive.
+Use an HTTPS release URL and the verified SHA-256 for the ZIP. Review its
+archive layout before selecting `strip_single_root`. The installer checks the
+listed executables and their reported version. Set `version_arg` if the
+executable uses a switch other than `--version`. Add its directory to
+`tool_directories()` in `environment_manager.py` and to the PATH in
+`activate_env.bat`.
 
 If the vendor distributes an MSI, EXE installer, tarball, or archive with
 special layout, extend the generic download/extraction code in
@@ -366,28 +142,19 @@ Therefore, adding a new suite requires no installer change: create the
 conventional directory, place the Visual Studio project and its manifest
 together, and commit both.
 
-`vcpkg.projects` in `environment_manifest.json` is only for exceptional projects
-outside the suite convention. Paths listed there are added to the automatically
-discovered set; normal suite projects must not be listed individually. Keep the
-vcpkg repository version and URL pinned together, restore every manifest with
-the configured triplet, and verify both installation modes.
+Use `vcpkg.projects` in `environment_manifest.json` for exceptional projects
+outside the suite convention. The installer combines their declared dependencies
+with the discovered suites into a single manifest under `bin/vcpkg_manifest`.
+Conflicting package declarations and project-specific version, registry,
+feature or override settings require reconciliation before they can be shared.
+Maintain the pinned versions, URLs and hashes of both the vcpkg tool and ports.
 
-`ctl/suite/Directory.Build.props` and `Directory.Build.targets` provide the
-shared MSBuild rule. When a project directory contains `vcpkg.json`, they enable
-manifest mode automatically and, when `bin/vcpkg` exists, point Visual Studio at
-the repository-private vcpkg tree and shared installed directory. They also set
-`VCPkgLocalAppDataDisabled=true`, preventing a user-wide Scoop/classic vcpkg
-integration from injecting a second, incompatible `vcpkg.props/targets` pair.
-This does not uninstall or modify the user's vcpkg. Do not create suite-specific
-copies of these files unless that project genuinely needs to override the
-common behavior: MSBuild uses the nearest `Directory.Build.*` files, which can
-shadow the central rule.
-
-The Visual Studio project consumes local vcpkg through `Directory.Build.props`
-and `Directory.Build.targets` when `bin/vcpkg` exists. Otherwise it remains
-compatible with classic mode's user-wide `vcpkg integrate install`. A service
-script must not run `vcpkg integrate install`; that is persistent user state and
-belongs only to the classic installer.
+`ctl/suite/Directory.Build.props` and `Directory.Build.targets` enable manifest
+mode and point completed GMP environments to the shared packages. They disable
+automatic manifest restore in that configuration, so building one project
+cannot reconcile the shared library directory against its own manifest.
+Suite-local `Directory.Build.*` files must import the common rules. If ports
+are missing or have changed, run `repair_gmp_vcpkg.bat`.
 
 ### Rules for GMP BAT services and launchers
 
@@ -579,19 +346,14 @@ python tools\gmp_installer\audit_env_guards.py
 
 ### Completion-marker invariant
 
-`bin/gmp_virtual_env_installed.flag` is the only indication that the private
-environment is complete. `gmp_environment.json` is diagnostic inventory and
-must never be used as the completion test. Online installation and copied-bin
-deployment delete any old marker before work begins; only
-`environment_manager.py` creates it atomically after all mandatory validation,
-CCS registration, and framework distribution steps succeed. Suite vcpkg package
-restoration is mandatory only when Visual Studio C++ is detected; its deliberate
-absence must not prevent hardware-only installations from becoming complete.
-
-No other program may create the marker. A debug install using `--skip-*` is
-intentionally incomplete and must finish without it. This invariant ensures
-that a failed reinstall cannot leave repository BAT files selecting a partial
-environment.
+The private and system markers are `gmp_virtual_env_installed.flag` and
+`gmp_system_env_installed.flag` in `bin`. The inventory in
+`gmp_environment.json` records versions and capabilities. The online installer
+verifies the entire cache before invalidating the prior markers and starting
+reinstallation. Copied-bin deployment invalidates copied markers before
+validation. The installer creates a new marker after successful setup.
+Diagnostic `--skip-*` runs finish without an active marker. The repair entry
+updates the existing capability inventory after successfully restoring vcpkg.
 
 ### Release and regression checklist
 

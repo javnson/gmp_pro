@@ -6,6 +6,8 @@
 
 ## 通用说明
 
+- [安装 GMP 开发环境](Install%20GMP_CN.md)
+
 - [代码规范](code-standard.md)
 - [变更历史](ChangeHistory.md)
 - [旧版中文综合手册](legacy_manual_cn.md)

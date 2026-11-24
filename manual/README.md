@@ -6,6 +6,8 @@ This directory collects repository-wide development guides. Start with the root 
 
 ## General guidance
 
+- [Install the GMP development environment](Install%20GMP.md)
+
 - [Code standard](code-standard.md)
 - [Change history](ChangeHistory.md)
 - [Legacy comprehensive Chinese manual](legacy_manual_cn.md)

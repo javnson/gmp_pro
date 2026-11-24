@@ -45,7 +45,7 @@ GMP 提供两种安装方式。
 install_gmp_virtual_env.bat
 ```
 
-如果希望沿用系统级工具和 Scoop 环境，可以运行经典安装：
+如需在普通终端中使用同一套固定版本的 GMP 工具，可运行系统安装将其发布到用户 PATH。
 
 ```bat
 install_gmp.bat

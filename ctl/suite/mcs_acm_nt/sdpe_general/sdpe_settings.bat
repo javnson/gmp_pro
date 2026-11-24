@@ -20,4 +20,3 @@ if /I "%SDPE_MANAGER_NAME%"=="sdpe_general" (
     set "SDPE_MATLAB_OUT=%~dp0."
 )
 exit /b 0
-

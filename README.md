@@ -52,7 +52,7 @@ Doxygen, Graphviz, vcpkg, and the required Python packages under `bin`:
 install_gmp_virtual_env.bat
 ```
 
-For compatibility with user-scoped system tools and Scoop, use:
+To publish the same pinned GMP tools on the current user PATH, use:
 
 ```bat
 install_gmp.bat

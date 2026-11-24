@@ -7,11 +7,11 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import urllib.parse
-import urllib.request
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -22,6 +22,7 @@ GMP_ROOT = Path(os.environ["GMP_PRO_LOCATION"]).resolve() if os.environ.get("GMP
 BIN_DIR = GMP_ROOT / "bin" if GMP_ROOT else None
 STATE_PATH = BIN_DIR / "gmp_environment.json" if BIN_DIR else None
 COMPLETION_MARKER_PATH = BIN_DIR / "gmp_virtual_env_installed.flag" if BIN_DIR else None
+SYSTEM_MARKER_PATH = BIN_DIR / "gmp_system_env_installed.flag" if BIN_DIR else None
 PROXY_CONFIG_PATH = BIN_DIR / "gmp_proxy.json" if BIN_DIR else None
 PROXY_ACTIVATION_PATH = BIN_DIR / "gmp_proxy_env.bat" if BIN_DIR else None
 SUITE_SIMULATE_GLOB = "ctl/suite/*/project/simulate"
@@ -100,7 +101,8 @@ def write_proxy_configuration() -> None:
         # URLs are kept inside SET quotes, so ampersands remain literal.
         lines.append(f'set "{name}={value.replace("%", "%%")}"')
     temporary_bat = PROXY_ACTIVATION_PATH.with_suffix(".bat.tmp")
-    temporary_bat.write_text("\r\n".join(lines) + "\r\n", encoding="utf-8")
+    lines.append("exit /b 0")
+    temporary_bat.write_text("\r\n".join(lines) + "\r\n", encoding="utf-8", newline="")
     temporary_bat.replace(PROXY_ACTIVATION_PATH)
     print(f"[PROXY] Saved GMP private environment proxy mode: {mode}")
 
@@ -139,55 +141,25 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def download(url: str, cache_dir: Path, expected_sha256: str | None = None) -> Path:
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    filename = Path(urllib.parse.unquote(urllib.parse.urlparse(url).path)).name
-    if not filename:
-        raise EnvironmentError(f"Cannot determine download filename: {url}")
-    destination = cache_dir / filename
-
-    if destination.exists() and (not expected_sha256 or sha256_file(destination) == expected_sha256):
-        print(f"[CACHE] {destination.name}")
-        return destination
-
-    temporary = destination.with_suffix(destination.suffix + ".part")
-    temporary.unlink(missing_ok=True)
-    request = urllib.request.Request(url, headers={"User-Agent": "GMP-Pro-Environment-Installer/1.0"})
-    print(f"[DOWNLOAD] {url}")
-    try:
-        with urllib.request.urlopen(request, timeout=60) as response, temporary.open("wb") as output:
-            total = int(response.headers.get("Content-Length", "0"))
-            received = 0
-            while True:
-                block = response.read(1024 * 1024)
-                if not block:
-                    break
-                output.write(block)
-                received += len(block)
-                if total:
-                    print(f"           {received * 100 // total:3d}%", end="\r", flush=True)
-        if total:
-            print("           100%")
-    except Exception:
-        temporary.unlink(missing_ok=True)
-        raise
-
-    if expected_sha256 and sha256_file(temporary) != expected_sha256:
-        temporary.unlink(missing_ok=True)
-        raise EnvironmentError(f"SHA-256 mismatch for {url}")
-    temporary.replace(destination)
-    return destination
+def verified_artifact(artifact: dict) -> Path:
+    filename = artifact.get("file") or Path(urllib.parse.urlsplit(artifact["url"]).path).name
+    path = BIN_DIR / "cache" / "downloads" / filename
+    if not path.is_file() or sha256_file(path) != artifact["sha256"]:
+        raise EnvironmentError(f"Missing or invalid locked artifact {path}; run the BAT installer to download it")
+    return path
 
 
 def _safe_archive_parts(name: str, strip_first: bool) -> tuple[str, ...] | None:
     path = PurePosixPath(name.replace("\\", "/"))
     parts = path.parts[1:] if strip_first else path.parts
-    if not parts or path.is_absolute() or any(part in ("", ".", "..") for part in parts):
+    if not parts:
         return None
+    if path.is_absolute() or any(part == ".." or ":" in part for part in path.parts):
+        raise EnvironmentError(f"Invalid path in installation archive: {name!r}")
     return tuple(parts)
 
 
-def extract_zip(archive: Path, destination: Path, strip_single_root: bool) -> None:
+def extract_zip(archive: Path, destination: Path, strip_single_root: bool, prepare) -> None:
     staging = destination.parent / f".{destination.name}.staging-{os.getpid()}"
     if staging.exists():
         shutil.rmtree(staging)
@@ -207,41 +179,67 @@ def extract_zip(archive: Path, destination: Path, strip_single_root: bool) -> No
                 with bundle.open(entry) as source, output.open("wb") as target:
                     shutil.copyfileobj(source, target)
 
-        if destination.exists():
-            shutil.rmtree(destination)
-        staging.replace(destination)
+        prepare(staging)
+        backup = destination.with_name(f".{destination.name}.backup-{os.getpid()}")
+        had_destination = destination.exists()
+        if had_destination:
+            destination.replace(backup)
+        try:
+            staging.replace(destination)
+        except OSError:
+            if had_destination:
+                backup.replace(destination)
+            raise
+        if had_destination:
+            shutil.rmtree(backup)
     except Exception:
         if staging.exists():
             shutil.rmtree(staging)
         raise
 
 
-def application_is_ready(application: dict) -> bool:
-    destination = BIN_DIR / application["destination"]
-    return all((destination / relative).is_file() for relative in application["executables"])
+def application_is_ready(application: dict, destination: Path, env: dict) -> bool:
+    executables = [destination / relative for relative in application["executables"]]
+    if not all(executable.is_file() for executable in executables):
+        return False
+    try:
+        result = subprocess.run(
+            [str(executables[0]), application.get("version_arg", "--version")],
+            capture_output=True, text=True, errors="replace", env=env, cwd=destination,
+        )
+    except OSError:
+        return False
+    version = re.escape(application["version"])
+    return result.returncode == 0 and bool(
+        re.search(rf"(?<![\w.]){version}(?![\w.])", result.stdout + result.stderr)
+    )
 
 
 def install_applications(manifest: dict) -> None:
-    downloads = BIN_DIR / "cache" / "downloads"
+    env = private_environment()
     for application in manifest["applications"]:
-        if application_is_ready(application):
+        destination = BIN_DIR / application["destination"]
+        if application_is_ready(application, destination, env):
             print(f"[OK] {application['name']} {application['version']} already installed")
             continue
-        archive = download(application["url"], downloads, application.get("sha256"))
-        destination = BIN_DIR / application["destination"]
+        archive = verified_artifact(application)
         print(f"[EXTRACT] {application['name']} -> {display_path(destination)}")
-        extract_zip(archive, destination, application.get("strip_single_root", False))
-        if not application_is_ready(application):
-            raise EnvironmentError(f"{application['name']} archive did not contain expected executables")
+        def prepare(staging: Path) -> None:
+            if not application_is_ready(application, staging, env):
+                raise EnvironmentError(f"{application['name']} archive did not contain the expected tool version")
+        extract_zip(archive, destination, application.get("strip_single_root", False), prepare)
 
 
 def install_python_packages(manifest: dict) -> None:
     python = BIN_DIR / "python" / "python.exe"
-    requirements = INSTALLER_DIR / manifest["python"]["requirements"]
+    requirements = INSTALLER_DIR / manifest["python"]["lock"]
     env = private_environment()
-    run([python, "-m", "pip", "install", "--upgrade", "pip"], env=env)
-    run([python, "-m", "pip", "install", "--requirement", requirements], env=env)
-    run([python, "-m", "pip", "check"], env=env)
+    run([
+        python, "-m", "pip", "--isolated", "install", "--no-index", "--only-binary=:all:",
+        "--require-hashes", "--find-links", BIN_DIR / "cache" / "wheels",
+        "--requirement", requirements,
+    ], env=env)
+    run([python, "-m", "pip", "--isolated", "check"], env=env)
 
 
 def ensure_vcpkg_cache_directories() -> None:
@@ -283,35 +281,57 @@ def discover_vcpkg_projects(manifest: dict) -> list[Path]:
     return sorted(projects, key=lambda path: path.relative_to(GMP_ROOT).as_posix().lower())
 
 
+def vcpkg_is_ready(manifest: dict) -> bool:
+    config = manifest["vcpkg"]
+    vcpkg_root = BIN_DIR / "vcpkg"
+    executable = vcpkg_root / "vcpkg.exe"
+    inventory = vcpkg_root / "gmp-registry.sha256"
+    return (
+        inventory.is_file()
+        and inventory.read_text(encoding="ascii").strip() == config["repository"]["sha256"]
+        and (vcpkg_root / "scripts" / "buildsystems" / "vcpkg.cmake").is_file()
+        and (vcpkg_root / "versions" / "baseline.json").is_file()
+        and executable.is_file()
+        and sha256_file(executable) == config["tool"]["sha256"]
+    )
+
+
 def install_vcpkg(manifest: dict) -> None:
     ensure_vcpkg_cache_directories()
     config = manifest["vcpkg"]
     vcpkg_root = BIN_DIR / "vcpkg"
-    executable = vcpkg_root / "vcpkg.exe"
-    if executable.is_file():
+    if vcpkg_is_ready(manifest):
         print(f"[OK] vcpkg {config['repository_version']} already installed")
         return
 
-    archive = download(config["repository_url"], BIN_DIR / "cache" / "downloads", config.get("sha256"))
+    archive = verified_artifact(config["repository"])
+    tool = verified_artifact(config["tool"])
     print(f"[EXTRACT] vcpkg -> {display_path(vcpkg_root)}")
-    extract_zip(archive, vcpkg_root, True)
 
-    metadata = vcpkg_root / "scripts" / "vcpkg-tool-metadata.txt"
-    if not metadata.is_file():
-        raise EnvironmentError("vcpkg tool metadata is missing from the repository archive")
-    values = {}
-    for line in metadata.read_text(encoding="utf-8").splitlines():
-        if "=" in line:
-            key, value = line.split("=", 1)
-            values[key.strip()] = value.strip()
-    release = values.get("VCPKG_TOOL_RELEASE_TAG")
-    if not release:
-        raise EnvironmentError("Cannot determine the matching vcpkg executable version")
-    tool_url = f"https://github.com/microsoft/vcpkg-tool/releases/download/{release}/vcpkg.exe"
-    cached_tool = download(tool_url, BIN_DIR / "cache" / "downloads")
-    shutil.copy2(cached_tool, executable)
-    (vcpkg_root / "vcpkg.disable-metrics").touch()
-    run([executable, "version", "--disable-metrics"], env=private_environment())
+    def prepare(staging: Path) -> None:
+        metadata = (staging / "scripts" / "vcpkg-tool-metadata.txt").read_text(encoding="utf-8").splitlines()
+        if f"VCPKG_TOOL_RELEASE_TAG={config['tool_version']}" not in metadata:
+            raise EnvironmentError("Locked vcpkg executable does not match the registry metadata")
+        shutil.copy2(tool, staging / "vcpkg.exe")
+        (staging / "vcpkg.disable-metrics").touch()
+        (staging / "gmp-registry.sha256").write_text(config["repository"]["sha256"] + "\n", encoding="ascii")
+
+    extract_zip(archive, vcpkg_root, True, prepare)
+    run([vcpkg_root / "vcpkg.exe", "version", "--disable-metrics"], env=private_environment())
+
+
+def tool_directories() -> list[Path]:
+    return [
+        BIN_DIR / "python",
+        BIN_DIR / "python" / "Scripts",
+        BIN_DIR / "apps" / "git" / "cmd",
+        BIN_DIR / "apps" / "git" / "mingw64" / "bin",
+        BIN_DIR / "apps" / "cmake" / "bin",
+        BIN_DIR / "apps" / "ninja",
+        BIN_DIR / "apps" / "doxygen",
+        BIN_DIR / "apps" / "graphviz" / "bin",
+        BIN_DIR / "vcpkg",
+    ]
 
 
 def private_environment() -> dict[str, str]:
@@ -335,18 +355,8 @@ def private_environment() -> dict[str, str]:
             "CMAKE_TOOLCHAIN_FILE": str(BIN_DIR / "vcpkg" / "scripts" / "buildsystems" / "vcpkg.cmake"),
         }
     )
-    path_entries = [
-        BIN_DIR / "python",
-        BIN_DIR / "python" / "Scripts",
-        BIN_DIR / "apps" / "git" / "cmd",
-        BIN_DIR / "apps" / "git" / "mingw64" / "bin",
-        BIN_DIR / "apps" / "cmake" / "bin",
-        BIN_DIR / "apps" / "ninja",
-        BIN_DIR / "apps" / "doxygen",
-        BIN_DIR / "apps" / "graphviz" / "bin",
-        BIN_DIR / "vcpkg",
-    ]
-    env["PATH"] = os.pathsep.join(str(path) for path in path_entries) + os.pathsep + env.get("PATH", "")
+    env["PATH"] = os.pathsep.join(str(path) for path in tool_directories()) + os.pathsep + env.get("PATH", "")
+    env.pop("PYTHONPATH", None)
     apply_persisted_proxy(env)
     return env
 
@@ -476,6 +486,36 @@ def visual_studio_environment(base_env: dict[str, str]) -> dict[str, str]:
     return activated
 
 
+def shared_vcpkg_manifest(manifest: dict) -> dict:
+    dependencies = {}
+    for project in discover_vcpkg_projects(manifest):
+        source = project / "vcpkg.json"
+        data = json.loads(source.read_text(encoding="utf-8"))
+        if (project / "vcpkg-configuration.json").exists() or set(data) - {
+            "$schema", "name", "version", "version-string", "version-semver", "version-date",
+            "port-version", "description", "homepage", "license", "dependencies",
+        }:
+            raise EnvironmentError(f"Cannot combine registry, feature or override settings from {source}")
+        for dependency in data.get("dependencies", []):
+            name = dependency if isinstance(dependency, str) else dependency["name"]
+            if name in dependencies and dependencies[name] != dependency:
+                raise EnvironmentError(f"Conflicting vcpkg requirements for {name} in {source}")
+            dependencies[name] = dependency
+    if not dependencies:
+        raise EnvironmentError("No shared vcpkg dependencies were discovered")
+    return {
+        "name": "gmp-shared-simulation-dependencies",
+        "version-string": manifest["environment_version"],
+        "dependencies": [dependencies[name] for name in sorted(dependencies)],
+    }
+
+
+def write_json(path: Path, data: dict) -> None:
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    temporary.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
 def install_vcpkg_projects(manifest: dict) -> None:
     ensure_vcpkg_cache_directories()
     executable = BIN_DIR / "vcpkg" / "vcpkg.exe"
@@ -485,29 +525,24 @@ def install_vcpkg_projects(manifest: dict) -> None:
     triplet = manifest["vcpkg"]["triplet"]
     install_root = BIN_DIR / "vcpkg_installed" / triplet
     install_root.mkdir(parents=True, exist_ok=True)
-    projects = discover_vcpkg_projects(manifest)
-    if not projects:
-        raise EnvironmentError(f"No vcpkg projects were found by {SUITE_SIMULATE_GLOB}")
-    for project in projects:
-        relative = project.relative_to(GMP_ROOT).as_posix()
-        print(f"[INSTALL] Restoring vcpkg manifest: {relative}")
-        run(
-            [
-                executable,
-                "install",
-                f"--x-manifest-root={project}",
-                f"--x-install-root={install_root}",
-                f"--triplet={triplet}",
-                "--disable-metrics",
-            ],
-            cwd=project,
-            env=env,
-        )
+    project = BIN_DIR / "vcpkg_manifest"
+    project.mkdir(parents=True, exist_ok=True)
+    write_json(project / "vcpkg.json", shared_vcpkg_manifest(manifest))
+    print("[INSTALL] Restoring the shared suite and Simulink vcpkg manifest")
+    run(
+        [
+            executable, "install", f"--x-manifest-root={project}", f"--x-install-root={install_root}",
+            f"--triplet={triplet}", "--disable-metrics",
+        ],
+        cwd=project,
+        env=env,
+    )
 
 
 def configure_repository() -> None:
     python = BIN_DIR / "python" / "python.exe"
     env = private_environment()
+    env["GMP_ENV_INSTALLING"] = str(GMP_ROOT)
     facilities = GMP_ROOT / "tools" / "facilities_generator"
     run([python, facilities / "gmp_fac_install_ccs_product.py"], cwd=facilities, env=env)
     run([python, facilities / "gmp_fac_generate_cfg_json.py"], cwd=facilities, env=env)
@@ -551,28 +586,98 @@ def write_state(
         },
         "python_packages": freeze.stdout.splitlines() if freeze.returncode == 0 else [],
         "portable": True,
+        "project_setup": True,
     }
     BIN_DIR.mkdir(parents=True, exist_ok=True)
-    STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_json(STATE_PATH, state)
 
 
 def remove_completion_marker() -> None:
     COMPLETION_MARKER_PATH.unlink(missing_ok=True)
+    SYSTEM_MARKER_PATH.unlink(missing_ok=True)
 
 
-def create_completion_marker() -> None:
-    temporary = COMPLETION_MARKER_PATH.with_suffix(".flag.tmp")
-    temporary.write_text("GMP virtual environment installation completed.\n", encoding="ascii")
-    temporary.replace(COMPLETION_MARKER_PATH)
+def create_completion_marker(mode: str) -> None:
+    marker = SYSTEM_MARKER_PATH if mode == "system" else COMPLETION_MARKER_PATH
+    temporary = marker.with_suffix(".flag.tmp")
+    temporary.write_text(f"GMP {mode} environment installation completed.\n", encoding="ascii")
+    temporary.replace(marker)
 
 
 def expected_vcpkg_ports(manifest: dict) -> set[str]:
-    ports = set()
-    for project in discover_vcpkg_projects(manifest):
-        data = json.loads((project / "vcpkg.json").read_text(encoding="utf-8"))
-        for dependency in data.get("dependencies", []):
-            ports.add(dependency if isinstance(dependency, str) else dependency["name"])
-    return ports
+    return {
+        dep if isinstance(dep, str) else dep["name"]
+        for dep in shared_vcpkg_manifest(manifest)["dependencies"]
+    }
+
+
+def python_package_failures(manifest: dict, python: Path, env: dict) -> list[str]:
+    lock = INSTALLER_DIR / manifest["python"]["lock"]
+    versions = {}
+    for line in lock.read_text(encoding="utf-8").splitlines():
+        if line.strip() and not line.lstrip().startswith("#"):
+            name, version = line.split()[0].split("==", 1)
+            versions[re.sub(r"[-_.]+", "-", name).lower()] = version
+    result = subprocess.run(
+        [python, "-m", "pip", "--isolated", "list", "--format=json"],
+        capture_output=True, text=True, env=env,
+    )
+    if result.returncode:
+        return ["cannot list the installed Python package versions"]
+    installed = {
+        re.sub(r"[-_.]+", "-", package["name"]).lower(): package["version"]
+        for package in json.loads(result.stdout)
+    }
+    return [
+        f"expected Python package {name}=={version}, found {installed.get(name, 'missing')}"
+        for name, version in versions.items() if installed.get(name) != version
+    ]
+
+
+def native_package_failures(manifest: dict) -> list[str]:
+    failures = []
+    triplet = manifest["vcpkg"]["triplet"]
+    project = BIN_DIR / "vcpkg_manifest" / "vcpkg.json"
+    if not project.is_file() or json.loads(project.read_text(encoding="utf-8")) != shared_vcpkg_manifest(manifest):
+        failures.append("shared vcpkg manifest is missing or out of date; run repair_gmp_vcpkg.bat")
+    share = BIN_DIR / "vcpkg_installed" / triplet / triplet / "share"
+    for port in sorted(expected_vcpkg_ports(manifest)):
+        if not (share / port).is_dir():
+            failures.append(f"missing vcpkg package for {triplet}: {port}")
+    return failures
+
+
+def publish_environment(mode: str, visual_studio_cpp: bool) -> None:
+    if mode == "system":
+        import winreg
+
+        if visual_studio_cpp:
+            executable = BIN_DIR / "vcpkg" / "vcpkg.exe"
+            run([executable, "integrate", "install", "--disable-metrics"], env=private_environment())
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0, winreg.KEY_READ | winreg.KEY_WRITE) as key:
+            try:
+                current, value_type = winreg.QueryValueEx(key, "Path")
+            except FileNotFoundError:
+                current, value_type = "", winreg.REG_EXPAND_SZ
+            try:
+                old_root, _ = winreg.QueryValueEx(key, "GMP_SYSTEM_ROOT")
+            except FileNotFoundError:
+                old_root = str(GMP_ROOT)
+
+            def normalize(entry: str) -> str:
+                return os.path.normcase(os.path.normpath(entry.strip(' "')))
+
+            new_paths = [str(path) for path in tool_directories()]
+            owned_paths = {
+                normalize(str(Path(old_root) / path.relative_to(GMP_ROOT)))
+                for path in tool_directories()
+            } | {normalize(path) for path in new_paths}
+            retained = [entry for entry in current.split(os.pathsep) if entry and normalize(entry) not in owned_paths]
+            winreg.SetValueEx(key, "Path", 0, value_type, os.pathsep.join(new_paths + retained))
+            winreg.SetValueEx(key, "GMP_SYSTEM_ROOT", 0, winreg.REG_SZ, str(GMP_ROOT))
+
+    setx = Path(os.environ["SystemRoot"]) / "System32" / "setx.exe"
+    run([setx, "GMP_PRO_LOCATION", GMP_ROOT])
 
 
 def doctor(
@@ -584,39 +689,39 @@ def doctor(
     if require_vcpkg_packages is None:
         require_vcpkg_packages = visual_studio_is_available()
     failures = []
+    env = private_environment()
     if require_completion_marker and not COMPLETION_MARKER_PATH.is_file():
         failures.append(f"missing completion marker: {display_path(COMPLETION_MARKER_PATH)}")
     python = BIN_DIR / "python" / "python.exe"
     if not python.is_file():
         failures.append(f"missing {display_path(python)}")
     else:
-        version = subprocess.run([str(python), "--version"], capture_output=True, text=True, env=private_environment())
-        if manifest["python"]["version"] not in (version.stdout + version.stderr):
+        version = subprocess.run([str(python), "--version"], capture_output=True, text=True, env=env)
+        if version.returncode or (version.stdout + version.stderr).strip() != f"Python {manifest['python']['version']}":
             failures.append(f"expected Python {manifest['python']['version']}, got {(version.stdout + version.stderr).strip()}")
+        failures.extend(python_package_failures(manifest, python, env))
+        if subprocess.run([python, "-m", "pip", "--isolated", "check"], env=env).returncode:
+            failures.append("Python package dependency check failed")
         import_code = "; ".join(f"import {name}" for name in manifest["python"]["imports"])
-        imports = subprocess.run([str(python), "-c", import_code], env=private_environment())
+        imports = subprocess.run([str(python), "-c", import_code], env=env)
         if imports.returncode:
             failures.append("one or more required Python packages cannot be imported")
 
     for application in manifest["applications"]:
-        if not application_is_ready(application):
-            failures.append(f"missing or incomplete application: {application['name']}")
-    if not (BIN_DIR / "vcpkg" / "vcpkg.exe").is_file():
-        failures.append("missing vcpkg/vcpkg.exe")
+        if not application_is_ready(application, BIN_DIR / application["destination"], env):
+            failures.append(f"missing or unexpected application version: {application['name']} {application['version']}")
+    if not vcpkg_is_ready(manifest):
+        failures.append("vcpkg tool or registry is missing, incomplete or unlocked")
 
     if require_vcpkg_packages:
-        triplet = manifest["vcpkg"]["triplet"]
-        share = BIN_DIR / "vcpkg_installed" / triplet / triplet / "share"
-        for port in expected_vcpkg_ports(manifest):
-            if not (share / port).is_dir():
-                failures.append(f"missing vcpkg package for {triplet}: {port}")
+        failures.extend(native_package_failures(manifest))
 
     if failures:
         print("[DOCTOR] Environment validation failed:")
         for failure in failures:
             print(f"  - {failure}")
         return False
-    print("[DOCTOR] GMP private environment is complete and relocatable.")
+    print("[DOCTOR] The checked GMP environment components match the locked plan.")
     return True
 
 
@@ -647,9 +752,10 @@ def print_vcpkg_project_paths(manifest: dict) -> None:
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
-    online = subparsers.add_parser("online", help="download and build bin from zero")
-    online.add_argument("--skip-vcpkg-packages", action="store_true")
-    online.add_argument("--skip-project-setup", action="store_true")
+    for command in ("online", "system"):
+        online = subparsers.add_parser(command, help="install the verified, cached toolchain")
+        online.add_argument("--skip-vcpkg-packages", action="store_true")
+        online.add_argument("--skip-project-setup", action="store_true")
     deploy = subparsers.add_parser("deploy", help="validate and deploy a copied bin folder")
     deploy.add_argument("--skip-project-setup", action="store_true")
     subparsers.add_parser("doctor", help="validate the current bin folder")
@@ -696,73 +802,59 @@ def main() -> int:
             if not visual_studio_is_available():
                 print_optional_visual_studio_warning()
                 return 2
-            install_vcpkg(manifest)
+            if not vcpkg_is_ready(manifest):
+                raise EnvironmentError("The pinned vcpkg tool or registry is missing; rerun the installer")
             install_vcpkg_projects(manifest)
-            return 0 if doctor(manifest, require_completion_marker=False) else 1
+            if not doctor(manifest, require_completion_marker=False):
+                return 1
+            if STATE_PATH.is_file():
+                state = json.loads(STATE_PATH.read_text(encoding="utf-8"))
+                if state.get("environment_version") == manifest["environment_version"]:
+                    write_state(manifest, state["deployed_by"], visual_studio_cpp=True, vcpkg_packages_restored=True)
+            print("[SUCCESS] Shared vcpkg dependencies restored.")
+            return 0
         if args.command == "doctor":
-            return 0 if doctor(manifest) else 1
-        if args.command == "online":
-            write_proxy_configuration()
-            remove_completion_marker()
+            return 0 if doctor(manifest, require_completion_marker=not SYSTEM_MARKER_PATH.is_file()) else 1
+
+        deploying = args.command == "deploy"
+        mode = "portable-copy" if deploying else args.command
+        skip_native = getattr(args, "skip_vcpkg_packages", False)
+        visual_studio_cpp = visual_studio_is_available()
+        if not visual_studio_cpp and not skip_native:
+            print_optional_visual_studio_warning()
+        remove_completion_marker()
+        STATE_PATH.unlink(missing_ok=True)
+        write_proxy_configuration()
+        if deploying and not doctor(manifest, require_completion_marker=False):
+            return 1
+        if not deploying:
             install_python_packages(manifest)
             install_applications(manifest)
             install_vcpkg(manifest)
-            visual_studio_cpp = visual_studio_is_available()
-            vcpkg_packages_restored = False
-            if not args.skip_vcpkg_packages and visual_studio_cpp:
+            if visual_studio_cpp and not skip_native:
                 install_vcpkg_projects(manifest)
-                vcpkg_packages_restored = True
-            elif not args.skip_vcpkg_packages:
-                print_optional_visual_studio_warning()
-            if not args.skip_project_setup:
-                configure_repository()
-            write_state(
-                manifest,
-                "online",
-                visual_studio_cpp=visual_studio_cpp,
-                vcpkg_packages_restored=vcpkg_packages_restored,
-            )
-            if not doctor(
-                manifest,
-                require_vcpkg_packages=vcpkg_packages_restored,
-                require_completion_marker=False,
-            ):
-                return 1
-            if args.skip_vcpkg_packages or args.skip_project_setup:
-                print("\n[WARNING] Partial installation completed; completion marker was not created.")
-                return 0
-            create_completion_marker()
-        elif args.command == "deploy":
-            write_proxy_configuration()
-            remove_completion_marker()
-            visual_studio_cpp = visual_studio_is_available()
-            if not visual_studio_cpp:
-                print_optional_visual_studio_warning()
-            if not doctor(
-                manifest,
-                require_vcpkg_packages=visual_studio_cpp,
-                require_completion_marker=False,
-            ):
-                return 1
-            if not args.skip_project_setup:
-                configure_repository()
-            write_state(
-                manifest,
-                "portable-copy",
-                visual_studio_cpp=visual_studio_cpp,
-                vcpkg_packages_restored=visual_studio_cpp,
-            )
-            if args.skip_project_setup:
-                print("\n[WARNING] Partial deployment completed; completion marker was not created.")
-                return 0
-            if not doctor(
-                manifest,
-                require_vcpkg_packages=visual_studio_cpp,
-                require_completion_marker=False,
-            ):
-                return 1
-            create_completion_marker()
-        print("\n[SUCCESS] GMP private environment is ready. Run gmp_env.bat to enter it.")
+        if not doctor(
+            manifest,
+            require_vcpkg_packages=visual_studio_cpp and not skip_native,
+            require_completion_marker=False,
+        ):
+            return 1
+        if not args.skip_project_setup:
+            configure_repository()
+        if args.skip_project_setup or skip_native:
+            print("\n[PARTIAL] Requested diagnostic steps finished. Run the full installer to activate GMP.")
+            return 0
+
+        publish_environment(mode, visual_studio_cpp)
+        write_state(
+            manifest, mode, visual_studio_cpp=visual_studio_cpp,
+            vcpkg_packages_restored=not native_package_failures(manifest),
+        )
+        create_completion_marker(mode)
+        if mode == "system":
+            print("\n[SUCCESS] GMP user environment is ready. Open a new terminal for the updated PATH.")
+        else:
+            print("\n[SUCCESS] GMP private environment is ready. Run gmp_env.bat to enter it.")
         return 0
     except (EnvironmentError, OSError, json.JSONDecodeError, zipfile.BadZipFile) as error:
         print(f"\n[ERROR] {error}", file=sys.stderr)
