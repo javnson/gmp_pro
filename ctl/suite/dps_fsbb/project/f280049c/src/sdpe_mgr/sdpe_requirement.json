@@ -15,6 +15,8 @@
     {
       "role": "Data Link Scope Depth",
       "macro": "GMP_DL_SCOPE_DEPTH",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "100"
       },
@@ -23,6 +25,8 @@
     {
       "role": "PWM Depth",
       "macro": "CTRL_PWM_CMP_MAX",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "2500"
       },
@@ -31,6 +35,8 @@
     {
       "role": "PWM Deadband Width",
       "macro": "CTRL_PWM_DEADBAND_CMP",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "60"
       },
@@ -39,6 +45,8 @@
     {
       "role": "System Tick Divider",
       "macro": "DSP_C2000_DSP_TIME_DIV",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "20"
       },
@@ -47,6 +55,8 @@
     {
       "role": "Fixed Input Voltage",
       "macro": "FSBB_LAUNCHXL_FIXED_VIN",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "12.0f"
       },
@@ -55,6 +65,8 @@
     {
       "role": "Commissioning Voltage",
       "macro": "FSBB_OPEN_LOOP_VOLTAGE_COMMAND",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "3.0f"
       },
@@ -63,22 +75,28 @@
     {
       "role": "Output Overvoltage",
       "macro": "FSBB_OUTPUT_VOLTAGE_MAX",
+      "enabled": true,
+      "weak": false,
       "binding": {
-        "number": "15.0f"
+        "number": "48.0"
       },
       "description": "Commissioning output overvoltage limit in volts."
     },
     {
       "role": "Positive Current Trip",
       "macro": "FSBB_PROTECT_IL_MAX",
+      "enabled": true,
+      "weak": false,
       "binding": {
-        "number": "2.0f"
+        "number": "10.0f"
       },
       "description": "Commissioning positive inductor current trip in amps."
     },
     {
       "role": "Negative Current Trip",
       "macro": "FSBB_PROTECT_IL_MIN",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "-2.0f"
       },
@@ -87,14 +105,18 @@
     {
       "role": "Output Current Limit",
       "macro": "FSBB_OUTPUT_CURRENT_LIM",
+      "enabled": true,
+      "weak": false,
       "binding": {
-        "number": "1.0f"
+        "number": "5.0f"
       },
       "description": "Controller current reference ceiling in amps."
     },
     {
       "role": "Default Output Voltage",
       "macro": "FSBB_DEFAULT_OUTPUT_VOLTAGE",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "6.0f"
       },
@@ -103,6 +125,8 @@
     {
       "role": "Default Current Limit",
       "macro": "FSBB_DEFAULT_CURRENT_LIMIT",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "0.5f"
       },
@@ -114,6 +138,7 @@
       "group": "PIL Runtime",
       "macro": "ENABLE_GMP_DL_PIL_SIM",
       "enabled": false,
+      "weak": false,
       "value": "",
       "description": "Execute control only on PIL STEP requests and hold both physical bridges in Trip."
     },
@@ -121,6 +146,7 @@
       "group": "Controller Settings",
       "macro": "CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT",
       "enabled": true,
+      "weak": false,
       "value": "",
       "description": "Use explicit CiA402 commands from the FSBB CAN mailbox."
     },
@@ -128,6 +154,7 @@
       "group": "Controller Settings",
       "macro": "CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH",
       "enabled": true,
+      "weak": false,
       "value": "",
       "description": "Advance through the full startup sequence on an explicit Enable Operation command."
     },
@@ -135,6 +162,7 @@
       "group": "Sampling",
       "macro": "FSBB_ENABLE_VIN_SAMPLE",
       "enabled": false,
+      "weak": false,
       "value": "",
       "description": "Enable optional isolated Vin feedback on BoosterPack pin 24 (ADCINB0)."
     }
@@ -144,7 +172,8 @@
       "group": "Controller Settings",
       "macro": "BUILD_LEVEL",
       "enabled": true,
-      "value": "(1)",
+      "weak": false,
+      "value": "(3)",
       "options_preset": "",
       "options": [
         "(1)",
@@ -156,5 +185,33 @@
   ],
   "code_sections": {
     "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 3)\n#error \"BUILD_LEVEL must be 1, 2, or 3.\"\n#endif"
-  }
+  },
+  "updated_at": "2026-11-24",
+  "requirement_groups": [
+    {
+      "name": "Ungrouped",
+      "requirements": [
+        "Data Link Scope Depth",
+        "PWM Depth",
+        "PWM Deadband Width",
+        "System Tick Divider",
+        "Fixed Input Voltage",
+        "Commissioning Voltage",
+        "Output Overvoltage",
+        "Positive Current Trip",
+        "Negative Current Trip",
+        "Output Current Limit",
+        "Default Output Voltage",
+        "Default Current Limit"
+      ]
+    }
+  ],
+  "feature_macro_groups": [
+    "PIL Runtime",
+    "Controller Settings",
+    "Sampling"
+  ],
+  "option_macro_groups": [
+    "Controller Settings"
+  ]
 }

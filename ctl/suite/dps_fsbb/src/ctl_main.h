@@ -84,7 +84,7 @@ GMP_STATIC_INLINE void ctl_dispatch(void)
 
 #if (BUILD_LEVEL == 1)
     dcdc_core.mode = CTL_DCDC_MODE_OPENLOOP;
-    dcdc_core.v_target = real2ctrl(FSBB_OPEN_LOOP_VOLTAGE_COMMAND / CTRL_VOLTAGE_BASE);
+//    dcdc_core.v_target = real2ctrl(FSBB_OPEN_LOOP_VOLTAGE_COMMAND / CTRL_VOLTAGE_BASE);
     v_req = ctl_step_dcdc_open_loop(&dcdc_core);
 #elif (BUILD_LEVEL == 2)
     dcdc_core.mode = CTL_DCDC_MODE_CURRENTLOOP;

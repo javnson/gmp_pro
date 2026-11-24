@@ -597,3 +597,4 @@ tools/hvhb40040_Antaioz/**/impl_1
 # Repository-local generated/test workspace
 tmp/**
 ctl\component\motor_control\observer\tests
+/third_party

@@ -6,21 +6,9 @@
 
 ### 功率板接线
 
-电感跨接 LVFB 的 `CN7`（Bridge2）和 `CN1`（Bridge1）。输入接 `CN11/CN10`，负载接 `CN4/CN10`。功率板单独供辅助 12 V，LaunchPad 由 USB 供电。两板的信号侧共地，功率板的 `PGND` 保持隔离。
+[接线与上电检查](README_WIRING_CN.md)包含主回路、电感、供电、PWM、反馈、过流和 CAN 接线。MCU 在 100 MHz TBCLK 下配置 20 kHz PWM 和 600 ns 死区，功率板自身也有门极死区。带主电源前按台架核对 [目标 SDPE](src/sdpe_mgr/sdpe_requirement.json) 中的控制等级、给定和保护门限。
 
-| 功率板 | LaunchPad 丝印针号 | 固件功能 |
-| --- | --- | --- |
-| J2-3 | 79 / GPIO1 | ePWM1B，Buck 下管 |
-| J2-5 | 80 / GPIO0 | ePWM1A，Buck 上管 |
-| J2-4 | 76 / GPIO2 | ePWM2A，Boost 下管 |
-| J2-6 | 75 / GPIO3 | ePWM2B，Boost 上管 |
-| J2-9 | 59 / GPIO27 | 门极使能，高有效 |
-| J3-9 | 54 / GPIO31 | /OC，低有效，Input X-BAR → 两组 ePWM One-Shot Trip |
-| J3-3 | 63 / ADCINA6 | 电感电流，正方向为 CN7 → CN1 |
-| J3-5 | 66 / ADCINC1 | 输出电压 |
-| J2-7/8 和 J3-7/8 | 60、62 / GND | 选择每组中的一个脚接信号回地 |
-
-刷入实物构建前，给功率板 `Enable_uC` 加 2.2 kΩ 下拉，并在只上辅助电源时确认复位关断、PWM 互补、死区和 /OC 锁存。MCU 在 100 MHz TBCLK 下配置 20 kHz PWM 和 600 ns 死区。功率板自身也有门极死区。硬件默认使用 `BUILD_LEVEL=1`，固定 Vin 为 12 V，开环目标为 3 V，电感电流软件保护为 ±2 A，Vout 过压上限为 15 V。这些是初始调试值，带主电源前应核对实际电源、电感和负载。固定 Vin 由 `FSBB_LAUNCHXL_FIXED_VIN` 设置。若加装隔离 Vin 调理电路，可接 BoosterPack **24 / ADCINB0** 并启用 `FSBB_ENABLE_VIN_SAMPLE`。
+### CAN 控制
 
 实物构建上电后等待显式使能命令。将 LaunchPad 的 S9 拨到 CAN 路由，CAN 使用 **500 kbit/s**、标准帧。ID `0x101` 的首字节为 `0` 关断、`1` 使能、`2` 故障复位。确认故障消失后先复位，再重新发送使能。ID `0x102` 是两个小端有符号 32 位值，依次是电压给定和电流限值，编码为标幺值乘以 10000。Level 1 使用 SDPE 开环给定，Level 2 使用电流给定，Level 3 使用电压给定和电流限值。
 

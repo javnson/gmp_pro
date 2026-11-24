@@ -28,6 +28,7 @@ extern "C"
 #define DPS_FSBB_F280049C_SDPE_PROJECT_ID "dps_fsbb_f280049c"
 #define DPS_FSBB_F280049C_SDPE_PROJECT_SUITE "dps_fsbb"
 #define DPS_FSBB_F280049C_SDPE_PROJECT_VERSION "1.0.0"
+#define DPS_FSBB_F280049C_SDPE_PROJECT_UPDATED_AT "2026-11-24"
 
 //=================================================================================================
 /**
@@ -73,7 +74,7 @@ extern "C"
  * @brief 1: open loop. 2: current loop. 3: cascaded voltage and current.
  *        Options: (1), (2), (3)
  */
-#define BUILD_LEVEL (1)
+#define BUILD_LEVEL (3)
 
 //=================================================================================================
 /**
@@ -113,12 +114,12 @@ extern "C"
 /**
  * @brief Commissioning output overvoltage limit in volts.
  */
-#define FSBB_OUTPUT_VOLTAGE_MAX (15.0f)
+#define FSBB_OUTPUT_VOLTAGE_MAX (48.0)
 
 /**
  * @brief Commissioning positive inductor current trip in amps.
  */
-#define FSBB_PROTECT_IL_MAX (2.0f)
+#define FSBB_PROTECT_IL_MAX (10.0f)
 
 /**
  * @brief Commissioning negative inductor current trip in amps.
@@ -128,7 +129,7 @@ extern "C"
 /**
  * @brief Controller current reference ceiling in amps.
  */
-#define FSBB_OUTPUT_CURRENT_LIM (1.0f)
+#define FSBB_OUTPUT_CURRENT_LIM (5.0f)
 
 /**
  * @brief Level 3 default command in volts.
@@ -151,18 +152,53 @@ extern "C"
  */
 
 /**
- * @brief Enable the four ADC slots used by the FSBB SIL input ABI.
+ * @brief Open-loop equivalent voltage command.
  */
-#ifndef GMP_PIL_RX_MASK
-#define GMP_PIL_RX_MASK (15)
-#endif // GMP_PIL_RX_MASK
+#ifndef FSBB_OPEN_LOOP_VOLTAGE_COMMAND
+#define FSBB_OPEN_LOOP_VOLTAGE_COMMAND real2param(12.0)
+#endif // FSBB_OPEN_LOOP_VOLTAGE_COMMAND
 
 /**
- * @brief Enable two PWM slots and eight monitor slots used by the FSBB SIL output ABI.
+ * @brief Maximum output voltage.
  */
-#ifndef GMP_PIL_TX_MASK
-#define GMP_PIL_TX_MASK (16711683)
-#endif // GMP_PIL_TX_MASK
+#ifndef FSBB_OUTPUT_VOLTAGE_MAX
+#define FSBB_OUTPUT_VOLTAGE_MAX real2param(72.0)
+#endif // FSBB_OUTPUT_VOLTAGE_MAX
+
+/**
+ * @brief Positive inductor-current protection threshold.
+ */
+#ifndef FSBB_PROTECT_IL_MAX
+#define FSBB_PROTECT_IL_MAX real2param(25.0)
+#endif // FSBB_PROTECT_IL_MAX
+
+/**
+ * @brief Negative inductor-current protection threshold.
+ */
+#ifndef FSBB_PROTECT_IL_MIN
+#define FSBB_PROTECT_IL_MIN real2param(-2.0)
+#endif // FSBB_PROTECT_IL_MIN
+
+/**
+ * @brief Output current limit.
+ */
+#ifndef FSBB_OUTPUT_CURRENT_LIM
+#define FSBB_OUTPUT_CURRENT_LIM real2param(10.0)
+#endif // FSBB_OUTPUT_CURRENT_LIM
+
+/**
+ * @brief Default voltage-loop command.
+ */
+#ifndef FSBB_DEFAULT_OUTPUT_VOLTAGE
+#define FSBB_DEFAULT_OUTPUT_VOLTAGE real2param(24.0)
+#endif // FSBB_DEFAULT_OUTPUT_VOLTAGE
+
+/**
+ * @brief Default current limit.
+ */
+#ifndef FSBB_DEFAULT_CURRENT_LIMIT
+#define FSBB_DEFAULT_CURRENT_LIMIT real2param(5.0)
+#endif // FSBB_DEFAULT_CURRENT_LIMIT
 
 /**
  * @brief FSBB switching frequency.
@@ -180,6 +216,20 @@ extern "C"
 #define CTRL_ADC_VOLTAGE_REF real2param(3.3)
 
 /**
+ * @brief Enable the four ADC slots used by the FSBB SIL input ABI.
+ */
+#ifndef GMP_PIL_RX_MASK
+#define GMP_PIL_RX_MASK (15)
+#endif // GMP_PIL_RX_MASK
+
+/**
+ * @brief Enable two PWM slots and eight monitor slots used by the FSBB SIL output ABI.
+ */
+#ifndef GMP_PIL_TX_MASK
+#define GMP_PIL_TX_MASK (16711683)
+#endif // GMP_PIL_TX_MASK
+
+/**
  * @brief Voltage per-unit base.
  */
 #define CTRL_VOLTAGE_BASE real2param(34.0)
@@ -187,7 +237,7 @@ extern "C"
 /**
  * @brief Current per-unit base.
  */
-#define CTRL_CURRENT_BASE real2param(14.14)
+#define CTRL_CURRENT_BASE real2param(5.0)
 
 /**
  * @brief Minimum load resistance.
@@ -220,46 +270,6 @@ extern "C"
 #define FSBB_PARAM_L_ESR real2param(0.05)
 
 /**
- * @brief Input-voltage sensor sensitivity in V/V.
- */
-#define CTRL_FSBB_VIN_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
-
-/**
- * @brief Input-voltage sensor bias in V.
- */
-#define CTRL_FSBB_VIN_BIAS GMP_LVFB_VOLTAGE_BIAS_V
-
-/**
- * @brief Output-voltage sensor sensitivity in V/V.
- */
-#define CTRL_FSBB_VOUT_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
-
-/**
- * @brief Output-voltage sensor bias in V.
- */
-#define CTRL_FSBB_VOUT_BIAS GMP_LVFB_VOLTAGE_BIAS_V
-
-/**
- * @brief Boost-side output-current sensor sensitivity in V/A.
- */
-#define CTRL_FSBB_IOUT_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
-
-/**
- * @brief Boost-side output-current sensor bias in V.
- */
-#define CTRL_FSBB_IOUT_BIAS GMP_LVFB_CURRENT_BIAS_V
-
-/**
- * @brief Inductor-current sensor sensitivity in V/A.
- */
-#define CTRL_FSBB_IL_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
-
-/**
- * @brief Inductor-current sensor bias in V.
- */
-#define CTRL_FSBB_IL_BIAS GMP_LVFB_CURRENT_BIAS_V
-
-/**
  * @brief Maximum input voltage.
  */
 #define FSBB_INPUT_VOLTAGE_MAX real2param(60.0)
@@ -275,37 +285,9 @@ extern "C"
 #define FSBB_INPUT_VOLTAGE_NOMINAL real2param(24.0)
 
 /**
- * @brief Maximum output voltage.
- */
-#ifndef FSBB_OUTPUT_VOLTAGE_MAX
-#define FSBB_OUTPUT_VOLTAGE_MAX real2param(72.0)
-#endif // FSBB_OUTPUT_VOLTAGE_MAX
-
-/**
  * @brief Minimum output voltage.
  */
 #define FSBB_OUTPUT_VOLTAGE_MIN real2param(3.0)
-
-/**
- * @brief Output current limit.
- */
-#ifndef FSBB_OUTPUT_CURRENT_LIM
-#define FSBB_OUTPUT_CURRENT_LIM real2param(10.0)
-#endif // FSBB_OUTPUT_CURRENT_LIM
-
-/**
- * @brief Default voltage-loop command.
- */
-#ifndef FSBB_DEFAULT_OUTPUT_VOLTAGE
-#define FSBB_DEFAULT_OUTPUT_VOLTAGE real2param(24.0)
-#endif // FSBB_DEFAULT_OUTPUT_VOLTAGE
-
-/**
- * @brief Default current limit.
- */
-#ifndef FSBB_DEFAULT_CURRENT_LIMIT
-#define FSBB_DEFAULT_CURRENT_LIMIT real2param(5.0)
-#endif // FSBB_DEFAULT_CURRENT_LIMIT
 
 /**
  * @brief Maximum leg duty.
@@ -318,35 +300,14 @@ extern "C"
 #define FSBB_DUTY_MIN real2param(0.05)
 
 /**
- * @brief Positive inductor-current protection threshold.
- */
-#ifndef FSBB_PROTECT_IL_MAX
-#define FSBB_PROTECT_IL_MAX real2param(25.0)
-#endif // FSBB_PROTECT_IL_MAX
-
-/**
- * @brief Negative inductor-current protection threshold.
- */
-#ifndef FSBB_PROTECT_IL_MIN
-#define FSBB_PROTECT_IL_MIN real2param(-2.0)
-#endif // FSBB_PROTECT_IL_MIN
-
-/**
- * @brief Open-loop equivalent voltage command.
- */
-#ifndef FSBB_OPEN_LOOP_VOLTAGE_COMMAND
-#define FSBB_OPEN_LOOP_VOLTAGE_COMMAND real2param(12.0)
-#endif // FSBB_OPEN_LOOP_VOLTAGE_COMMAND
-
-/**
  * @brief Current-loop crossover frequency.
  */
 #define FSBB_CURRENT_LOOP_BANDWIDTH real2param(800.0)
 
 /**
- * @brief Voltage-loop crossover frequency.
+ * @brief Compatibility setting used by the suite framework.
  */
-#define FSBB_VOLTAGE_LOOP_BANDWIDTH real2param(40.0)
+#define CTRL_SPLL_EPSILON real2param(0.005)
 
 /**
  * @brief Buck-to-transition boundary.
@@ -359,14 +320,54 @@ extern "C"
 #define FSBB_TRANSITION_RATIO_HIGH real2param(1.10)
 
 /**
- * @brief Compatibility setting used by the suite framework.
+ * @brief Voltage-loop crossover frequency.
  */
-#define CTRL_SPLL_EPSILON real2param(0.005)
+#define FSBB_VOLTAGE_LOOP_BANDWIDTH real2param(40.0)
 
 /**
  * @brief ADC calibration timeout.
  */
 #define TIMEOUT_ADC_CALIB_MS (3000)
+
+/**
+ * @brief Inductor-current sensor sensitivity in V/A.
+ */
+#define CTRL_FSBB_IL_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
+
+/**
+ * @brief Inductor-current sensor bias in V.
+ */
+#define CTRL_FSBB_IL_BIAS GMP_LVFB_CURRENT_BIAS_V
+
+/**
+ * @brief Input-voltage sensor sensitivity in V/V.
+ */
+#define CTRL_FSBB_VIN_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
+
+/**
+ * @brief Input-voltage sensor bias in V.
+ */
+#define CTRL_FSBB_VIN_BIAS GMP_LVFB_VOLTAGE_BIAS_V
+
+/**
+ * @brief Boost-side output-current sensor sensitivity in V/A.
+ */
+#define CTRL_FSBB_IOUT_SENSITIVITY GMP_LVFB_CURRENT_SENSITIVITY
+
+/**
+ * @brief Boost-side output-current sensor bias in V.
+ */
+#define CTRL_FSBB_IOUT_BIAS GMP_LVFB_CURRENT_BIAS_V
+
+/**
+ * @brief Output-voltage sensor sensitivity in V/V.
+ */
+#define CTRL_FSBB_VOUT_SENSITIVITY GMP_LVFB_VOLTAGE_SENSITIVITY
+
+/**
+ * @brief Output-voltage sensor bias in V.
+ */
+#define CTRL_FSBB_VOUT_BIAS GMP_LVFB_VOLTAGE_BIAS_V
 
 /**
  * @brief Voltage command ramp in pu/s.

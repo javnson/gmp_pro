@@ -100,6 +100,8 @@ void ctl_init(void)
 
     v_req = real2ctrl(FSBB_OPEN_LOOP_VOLTAGE_COMMAND / CTRL_VOLTAGE_BASE);
 
+    dcdc_core.v_target = real2ctrl(FSBB_OPEN_LOOP_VOLTAGE_COMMAND / CTRL_VOLTAGE_BASE);
+
     //
     // init FSBB PWM modulator
     //

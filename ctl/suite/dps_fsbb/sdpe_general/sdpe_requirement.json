@@ -5,7 +5,7 @@
   "description": "Platform-independent FSBB topology, sensing, protection and control contract shared by all hardware and SIL targets.",
   "suite": "dps_fsbb",
   "version": "1.0.0",
-  "updated_at": "2026-08-15",
+  "updated_at": "2026-11-24",
   "output_header": "sdpe_dps_fsbb_common_settings.h",
   "hardware": [
     {
@@ -16,258 +16,30 @@
   "option_macros": [],
   "requirements": [
     {
-      "role": "PIL input channel mask",
-      "macro": "GMP_PIL_RX_MASK",
+      "role": "Open-loop Voltage Command",
+      "macro": "FSBB_OPEN_LOOP_VOLTAGE_COMMAND",
+      "enabled": true,
       "weak": true,
-      "binding": {
-        "number": "15"
-      },
-      "description": "Enable the four ADC slots used by the FSBB SIL input ABI."
-    },
-    {
-      "role": "PIL output channel mask",
-      "macro": "GMP_PIL_TX_MASK",
-      "weak": true,
-      "binding": {
-        "number": "16711683"
-      },
-      "description": "Enable two PWM slots and eight monitor slots used by the FSBB SIL output ABI."
-    },
-    {
-      "role": "PWM Frequency",
-      "macro": "PWM_FREQ",
-      "binding": {
-        "parameter": "20e3"
-      },
-      "description": "FSBB switching frequency."
-    },
-    {
-      "role": "Controller Frequency",
-      "macro": "CONTROLLER_FREQUENCY",
-      "binding": {
-        "parameter": "20e3"
-      },
-      "description": "SIL controller sample frequency."
-    },
-    {
-      "role": "ADC Reference Voltage",
-      "macro": "CTRL_ADC_VOLTAGE_REF",
-      "binding": {
-        "parameter": "3.3"
-      },
-      "description": "ADC reference voltage."
-    },
-    {
-      "role": "Voltage PU Base",
-      "macro": "CTRL_VOLTAGE_BASE",
-      "binding": {
-        "parameter": "34.0"
-      },
-      "description": "Voltage per-unit base."
-    },
-    {
-      "role": "Current PU Base",
-      "macro": "CTRL_CURRENT_BASE",
-      "binding": {
-        "parameter": "14.14"
-      },
-      "description": "Current per-unit base."
-    },
-    {
-      "role": "Minimum Load Resistance",
-      "macro": "FSBB_PARAM_RLOAD_MIN",
-      "binding": {
-        "parameter": "20.0"
-      },
-      "description": "Minimum load resistance."
-    },
-    {
-      "role": "Input Capacitance",
-      "macro": "FSBB_PARAM_CIN",
-      "binding": {
-        "parameter": "440e-6"
-      },
-      "description": "Input capacitance."
-    },
-    {
-      "role": "Output Capacitance",
-      "macro": "FSBB_PARAM_COUT",
-      "binding": {
-        "parameter": "440e-6"
-      },
-      "description": "Output capacitance."
-    },
-    {
-      "role": "Output Capacitor ESR",
-      "macro": "FSBB_PARAM_COUT_ESR",
-      "binding": {
-        "parameter": "0.1"
-      },
-      "description": "Output capacitor ESR."
-    },
-    {
-      "role": "Main Inductor",
-      "macro": "FSBB_PARAM_L",
-      "binding": {
-        "parameter": "1.5e-3"
-      },
-      "description": "Main FSBB inductance."
-    },
-    {
-      "role": "Main Inductor ESR",
-      "macro": "FSBB_PARAM_L_ESR",
-      "binding": {
-        "parameter": "0.05"
-      },
-      "description": "Main inductor ESR."
-    },
-    {
-      "role": "Input Voltage Sensitivity",
-      "macro": "CTRL_FSBB_VIN_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
-      },
-      "description": "Input-voltage sensor sensitivity in V/V."
-    },
-    {
-      "role": "Input Voltage Bias",
-      "macro": "CTRL_FSBB_VIN_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
-      },
-      "description": "Input-voltage sensor bias in V."
-    },
-    {
-      "role": "Output Voltage Sensitivity",
-      "macro": "CTRL_FSBB_VOUT_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
-      },
-      "description": "Output-voltage sensor sensitivity in V/V."
-    },
-    {
-      "role": "Output Voltage Bias",
-      "macro": "CTRL_FSBB_VOUT_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
-      },
-      "description": "Output-voltage sensor bias in V."
-    },
-    {
-      "role": "Output Current Sensitivity",
-      "macro": "CTRL_FSBB_IOUT_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
-      },
-      "description": "Boost-side output-current sensor sensitivity in V/A."
-    },
-    {
-      "role": "Output Current Bias",
-      "macro": "CTRL_FSBB_IOUT_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
-      },
-      "description": "Boost-side output-current sensor bias in V."
-    },
-    {
-      "role": "Inductor Current Sensitivity",
-      "macro": "CTRL_FSBB_IL_SENSITIVITY",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
-      },
-      "description": "Inductor-current sensor sensitivity in V/A."
-    },
-    {
-      "role": "Inductor Current Bias",
-      "macro": "CTRL_FSBB_IL_BIAS",
-      "binding": {
-        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
-      },
-      "description": "Inductor-current sensor bias in V."
-    },
-    {
-      "role": "Maximum Input Voltage",
-      "macro": "FSBB_INPUT_VOLTAGE_MAX",
-      "binding": {
-        "parameter": "60.0"
-      },
-      "description": "Maximum input voltage."
-    },
-    {
-      "role": "Minimum Input Voltage",
-      "macro": "FSBB_INPUT_VOLTAGE_MIN",
       "binding": {
         "parameter": "12.0"
       },
-      "description": "Minimum input voltage."
-    },
-    {
-      "role": "Nominal Input Voltage",
-      "macro": "FSBB_INPUT_VOLTAGE_NOMINAL",
-      "binding": {
-        "parameter": "24.0"
-      },
-      "description": "Nominal model source voltage."
+      "description": "Open-loop equivalent voltage command."
     },
     {
       "role": "Maximum Output Voltage",
       "macro": "FSBB_OUTPUT_VOLTAGE_MAX",
+      "enabled": true,
+      "weak": true,
       "binding": {
         "parameter": "72.0"
       },
       "description": "Maximum output voltage."
     },
     {
-      "role": "Minimum Output Voltage",
-      "macro": "FSBB_OUTPUT_VOLTAGE_MIN",
-      "binding": {
-        "parameter": "3.0"
-      },
-      "description": "Minimum output voltage."
-    },
-    {
-      "role": "Maximum Output Current",
-      "macro": "FSBB_OUTPUT_CURRENT_LIM",
-      "binding": {
-        "parameter": "10.0"
-      },
-      "description": "Output current limit."
-    },
-    {
-      "role": "Default Output Voltage",
-      "macro": "FSBB_DEFAULT_OUTPUT_VOLTAGE",
-      "binding": {
-        "parameter": "24.0"
-      },
-      "description": "Default voltage-loop command."
-    },
-    {
-      "role": "Default Current Limit",
-      "macro": "FSBB_DEFAULT_CURRENT_LIMIT",
-      "binding": {
-        "parameter": "5.0"
-      },
-      "description": "Default current limit."
-    },
-    {
-      "role": "Maximum Duty",
-      "macro": "FSBB_DUTY_MAX",
-      "binding": {
-        "parameter": "0.95"
-      },
-      "description": "Maximum leg duty."
-    },
-    {
-      "role": "Minimum Duty",
-      "macro": "FSBB_DUTY_MIN",
-      "binding": {
-        "parameter": "0.05"
-      },
-      "description": "Minimum leg duty."
-    },
-    {
       "role": "Maximum Inductor Current",
       "macro": "FSBB_PROTECT_IL_MAX",
+      "enabled": true,
+      "weak": true,
       "binding": {
         "parameter": "25.0"
       },
@@ -276,38 +48,258 @@
     {
       "role": "Minimum Inductor Current",
       "macro": "FSBB_PROTECT_IL_MIN",
+      "enabled": true,
+      "weak": true,
       "binding": {
         "parameter": "-2.0"
       },
       "description": "Negative inductor-current protection threshold."
     },
     {
-      "role": "Open-loop Voltage Command",
-      "macro": "FSBB_OPEN_LOOP_VOLTAGE_COMMAND",
+      "role": "Maximum Output Current",
+      "macro": "FSBB_OUTPUT_CURRENT_LIM",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "parameter": "10.0"
+      },
+      "description": "Output current limit."
+    },
+    {
+      "role": "Default Output Voltage",
+      "macro": "FSBB_DEFAULT_OUTPUT_VOLTAGE",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "parameter": "24.0"
+      },
+      "description": "Default voltage-loop command."
+    },
+    {
+      "role": "Default Current Limit",
+      "macro": "FSBB_DEFAULT_CURRENT_LIMIT",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "parameter": "5.0"
+      },
+      "description": "Default current limit."
+    },
+    {
+      "role": "PWM Frequency",
+      "macro": "PWM_FREQ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "20e3"
+      },
+      "description": "FSBB switching frequency."
+    },
+    {
+      "role": "Controller Frequency",
+      "macro": "CONTROLLER_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "20e3"
+      },
+      "description": "SIL controller sample frequency."
+    },
+    {
+      "role": "ADC Reference Voltage",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "3.3"
+      },
+      "description": "ADC reference voltage."
+    },
+    {
+      "role": "PIL Input Channel Mask",
+      "macro": "GMP_PIL_RX_MASK",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "number": "15"
+      },
+      "description": "Enable the four ADC slots used by the FSBB SIL input ABI."
+    },
+    {
+      "role": "PIL Output Channel Mask",
+      "macro": "GMP_PIL_TX_MASK",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "number": "16711683"
+      },
+      "description": "Enable two PWM slots and eight monitor slots used by the FSBB SIL output ABI."
+    },
+    {
+      "role": "Voltage PU Base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "34.0"
+      },
+      "description": "Voltage per-unit base."
+    },
+    {
+      "role": "Current PU Base",
+      "macro": "CTRL_CURRENT_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "5.0"
+      },
+      "description": "Current per-unit base."
+    },
+    {
+      "role": "Minimum Load Resistance",
+      "macro": "FSBB_PARAM_RLOAD_MIN",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "20.0"
+      },
+      "description": "Minimum load resistance."
+    },
+    {
+      "role": "Input Capacitance",
+      "macro": "FSBB_PARAM_CIN",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "440e-6"
+      },
+      "description": "Input capacitance."
+    },
+    {
+      "role": "Output Capacitance",
+      "macro": "FSBB_PARAM_COUT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "440e-6"
+      },
+      "description": "Output capacitance."
+    },
+    {
+      "role": "Output Capacitor ESR",
+      "macro": "FSBB_PARAM_COUT_ESR",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "0.1"
+      },
+      "description": "Output capacitor ESR."
+    },
+    {
+      "role": "Main Inductor",
+      "macro": "FSBB_PARAM_L",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "1.5e-3"
+      },
+      "description": "Main FSBB inductance."
+    },
+    {
+      "role": "Main Inductor ESR",
+      "macro": "FSBB_PARAM_L_ESR",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "0.05"
+      },
+      "description": "Main inductor ESR."
+    },
+    {
+      "role": "Maximum Input Voltage",
+      "macro": "FSBB_INPUT_VOLTAGE_MAX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "60.0"
+      },
+      "description": "Maximum input voltage."
+    },
+    {
+      "role": "Minimum Input Voltage",
+      "macro": "FSBB_INPUT_VOLTAGE_MIN",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "parameter": "12.0"
       },
-      "description": "Open-loop equivalent voltage command."
+      "description": "Minimum input voltage."
+    },
+    {
+      "role": "Nominal Input Voltage",
+      "macro": "FSBB_INPUT_VOLTAGE_NOMINAL",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "24.0"
+      },
+      "description": "Nominal model source voltage."
+    },
+    {
+      "role": "Minimum Output Voltage",
+      "macro": "FSBB_OUTPUT_VOLTAGE_MIN",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "3.0"
+      },
+      "description": "Minimum output voltage."
+    },
+    {
+      "role": "Maximum Duty",
+      "macro": "FSBB_DUTY_MAX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "0.95"
+      },
+      "description": "Maximum leg duty."
+    },
+    {
+      "role": "Minimum Duty",
+      "macro": "FSBB_DUTY_MIN",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "0.05"
+      },
+      "description": "Minimum leg duty."
     },
     {
       "role": "Current-loop Bandwidth",
       "macro": "FSBB_CURRENT_LOOP_BANDWIDTH",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "parameter": "800.0"
       },
       "description": "Current-loop crossover frequency."
     },
     {
-      "role": "Voltage-loop Bandwidth",
-      "macro": "FSBB_VOLTAGE_LOOP_BANDWIDTH",
+      "role": "SPLL Epsilon",
+      "macro": "CTRL_SPLL_EPSILON",
+      "enabled": true,
+      "weak": false,
       "binding": {
-        "parameter": "40.0"
+        "parameter": "0.005"
       },
-      "description": "Voltage-loop crossover frequency."
+      "description": "Compatibility setting used by the suite framework."
     },
     {
       "role": "Low Transition Ratio",
       "macro": "FSBB_TRANSITION_RATIO_LOW",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "parameter": "0.90"
       },
@@ -316,30 +308,118 @@
     {
       "role": "High Transition Ratio",
       "macro": "FSBB_TRANSITION_RATIO_HIGH",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "parameter": "1.10"
       },
       "description": "Transition-to-boost boundary."
     },
     {
-      "role": "SPLL Epsilon",
-      "macro": "CTRL_SPLL_EPSILON",
+      "role": "Voltage-loop Bandwidth",
+      "macro": "FSBB_VOLTAGE_LOOP_BANDWIDTH",
+      "enabled": true,
+      "weak": false,
       "binding": {
-        "parameter": "0.005"
+        "parameter": "40.0"
       },
-      "description": "Compatibility setting used by the suite framework."
+      "description": "Voltage-loop crossover frequency."
     },
     {
       "role": "ADC Calibration Timeout",
       "macro": "TIMEOUT_ADC_CALIB_MS",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "number": "3000"
       },
       "description": "ADC calibration timeout."
     },
     {
+      "role": "Inductor Current Sensitivity",
+      "macro": "CTRL_FSBB_IL_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
+      },
+      "description": "Inductor-current sensor sensitivity in V/A."
+    },
+    {
+      "role": "Inductor Current Bias",
+      "macro": "CTRL_FSBB_IL_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
+      },
+      "description": "Inductor-current sensor bias in V."
+    },
+    {
+      "role": "Input Voltage Sensitivity",
+      "macro": "CTRL_FSBB_VIN_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
+      },
+      "description": "Input-voltage sensor sensitivity in V/V."
+    },
+    {
+      "role": "Input Voltage Bias",
+      "macro": "CTRL_FSBB_VIN_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
+      },
+      "description": "Input-voltage sensor bias in V."
+    },
+    {
+      "role": "Output Current Sensitivity",
+      "macro": "CTRL_FSBB_IOUT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_sensitivity"
+      },
+      "description": "Boost-side output-current sensor sensitivity in V/A."
+    },
+    {
+      "role": "Output Current Bias",
+      "macro": "CTRL_FSBB_IOUT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.current_bias_v"
+      },
+      "description": "Boost-side output-current sensor bias in V."
+    },
+    {
+      "role": "Output Voltage Sensitivity",
+      "macro": "CTRL_FSBB_VOUT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_sensitivity"
+      },
+      "description": "Output-voltage sensor sensitivity in V/V."
+    },
+    {
+      "role": "Output Voltage Bias",
+      "macro": "CTRL_FSBB_VOUT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_lvfb_150_2ph_v2.voltage_bias_v"
+      },
+      "description": "Output-voltage sensor bias in V."
+    },
+    {
       "role": "Voltage Ramp Rate",
       "macro": "FSBB_VOLTAGE_RAMP_PU_S",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "parameter": "1.0"
       },
@@ -348,6 +428,8 @@
     {
       "role": "Current Ramp Rate",
       "macro": "FSBB_CURRENT_RAMP_PU_S",
+      "enabled": true,
+      "weak": false,
       "binding": {
         "parameter": "1.0"
       },
@@ -356,13 +438,25 @@
   ],
   "requirement_groups": [
     {
+      "name": "Ungrouped",
+      "requirements": [
+        "Open-loop Voltage Command",
+        "Maximum Output Voltage",
+        "Maximum Inductor Current",
+        "Minimum Inductor Current",
+        "Maximum Output Current",
+        "Default Output Voltage",
+        "Default Current Limit"
+      ]
+    },
+    {
       "name": "Peripheral Parameters",
       "requirements": [
         "PWM Frequency",
         "Controller Frequency",
         "ADC Reference Voltage",
-        "PIL input channel mask",
-        "PIL output channel mask"
+        "PIL Input Channel Mask",
+        "PIL Output Channel Mask"
       ]
     },
     {
@@ -389,15 +483,9 @@
         "Maximum Input Voltage",
         "Minimum Input Voltage",
         "Nominal Input Voltage",
-        "Maximum Output Voltage",
         "Minimum Output Voltage",
-        "Maximum Output Current",
-        "Default Output Voltage",
-        "Default Current Limit",
         "Maximum Duty",
-        "Minimum Duty",
-        "Maximum Inductor Current",
-        "Minimum Inductor Current"
+        "Minimum Duty"
       ]
     },
     {
@@ -462,7 +550,6 @@
     {
       "name": "Commissioning Defaults",
       "requirements": [
-        "Open-loop Voltage Command",
         "Voltage Ramp Rate",
         "Current Ramp Rate"
       ]
