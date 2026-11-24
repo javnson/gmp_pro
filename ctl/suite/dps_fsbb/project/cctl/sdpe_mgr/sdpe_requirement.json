@@ -1,0 +1,35 @@
+{
+  "id": "dps_fsbb_cctl",
+  "macro_prefix": "DPS_FSBB_CCTL",
+  "display_name": "DPS FSBB native CCTL",
+  "suite": "dps_fsbb",
+  "version": "1.0.0",
+  "output_header": "ctrl_settings.h",
+  "hardware": [],
+  "common_requirements": ["../../../sdpe_general/sdpe_requirement.json"],
+  "requirements": [
+    { "role": "PWM compare register maximum", "macro": "CTRL_PWM_CMP_MAX", "binding": { "number": "2999" } },
+    { "role": "PWM deadband counts", "macro": "CTRL_PWM_DEADBAND_CMP", "binding": { "number": "50" } },
+    { "role": "ADC resolution", "macro": "CTRL_ADC_RESOLUTION", "binding": { "number": "12" } },
+    { "role": "Data Link scope depth", "macro": "GMP_DL_SCOPE_DEPTH", "binding": { "number": "100" } },
+    { "role": "ePWM clock Hz", "macro": "CCTL_SIM_EPWM_TBCLK_HZ", "binding": { "literal": "120.0e6" } },
+    { "role": "Plant step seconds", "macro": "CCTL_SIM_PLANT_STEP_S", "binding": { "literal": "1.0e-7" } },
+    { "role": "MCU background frequency Hz", "macro": "CCTL_SIM_USER_CODE_FREQUENCY_HZ", "binding": { "literal": "33.0e3" } },
+    { "role": "Simulation duration seconds", "macro": "CCTL_SIM_DURATION_S", "binding": { "literal": "1.2" } },
+    { "role": "Level 3 duration seconds", "macro": "CCTL_SIM_LEVEL3_DURATION_S", "binding": { "literal": "1.8" } },
+    { "role": "Level 3 supply before step volts", "macro": "CCTL_SIM_VIN_BEFORE_STEP", "binding": { "literal": "32.0" } },
+    { "role": "Level 3 supply after step volts", "macro": "CCTL_SIM_VIN_AFTER_STEP", "binding": { "literal": "18.0" } },
+    { "role": "Level 3 supply step time seconds", "macro": "CCTL_SIM_VIN_STEP_S", "binding": { "literal": "1.2" } },
+    { "role": "Circuit record frequency Hz", "macro": "CCTL_SIM_CIRCUIT_RECORD_FREQUENCY_HZ", "binding": { "literal": "100.0e3" } },
+    { "role": "Default output basename", "macro": "CCTL_SIM_OUTPUT_FILENAME", "binding": { "string": "fsbb_cctl.csv" } }
+  ],
+  "feature_macros": [
+    { "macro": "CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH", "enabled": true, "value": "" },
+    { "macro": "FSBB_ENABLE_VIN_SAMPLE", "enabled": true, "value": "" },
+    { "macro": "FSBB_ENABLE_IOUT_SAMPLE", "enabled": true, "value": "" }
+  ],
+  "option_macros": [],
+  "code_sections": {
+    "before_footer": "#ifndef CCTL_FSBB_BUILD_LEVEL\n#define CCTL_FSBB_BUILD_LEVEL 3\n#endif\n#define BUILD_LEVEL CCTL_FSBB_BUILD_LEVEL\n#if BUILD_LEVEL < 1 || BUILD_LEVEL > 3\n#error \"FSBB BUILD_LEVEL must be 1, 2, or 3.\"\n#endif"
+  }
+}

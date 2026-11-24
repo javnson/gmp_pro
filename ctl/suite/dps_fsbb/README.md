@@ -8,7 +8,9 @@ This suite implements a four-switch buck-boost DC-DC controller with shared GMP 
 
 - `src/` contains controller code shared by all targets.
 - `sdpe_general/` contains suite-wide SDPE configuration.
-- `project/f280039c_Iris_node/` contains the C2000 hardware project.
+- `project/f280039c_Iris_node/` contains the F280039C Iris project.
+- [`project/f280049c/`](project/f280049c/README.md) contains the LaunchXL-F280049C project for the LVFB power board and USB Data Link PIL.
+- [`project/cctl/`](project/cctl/README.md) runs the shared FSBB controller with a native switching-circuit model.
 - `project/simulate/` contains the Visual Studio simulation project.
 - `doc/` contains UDP/SIL experiments and captured results.
 - `tunable_variable_list.json` describes variables exposed to the tuning tools.

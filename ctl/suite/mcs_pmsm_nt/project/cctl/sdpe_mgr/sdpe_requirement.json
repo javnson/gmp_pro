@@ -10,7 +10,7 @@
   "common_requirements": ["../../../sdpe_general/sdpe_requirement.json"],
   "hardware": [
     { "entity": "sm060r20b30mnad" },
-    { "entity": "mcs_pmsm_nt_cctl_inverter" }
+    { "entity": "gmp_3ph_2136sinv_dual" }
   ],
   "requirement_groups": [
     {
@@ -20,6 +20,10 @@
         "DC Bus Voltage Base", "Phase Voltage Base", "Current Base", "Encoder Full Scale",
         "Encoder Bias", "Mechanical Division"
       ]
+    },
+    {
+      "name": "Velocity Controller",
+      "requirements": ["Mech Velocity Ki", "Mech Current Limit"]
     },
     {
       "name": "Simulation Peripherals",
@@ -77,15 +81,17 @@
     { "role": "Encoder Full Scale", "macro": "CTRL_POS_ENC_FS", "binding": { "number": "16384" } },
     { "role": "Encoder Bias", "macro": "CTRL_POS_ENC_BIAS", "binding": { "parameter": "0.0" } },
     { "role": "Mechanical Division", "macro": "CTRL_MECH_DIV", "binding": { "number": "5" } },
+    { "role": "Mech Velocity Ki", "macro": "MCS_MECH_VELOCITY_KI_PU_S", "binding": { "parameter": "150.0" } },
+    { "role": "Mech Current Limit", "macro": "MCS_MECH_CURRENT_LIMIT_A", "binding": { "parameter": "4.5" } },
 
-    { "role": "Phase Current Sensitivity", "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY", "binding": { "expr": "(${mcs_pmsm_nt_cctl_inverter.phase_shunt_resistance_ohm} * ${mcs_pmsm_nt_cctl_inverter.phase_current_gain_v_v})" } },
-    { "role": "Phase Current Bias", "macro": "CTRL_INVERTER_CURRENT_BIAS", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.phase_current_bias_v" } },
-    { "role": "Phase Voltage Sensitivity", "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.phase_voltage_gain_v_v" } },
-    { "role": "Phase Voltage Bias", "macro": "CTRL_INVERTER_VOLTAGE_BIAS", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.phase_voltage_bias_v" } },
-    { "role": "DC Current Sensitivity", "macro": "CTRL_DC_CURRENT_SENSITIVITY", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.bus_current_gain_v_a" } },
-    { "role": "DC Current Bias", "macro": "CTRL_DC_CURRENT_BIAS", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.bus_current_bias_v" } },
-    { "role": "DC Voltage Sensitivity", "macro": "CTRL_DC_VOLTAGE_SENSITIVITY", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.bus_voltage_gain_v_v" } },
-    { "role": "DC Voltage Bias", "macro": "CTRL_DC_VOLTAGE_BIAS", "binding": { "export": "mcs_pmsm_nt_cctl_inverter.bus_voltage_bias_v" } },
+    { "role": "Phase Current Sensitivity", "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY", "binding": { "expr": "(${gmp_3ph_2136sinv_dual.phase_shunt_resistance_ohm} * ${gmp_3ph_2136sinv_dual.phase_current_gain_v_v})" } },
+    { "role": "Phase Current Bias", "macro": "CTRL_INVERTER_CURRENT_BIAS", "binding": { "export": "gmp_3ph_2136sinv_dual.phase_current_bias_v" } },
+    { "role": "Phase Voltage Sensitivity", "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY", "binding": { "export": "gmp_3ph_2136sinv_dual.phase_voltage_gain_v_v" } },
+    { "role": "Phase Voltage Bias", "macro": "CTRL_INVERTER_VOLTAGE_BIAS", "binding": { "export": "gmp_3ph_2136sinv_dual.phase_voltage_bias_v" } },
+    { "role": "DC Current Sensitivity", "macro": "CTRL_DC_CURRENT_SENSITIVITY", "binding": { "export": "gmp_3ph_2136sinv_dual.bus_current_gain_v_a" } },
+    { "role": "DC Current Bias", "macro": "CTRL_DC_CURRENT_BIAS", "binding": { "export": "gmp_3ph_2136sinv_dual.bus_current_bias_v" } },
+    { "role": "DC Voltage Sensitivity", "macro": "CTRL_DC_VOLTAGE_SENSITIVITY", "binding": { "export": "gmp_3ph_2136sinv_dual.bus_voltage_gain_v_v" } },
+    { "role": "DC Voltage Bias", "macro": "CTRL_DC_VOLTAGE_BIAS", "binding": { "export": "gmp_3ph_2136sinv_dual.bus_voltage_bias_v" } },
 
     { "role": "Simulation ADC Resolution", "macro": "CCTL_SIM_ADC_RESOLUTION_BITS", "binding": { "number": "12" } },
     { "role": "Simulation ADC Reference", "macro": "CCTL_SIM_ADC_REFERENCE_V", "binding": { "literal": "3.3" } },
@@ -94,7 +100,7 @@
     { "role": "Simulation ePWM Period", "macro": "CCTL_SIM_EPWM_PERIOD_COUNT", "binding": { "number": "2499" } },
     { "role": "Simulation ePWM Rising Deadband", "macro": "CCTL_SIM_EPWM_DBRED_COUNT", "binding": { "number": "100" } },
     { "role": "Simulation ePWM Falling Deadband", "macro": "CCTL_SIM_EPWM_DBFED_COUNT", "binding": { "number": "100" } },
-    { "role": "Simulation ADC Trigger Compare", "macro": "CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT", "binding": { "number": "250" } },
+    { "role": "Simulation ADC Trigger Compare", "macro": "CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT", "binding": { "number": "0" }, "description": "ADC SOC on the up-count at this TBCLK count. Zero matches the F280049C counter-zero SOC." },
 
     { "role": "Plant Step", "macro": "CCTL_SIM_PLANT_STEP_S", "binding": { "literal": "1.0e-7" } },
     { "role": "Control Frequency", "macro": "CCTL_SIM_CONTROL_FREQUENCY_HZ", "binding": { "literal": "20.0e3" } },

@@ -252,9 +252,9 @@ GMP_NO_OPT_PREFIX void init(void) GMP_NO_OPT_SUFFIX
 
     init_dl_modules();
 
-#if defined SPECIFY_PC_ENVIRONMENT
+#if defined SPECIFY_PC_ENVIRONMENT || defined ENABLE_GMP_DL_PIL_SIM
     // The SIL target has no external CiA402 master. Use the normal sequenced
-    // transitions and request operation immediately after initialization.
+    // transitions with a virtual enable request in SIL and PIL.
     cia402_sm.flag_enable_control_word = 0;
     cia402_sm.current_cmd = CIA402_CMD_ENABLE_OPERATION;
 #endif

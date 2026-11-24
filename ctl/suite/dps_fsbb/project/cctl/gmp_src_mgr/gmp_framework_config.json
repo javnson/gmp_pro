@@ -1,0 +1,16 @@
+{
+  "sync_mode": "src_only",
+  "selected_modules": [
+    { "root": "csp", "module": "cctl" },
+    { "root": "cctl", "module": "component|control_peripheral" },
+    { "root": "core", "module": "dev|software|at_device" },
+    { "root": "core", "module": "pm|function_scheduler" },
+    { "root": "core", "module": "dev|datalink|variable_monitor" },
+    { "root": "core", "module": "dev|datalink|mem_monitor" },
+    { "root": "ctl", "module": "framework|cia402" },
+    { "root": "ctl", "module": "component|dsa|dsa_dl_scope" },
+    { "root": "ctl", "module": "component|interface|_internal" },
+    { "root": "ctl", "module": "component|digital_power|dcdc" },
+    { "root": "ctl", "module": "component|intrinsic|discrete|biquad_filter" }
+  ]
+}

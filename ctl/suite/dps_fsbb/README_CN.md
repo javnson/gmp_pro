@@ -9,6 +9,8 @@
 - `src/`：各平台共用的控制算法。
 - `sdpe_general/`：工程公共 SDPE 配置。
 - `project/f280039c_Iris_node/`：C2000 硬件工程。
+- [`project/f280049c/`](project/f280049c/README_CN.md)：LaunchXL-F280049C 硬件工程，支持 LVFB 功率板和 USB Data Link PIL。
+- [`project/cctl/`](project/cctl/README_CN.md)：共用 FSBB 控制器的本机开关电路联合仿真。
 - `project/simulate/`：Visual Studio 仿真工程。
 - `doc/`：UDP/SIL 实验过程和结果。
 - `tunable_variable_list.json`：调试工具可访问的变量清单。

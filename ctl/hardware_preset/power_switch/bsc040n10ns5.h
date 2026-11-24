@@ -48,19 +48,19 @@ extern "C"
  * @brief Drain-source or collector-emitter voltage rating.
  * @unit V
  */
-#define BSC040N10NS5_VOLTAGE_RATING_V (100.0f)
+#define BSC040N10NS5_VOLTAGE_RATING_V real2param(100.0)
 
 /**
  * @brief Current rating.
  * @unit A
  */
-#define BSC040N10NS5_CURRENT_RATING_A (120.0f)
+#define BSC040N10NS5_CURRENT_RATING_A real2param(120.0)
 
 /**
  * @brief On resistance.
  * @unit ohm
  */
-#define BSC040N10NS5_RDSON_OHM (0.0034f)
+#define BSC040N10NS5_RDSON_OHM real2param(0.0034)
 
 /**
  * @brief Single switch, dual switch, half bridge power block, etc.
@@ -71,19 +71,19 @@ extern "C"
  * @brief Maximum on resistance at the documented gate voltage.
  * @unit ohm
  */
-#define BSC040N10NS5_RDSON_MAX_OHM (0.004f)
+#define BSC040N10NS5_RDSON_MAX_OHM real2param(0.004)
 
 /**
  * @brief Gate voltage associated with the resistance value.
  * @unit V
  */
-#define BSC040N10NS5_GATE_VOLTAGE_V (10.0f)
+#define BSC040N10NS5_GATE_VOLTAGE_V real2param(10.0)
 
 /**
  * @brief Typical total gate charge.
  * @unit nC
  */
-#define BSC040N10NS5_GATE_CHARGE_NC (0.0f)
+#define BSC040N10NS5_GATE_CHARGE_NC real2param(0.0)
 
 /**
  * @brief Manufacturer package name.

@@ -1,0 +1,45 @@
+FSBB (TINA Netlist Editor format)
+**************************************
+**  This file was created by TINA   **
+**         www.tina.com             ** 
+**      (c) DesignSoft, Inc.        **          
+**     www.designsoftware.com       **
+**************************************
+.LIB "<TINADIR>\EXAMPLES\SPICE\TSPICE.LIB"
+.LIB "<TINADIR>\SPICELIB\Operational Amplifiers.LIB"
+.TEMP 27
+.AC DEC 20 10 1MEG
+.TRAN 2N 1U
+.DC LIN VPWM1 0 1 10M
+
+.PROBE V([VF1]) I(VAM1)
+
+VPWM1       2 3 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM2       5 0 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VPWM4       6 7 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VAM1        3 8 ; Current Arrow
+VPWM3       10 0 DC 0 AC 1 0
++ PULSE ( 0 1 0  0  0  1e19 1e20 )
+VS1         9 0 5
+MT4         4 2 3 3  ME_2N6755_N_1 NRD=0 NRS=0 
+MT3         3 5 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
+MT2         VF1 6 7 7  ME_2N6755_N_1 NRD=0 NRS=0 
+R3          9 4 50M 
+C2          4 0 100U 
+R2          VF1 0 10 
+MT1         7 10 0 0  ME_2N6755_N_1 NRD=0 NRS=0 
+C1          VF1 0 100U 
+R1          11 7 50M 
+L1          8 11 1M IC=0 
+
+.MODEL ME_2N6755_N_1 NMOS( LEVEL=3 VTO=3.128 KP=21.14U PHI=600M GAMMA=0 TOX=100N 
++      UO=600 VMAX=0 DELTA=0 THETA=0 ETA=0 
++      L=2U W=1.1 RD=64.68M RS=120.7M RG=5.839 
++      RB=0 RDS=600K IS=44.14F N=1 PB=800M 
++      CBD=1.261N CBS=0 MJ=500M TT=370N CGSO=725.6P 
++      CGDO=310.6P CGBO=0 KF=0 AF=1 )
+
+.END

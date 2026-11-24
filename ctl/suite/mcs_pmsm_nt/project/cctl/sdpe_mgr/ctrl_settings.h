@@ -7,8 +7,8 @@
 #ifndef _PROJECT_CTRL_SETTINGS_H_
 #define _PROJECT_CTRL_SETTINGS_H_
 
+#include <ctl/hardware_preset/inverter_3ph/gmp_3ph_2136sinv_dual.h>
 #include <ctl/hardware_preset/pmsm_motor/sm060r20b30mnad.h>
-#include "hardware_preset/inverter_3ph/mcs_pmsm_nt_cctl_inverter.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -119,44 +119,54 @@ extern "C"
 #define CTRL_MECH_DIV (5)
 
 /**
+ * @brief Mech Velocity Ki
+ */
+#define MCS_MECH_VELOCITY_KI_PU_S real2param(150.0)
+
+/**
+ * @brief Mech Current Limit
+ */
+#define MCS_MECH_CURRENT_LIMIT_A real2param(4.5)
+
+/**
  * @brief Phase Current Sensitivity
  */
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (MCS_PMSM_NT_CCTL_INVERTER_PH_SHUNT_RESISTANCE_OHM * MCS_PMSM_NT_CCTL_INVERTER_PH_CSA_GAIN_V_V)
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (GMP_3PH_2136SINV_DUAL_PH_SHUNT_RESISTANCE_OHM * GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V)
 
 /**
  * @brief Phase Current Bias
  */
-#define CTRL_INVERTER_CURRENT_BIAS MCS_PMSM_NT_CCTL_INVERTER_PH_CSA_BIAS_V
+#define CTRL_INVERTER_CURRENT_BIAS GMP_3PH_2136SINV_DUAL_PH_CSA_BIAS_V
 
 /**
  * @brief Phase Voltage Sensitivity
  */
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY MCS_PMSM_NT_CCTL_INVERTER_PH_VOLTAGE_SENSE_GAIN
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_GAIN
 
 /**
  * @brief Phase Voltage Bias
  */
-#define CTRL_INVERTER_VOLTAGE_BIAS MCS_PMSM_NT_CCTL_INVERTER_PH_VOLTAGE_SENSE_BIAS_V
+#define CTRL_INVERTER_VOLTAGE_BIAS GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_BIAS_V
 
 /**
  * @brief DC Current Sensitivity
  */
-#define CTRL_DC_CURRENT_SENSITIVITY MCS_PMSM_NT_CCTL_INVERTER_DCBUS_CURRENT_SENSE_GAIN
+#define CTRL_DC_CURRENT_SENSITIVITY GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_GAIN
 
 /**
  * @brief DC Current Bias
  */
-#define CTRL_DC_CURRENT_BIAS MCS_PMSM_NT_CCTL_INVERTER_DCBUS_CURRENT_SENSE_BIAS_V
+#define CTRL_DC_CURRENT_BIAS GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_BIAS_V
 
 /**
  * @brief DC Voltage Sensitivity
  */
-#define CTRL_DC_VOLTAGE_SENSITIVITY MCS_PMSM_NT_CCTL_INVERTER_DCBUS_VOLTAGE_SENSE_GAIN
+#define CTRL_DC_VOLTAGE_SENSITIVITY GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_GAIN
 
 /**
  * @brief DC Voltage Bias
  */
-#define CTRL_DC_VOLTAGE_BIAS MCS_PMSM_NT_CCTL_INVERTER_DCBUS_VOLTAGE_SENSE_BIAS_V
+#define CTRL_DC_VOLTAGE_BIAS GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_BIAS_V
 
 /**
  * @brief Simulation ADC Resolution
@@ -194,9 +204,9 @@ extern "C"
 #define CCTL_SIM_EPWM_DBFED_COUNT (100)
 
 /**
- * @brief Simulation ADC Trigger Compare
+ * @brief ADC SOC on the up-count at this TBCLK count. Zero matches the F280049C counter-zero SOC.
  */
-#define CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT (250)
+#define CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT (0)
 
 /**
  * @brief Plant Step
@@ -570,7 +580,7 @@ extern "C"
 
 //=================================================================================================
 /**
- * @brief Controller Options.
+ * @brief PIL Commissioning.
  */
 
 /**
@@ -578,7 +588,7 @@ extern "C"
  *        Options: (1), (2), (3), (4)
  */
 #ifndef BUILD_LEVEL
-#define BUILD_LEVEL (1)
+#define BUILD_LEVEL (4)
 #endif // BUILD_LEVEL
 
 //=================================================================================================
@@ -614,6 +624,18 @@ extern "C"
  * @brief Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current.
  */
 #define MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A real2param(0.05)
+
+/**
+ * @brief Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
+ */
+#define MCS_NOMINAL_DC_BUS_VOLTAGE_V real2param(80.0)
+
+/**
+ * @brief Mechanical speed base in rpm.
+ */
+#ifndef CTRL_SPEED_RPM_BASE
+#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
+#endif // CTRL_SPEED_RPM_BASE
 
 /**
  * @brief
@@ -679,13 +701,6 @@ extern "C"
 #endif // MOTOR_PARAM_MAX_SPEED
 
 /**
- * @brief Mechanical speed base in rpm.
- */
-#ifndef CTRL_SPEED_RPM_BASE
-#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
-#endif // CTRL_SPEED_RPM_BASE
-
-/**
  * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
  */
 #define MCS_MECH_SPEED_LIMIT_RPM real2param(3000.0)
@@ -698,22 +713,26 @@ extern "C"
 /**
  * @brief Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting.
  */
-#define MCS_MECH_CURRENT_LIMIT_A real2param(3.0)
+#ifndef MCS_MECH_CURRENT_LIMIT_A
+#define MCS_MECH_CURRENT_LIMIT_A real2param(5.0)
+#endif // MCS_MECH_CURRENT_LIMIT_A
 
 /**
  * @brief Rectangular saturation limit for d/q axes in V.
  */
+#ifndef MCS_MAX_RECT_SATURATION_VOLTAGE_V
 #define MCS_MAX_RECT_SATURATION_VOLTAGE_V real2param(10.0)
-
-/**
- * @brief Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
- */
-#define MCS_NOMINAL_DC_BUS_VOLTAGE_V real2param(80.0)
+#endif // MCS_MAX_RECT_SATURATION_VOLTAGE_V
 
 /**
  * @brief
  */
 #define MCS_MAX_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2f)
+
+/**
+ * @brief
+ */
+#define MCS_MIN_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2f)
 
 /**
  * @brief The current limit value at which the machine must be shut down.
@@ -725,7 +744,19 @@ extern "C"
 /**
  * @brief Circular saturation limit for voltage vector magnitude in V.
  */
+#ifndef MCS_MAX_CIR_SATURATION_VOLTAGE_V
 #define MCS_MAX_CIR_SATURATION_VOLTAGE_V real2param(10.0)
+#endif // MCS_MAX_CIR_SATURATION_VOLTAGE_V
+
+/**
+ * @brief Controller startup delay in milliseconds.
+ */
+#define CTRL_STARTUP_DELAY (100)
+
+/**
+ * @brief Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
+ */
+#define MCS_CIA402_OPERATION_ENABLE_DELAY_MS (100)
 
 /**
  * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
@@ -741,6 +772,28 @@ extern "C"
  * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
  */
 #define MCS_ADC_CALIBRATOR_Q real2param(0.707)
+
+/**
+ * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
+ */
+#define MCS_MECH_POSITION_KP_PU real2param(5.0)
+
+/**
+ * @brief Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ */
+#define MCS_MECH_POSITION_KI_PU_S real2param(1.0)
+
+/**
+ * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
+ */
+#define MCS_MECH_VELOCITY_KP_PU real2param(5.0)
+
+/**
+ * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ */
+#ifndef MCS_MECH_VELOCITY_KI_PU_S
+#define MCS_MECH_VELOCITY_KI_PU_S real2param(1.0)
+#endif // MCS_MECH_VELOCITY_KI_PU_S
 
 /**
  * @brief D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
@@ -766,41 +819,6 @@ extern "C"
  * @brief Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator.
  */
 #define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S real2param(20.0)
-
-/**
- * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
- */
-#define MCS_MECH_POSITION_KP_PU real2param(5.0)
-
-/**
- * @brief Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
- */
-#define MCS_MECH_POSITION_KI_PU_S real2param(1.0)
-
-/**
- * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
- */
-#define MCS_MECH_VELOCITY_KP_PU real2param(5.0)
-
-/**
- * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
- */
-#define MCS_MECH_VELOCITY_KI_PU_S real2param(1.0)
-
-/**
- * @brief Controller startup delay in milliseconds.
- */
-#define CTRL_STARTUP_DELAY (100)
-
-/**
- * @brief Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
- */
-#define MCS_CIA402_OPERATION_ENABLE_DELAY_MS (100)
-
-/**
- * @brief
- */
-#define MCS_MIN_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2f)
 
 // Common tail code: MCS PMSM NT Common Controller Settings
 /* Accept the historical misspelling while all source code uses the canonical switch. */

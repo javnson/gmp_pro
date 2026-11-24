@@ -31,7 +31,8 @@ The MCU aggregate exposes only `control_outputs()` and `control_inputs()` on
 the runtime data path. The former samples PWM/SOC outputs for the plant; the
 latter accepts all conditioned ADC voltages plus rotor position and, on SOC,
 performs ADC latching, result-register transfer, eQEP transfer, ISR dispatch,
-PWM-register application, and interrupt acknowledgement. Project code does not
+and interrupt acknowledgement. The ISR writes CMPA shadow values, which take
+effect at the next time-base zero. Project code does not
 operate ADC/PWM/QEP members individually. Generic peripherals accept SDPE
 arguments through static `make()` factories and expose immutable configuration
 values. Construction creates the configuration once, while `initialize()` only
@@ -78,8 +79,9 @@ either `windows-msvc-release` or
 packages prepared by the installer; only classic system mode performs a
 project manifest restore.
 
-The plant advances at 100 ns. The master ePWM emits one ADC SOC per 50 us,
-center-aligned carrier on the configured CMPB up-count event (250 TBCLK here).
+The plant advances at 100 ns. The master ePWM emits one ADC SOC per 50 us
+center-aligned carrier. The default CMPB up-count setting of zero models the
+F280049C counter-zero SOC.
 The testbench requires that event to occur while all three low-side gates conduct.
 The ADC only stages analog values between SOC events; a trigger atomically latches
 all channels, sets interrupt pending, and immediately dispatches the control ISR.
@@ -93,13 +95,17 @@ The netlist exposes seven final conditioning nodes named `VADC_VDC`,
 `VADC_VA/VB/VC`, and `VADC_IA/IB/IC`; circuit JSON marks them with
 `role=adc_sample_voltage` and an `adc_channel`. Conversion is
 `floor(clamp(VADC,0,Vref)/Vref*2^N)`, saturated to `2^N-1` (3.3 V, 12 bit in
-this project). The project-private `mcs_pmsm_nt_cctl_inverter` SDPE entity binds
-the 2136SINV simulation calibration: 1/48 voltage dividers, 5 mOhm times 11 or
-0.055 V/A current sensitivity, and 1.65 V current bias. The netlist's 22 kOhm
-feedback and two series 1 kOhm input resistors give an effective gain of 11. Before compilation,
-`hw/validate_generated_model.py` recovers these DC gains from the generated
-matrices, compares them with the private SDPE parameters, rejects phase-current
-cross coupling, and verifies A-to-PWM1/2, B-to-PWM3/4, C-to-PWM5/6 bridge routing.
+this project). The controller uses the shared `gmp_3ph_2136sinv_dual` SDPE
+preset. The three low-side 5 mΩ shunts and 11 V/V amplifiers give 0.055 V/A
+current sensitivity with a 1.65 V zero-current bias. The netlist implements the
+DC gain with 22 kΩ feedback and two series 1 kΩ input resistors. The phase
+and bus voltage dividers use 0.02083 V/V with zero offset. `hw/generate_code.bat`
+applies the shared BSC040N10NS5 preset's typical 3.4 mΩ channel on-resistance
+to all six MOSFETs. The body diodes and parasitic capacitance retain the TINA
+approximations, and the virtual ePWM dead time determines gate timing. Before
+compilation, `hw/validate_generated_model.py`
+checks channel resistance, DC gain and bias for all seven ADC inputs,
+phase-current cross coupling, and A-to-PWM1/2, B-to-PWM3/4, C-to-PWM5/6 routing.
 The physical A/B/C shunt paths now map directly to `VADC_IA/IB/IC`; the handwritten
 binding performs no A/C swap. CSV records include all seven raw
 ADC result codes.

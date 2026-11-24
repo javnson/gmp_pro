@@ -5,7 +5,7 @@
   "description": "Platform-independent controller contract shared by every mcs_pmsm_nt implementation. Hardware timing, sensing and peripheral bindings remain in each project SDPE requirement.",
   "suite": "mcs_pmsm_nt",
   "version": "1.1.0",
-  "updated_at": "2026-08-15",
+  "updated_at": "2026-11-24",
   "output_header": "sdpe_mcs_pmsm_nt_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -80,11 +80,11 @@
   ],
   "option_macros": [
     {
-      "group": "Controller Options",
+      "group": "PIL Commissioning",
       "macro": "BUILD_LEVEL",
       "enabled": true,
       "weak": true,
-      "value": "(1)",
+      "value": "(4)",
       "options_preset": "",
       "options": [
         "(1)",
@@ -97,8 +97,9 @@
   ],
   "requirements": [
     {
-      "role": "PIL input channel mask",
+      "role": "PIL Input Channel Mask",
       "macro": "GMP_PIL_RX_MASK",
+      "enabled": true,
       "weak": true,
       "binding": {
         "number": "127"
@@ -106,8 +107,9 @@
       "description": "Enable the seven ADC slots used by the PMSM SIL input ABI."
     },
     {
-      "role": "PIL output channel mask",
+      "role": "PIL Output Channel Mask",
       "macro": "GMP_PIL_TX_MASK",
+      "enabled": true,
       "weak": true,
       "binding": {
         "number": "4128775"
@@ -143,6 +145,26 @@
         "parameter": "0.05"
       },
       "description": "Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current."
+    },
+    {
+      "role": "Nominal DC Bus Voltage",
+      "macro": "MCS_NOMINAL_DC_BUS_VOLTAGE_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "80.0"
+      },
+      "description": "Nominal DC-bus voltage used by common protection thresholds and target per-unit bases."
+    },
+    {
+      "role": "Rated Speed Rpm",
+      "macro": "CTRL_SPEED_RPM_BASE",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "macro": "MOTOR_PARAM_MAX_SPEED"
+      },
+      "description": "Mechanical speed base in rpm."
     },
     {
       "role": "Motor Rs",
@@ -235,16 +257,6 @@
       "description": "Maximum mechanical speed of the common reference motor in rpm."
     },
     {
-      "role": "Rated Speed Rpm",
-      "macro": "CTRL_SPEED_RPM_BASE",
-      "enabled": true,
-      "weak": true,
-      "binding": {
-        "macro": "MOTOR_PARAM_MAX_SPEED"
-      },
-      "description": "Mechanical speed base in rpm."
-    },
-    {
       "role": "Mech Speed Limit",
       "macro": "MCS_MECH_SPEED_LIMIT_RPM",
       "enabled": true,
@@ -268,9 +280,9 @@
       "role": "Mech Current Limit",
       "macro": "MCS_MECH_CURRENT_LIMIT_A",
       "enabled": true,
-      "weak": false,
+      "weak": true,
       "binding": {
-        "parameter": "3.0"
+        "parameter": "5.0"
       },
       "description": "Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting."
     },
@@ -278,21 +290,11 @@
       "role": "Max Voltage For Rect Saturation",
       "macro": "MCS_MAX_RECT_SATURATION_VOLTAGE_V",
       "enabled": true,
-      "weak": false,
+      "weak": true,
       "binding": {
         "parameter": "10.0"
       },
       "description": "Rectangular saturation limit for d/q axes in V."
-    },
-    {
-      "role": "Nominal DC Bus Voltage",
-      "macro": "MCS_NOMINAL_DC_BUS_VOLTAGE_V",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "parameter": "80.0"
-      },
-      "description": "Nominal DC-bus voltage used by common protection thresholds and target per-unit bases."
     },
     {
       "role": "Max DC Bus Voltage",
@@ -301,6 +303,16 @@
       "weak": false,
       "binding": {
         "literal": "(MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2f)"
+      },
+      "description": ""
+    },
+    {
+      "role": "Min DC Bus Voltage",
+      "macro": "MCS_MIN_DC_BUS_VOLTAGE_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2f)"
       },
       "description": ""
     },
@@ -318,11 +330,31 @@
       "role": "Max Voltage For Circular Saturation",
       "macro": "MCS_MAX_CIR_SATURATION_VOLTAGE_V",
       "enabled": true,
-      "weak": false,
+      "weak": true,
       "binding": {
         "parameter": "10.0"
       },
       "description": "Circular saturation limit for voltage vector magnitude in V."
+    },
+    {
+      "role": "Startup Delay",
+      "macro": "CTRL_STARTUP_DELAY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Controller startup delay in milliseconds."
+    },
+    {
+      "role": "Cia402 Operation Enable Delay",
+      "macro": "MCS_CIA402_OPERATION_ENABLE_DELAY_MS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": "Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds."
     },
     {
       "role": "Encoder Speed Filter Cutoff",
@@ -353,6 +385,46 @@
         "parameter": "0.707"
       },
       "description": "Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response."
+    },
+    {
+      "role": "Mech Position Kp",
+      "macro": "MCS_MECH_POSITION_KP_PU",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "5.0"
+      },
+      "description": "Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu."
+    },
+    {
+      "role": "Mech Position Ki",
+      "macro": "MCS_MECH_POSITION_KI_PU_S",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "1.0"
+      },
+      "description": "Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
+    },
+    {
+      "role": "Mech Velocity Kp",
+      "macro": "MCS_MECH_VELOCITY_KP_PU",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "5.0"
+      },
+      "description": "Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu."
+    },
+    {
+      "role": "Mech Velocity Ki",
+      "macro": "MCS_MECH_VELOCITY_KI_PU_S",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "parameter": "1.0"
+      },
+      "description": "Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
     },
     {
       "role": "Commissioning Id Reference",
@@ -403,87 +475,17 @@
         "parameter": "20.0"
       },
       "description": "Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator."
-    },
-    {
-      "role": "Mech Position Kp",
-      "macro": "MCS_MECH_POSITION_KP_PU",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "parameter": "5.0"
-      },
-      "description": "Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu."
-    },
-    {
-      "role": "Mech Position Ki",
-      "macro": "MCS_MECH_POSITION_KI_PU_S",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "parameter": "1.0"
-      },
-      "description": "Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
-    },
-    {
-      "role": "Mech Velocity Kp",
-      "macro": "MCS_MECH_VELOCITY_KP_PU",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "parameter": "5.0"
-      },
-      "description": "Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu."
-    },
-    {
-      "role": "Mech Velocity Ki",
-      "macro": "MCS_MECH_VELOCITY_KI_PU_S",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "parameter": "1.0"
-      },
-      "description": "Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally."
-    },
-    {
-      "role": "Startup Delay",
-      "macro": "CTRL_STARTUP_DELAY",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "number": "100"
-      },
-      "description": "Controller startup delay in milliseconds."
-    },
-    {
-      "role": "Cia402 Operation Enable Delay",
-      "macro": "MCS_CIA402_OPERATION_ENABLE_DELAY_MS",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "number": "100"
-      },
-      "description": "Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds."
-    },
-    {
-      "role": "Min DC Bus Voltage",
-      "macro": "MCS_MIN_DC_BUS_VOLTAGE_V",
-      "enabled": true,
-      "weak": false,
-      "binding": {
-        "literal": "(MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2f)"
-      },
-      "description": ""
     }
   ],
   "requirement_groups": [
     {
       "name": "Peripheral Parameters",
       "requirements": [
+        "PIL Input Channel Mask",
+        "PIL Output Channel Mask",
         "Controller Frequency",
         "PWM DT Current Deadband",
-        "PWM DT Current Hysteresis",
-        "PIL input channel mask",
-        "PIL output channel mask"
+        "PWM DT Current Hysteresis"
       ]
     },
     {
@@ -503,13 +505,13 @@
         "Motor Flux",
         "Motor Pole Pairs",
         "Load Inertia",
-        "Motor Friction",
-        "Motor Maximum Speed"
+        "Motor Friction"
       ]
     },
     {
       "name": "Protection Parameters",
       "requirements": [
+        "Motor Maximum Speed",
         "Mech Speed Limit",
         "Mech Speed Slope Limit",
         "Mech Current Limit",
@@ -518,6 +520,26 @@
         "Min DC Bus Voltage",
         "Max Shutdown Current",
         "Max Voltage For Circular Saturation"
+      ]
+    },
+    {
+      "name": "Runtime Parameters",
+      "requirements": [
+        "Startup Delay",
+        "Cia402 Operation Enable Delay"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Position Sensor",
+      "requirements": [
+        "Encoder Speed Filter Cutoff"
+      ]
+    },
+    {
+      "name": "Voltage & Current Sensor / Calibration",
+      "requirements": [
+        "Adc Calibrator Cutoff",
+        "Adc Calibrator Quality Factor"
       ]
     },
     {
@@ -532,26 +554,6 @@
       "requirements": [
         "Mech Velocity Kp",
         "Mech Velocity Ki"
-      ]
-    },
-    {
-      "name": "Runtime Parameters",
-      "requirements": [
-        "Startup Delay",
-        "Cia402 Operation Enable Delay"
-      ]
-    },
-    {
-      "name": "Voltage & Current Sensor / Calibration",
-      "requirements": [
-        "Adc Calibrator Cutoff",
-        "Adc Calibrator Quality Factor"
-      ]
-    },
-    {
-      "name": "Voltage & Current Sensor / Position Sensor",
-      "requirements": [
-        "Encoder Speed Filter Cutoff"
       ]
     },
     {
@@ -571,6 +573,6 @@
     "PWM Modulator"
   ],
   "option_macro_groups": [
-    "Controller Options"
+    "PIL Commissioning"
   ]
 }

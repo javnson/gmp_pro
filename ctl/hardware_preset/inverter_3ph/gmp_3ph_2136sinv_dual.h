@@ -8,7 +8,7 @@
 #define _INVERTER_3PH_GMP_3PH_2136SINV_DUAL_H_
 
 #include <ctl/hardware_preset/power_switch/bsc040n10ns5.h>
-#include <ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h>
+#include "ctl/component/hardware_preset/inverter_3ph/inverter_3ph_general.h"
 
 // User code after includes
 // SDPE extension point: add after_includes code in the Entity Instance Code page if needed.
@@ -121,7 +121,7 @@ extern "C"
  * @brief Current signal-chain gain; zero means configurable/unknown.
  * @unit V/V
  */
-#define GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V (15.0f)
+#define GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V (11.0f)
 
 /**
  * @brief Zero-current ADC bias; zero may mean differential/unknown.

@@ -51,6 +51,8 @@ const gmp_param_item_t dict_m1[] = {
     {&mtr_ctrl.vdq_ref.dat[phase_q],    GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW, NULL},
     {&mech_ctrl.target_velocity,        GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW, NULL},
     {&spd_enc.encif.speed,              GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO, NULL},
+    {&rg.target_freq_pu,                 GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RW, NULL},
+    {&rg.current_freq_pu,                GMP_PARAM_TYPE_F32, GMP_PARAM_PERM_RO, NULL},
 };
 const uint16_t var_tunable_count = sizeof(dict_m1) / sizeof(dict_m1[0]);
 gmp_param_tunable_t tunable;

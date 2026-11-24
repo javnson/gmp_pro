@@ -8,19 +8,19 @@
     "class_name": "PmsmCircuit",
     "source": {
       "file": "PMSM.CIR",
-      "sha256": "ec6ca113ace0bf79d6e1c865dc646e5c9e246b99540361f586292679199d8d23"
+      "sha256": "172eebf8b4eb1bcdf7f27ae7a1f56679be33f9a717f52ce00adca1c7ca4e49f5"
     }
   },
   "artifacts": {
     "header": {
       "path": "pmsmcircuit.hpp",
       "size_bytes": 26174,
-      "sha256": "65f6263a4570582887c61c3415bf4dcfccbf24e529a762a469c5a993794ba7ef"
+      "sha256": "96f61aa7e769089eece7b2feb32e9c3996395d3889ef5818604e6f02ed032010"
     },
     "archive": {
       "path": "pmsmcircuit.archive",
       "size_bytes": 8328564,
-      "sha256": "4a6a77a18956d6202160dad253b8c354199b2087baabe16511be18d6e1978aec"
+      "sha256": "c8f1a5705ef9d2d968583cde24c4a207946265f63dd28964cbc85954527e3241"
     }
   },
   "cpp": {

@@ -27,8 +27,9 @@ ADC SOC/中断分发和 eQEP。C 兼容的 `xplt.peripheral.*` 只保存控制�
 
 运行期的 MCU 聚合接口只分成 `control_outputs()` 和 `control_inputs()`：前者
 采样 PWM/SOC 输出并送给主电路，后者一次性接收 ADC 调理电压和转子位置，并在
-SOC 到来时完成 ADC 锁存、结果寄存器搬运、eQEP 搬运、ISR、PWM 寄存器更新和
-中断确认。工程不逐个操作 ADC/PWM/QEP 成员。通用外设通过静态 `make()` 接收
+SOC 到来时完成 ADC 锁存、结果寄存器搬运、eQEP 搬运、ISR 和中断确认。
+ISR 写入 CMPA 影子值，下一次计数归零时生效。工程不逐个操作 ADC/PWM/QEP 成员。
+通用外设通过静态 `make()` 接收
 SDPE 形参；配置对象是只读值对象。构造函数只创建一次配置，`initialize()` 仅
 复位已有外设状态。ADC 内部保存 ISR 函数指针，并保证结果搬运发生在 ISR 之前。
 
@@ -74,8 +75,8 @@ SDPE 形参；配置对象是只读值对象。构造函数只创建一次配置
   系统 vcpkg 按 manifest 自动恢复。
 
 仿真使用 100 ns 电路/电机步长。主 ePWM 在每个 50 us（20 kHz）中心对齐载波
-的 CMPB 上数事件产生一次 ADC SOC；当前 SDPE 值为 250 TBCLK，testbench 会
-断言该事件落在三个下桥同时导通的 low-side 采样窗口。ADC 在 SOC 到来前只
+产生一次 ADC SOC。默认 CMPB 上数比较值为零，对应 F280049C 的计数归零触发。
+testbench 会断言该事件落在三个下桥同时导通的 low-side 采样窗口。ADC 在 SOC 到来前只
 更新模拟输入，触发时同时锁存七路结果、置中断 pending，并立即执行控制主中断。
 TI 风格外设模型位于 `cctl/component/control_peripheral`：带 SOC/中断握手的 12/16 位右对齐
 ADC、带比较事件触发输出的中心对齐互补 ePWM（含 DBRED/DBFED 死区），以及
@@ -87,14 +88,16 @@ ADC、带比较事件触发输出的中心对齐互补 ePWM（含 DBRED/DBFED �
 七个最终调理电压。MNA JSON 为这些探针增加 `role=adc_sample_voltage` 和
 `adc_channel` 元数据。ADC 量化为
 `floor(clamp(VADC, 0, Vref) / Vref * 2^N)`，并在满量程饱和到 `2^N-1`；
-本工程使用 `Vref=3.3 V`、`N=12`。工程通过
-`sdpe_mgr/private_hardware/inverter_3ph/mcs_pmsm_nt_cctl_inverter.json` 绑定
-2136SINV 的私有仿真标定：电压分压为 `1/48`，当前网表的电流灵敏度为
-`5 mOhm * 11 = 0.055 V/A`，零电流偏置为 1.65 V。网表每相使用 22 kΩ
-反馈和两段串联的 1 kΩ 输入电阻，因此闭环有效增益为 11；
-`hw/validate_generated_model.py` 会在编译前从生成矩阵反算三相电流和母线电压
-DC 增益，并与私有 SDPE 参数比较，同时检查三相采样交叉耦合和
-A→PWM1/2、B→PWM3/4、C→PWM5/6 的桥臂路由。物理 A/B/C 下桥采样网络
+本工程使用 `Vref=3.3 V`、`N=12`。控制器通过 SDPE 直接引用共享的
+`gmp_3ph_2136sinv_dual` 预设。三相低侧分流电阻均为 5 mΩ，采样放大增益为
+11 V/V，换算灵敏度为 0.055 V/A，零电流偏置为 1.65 V。网表每相以 22 kΩ
+反馈和两段串联的 1 kΩ 输入电阻实现该直流增益。相电压和母线电压分压比均按
+预设的 0.02083 V/V 建模，偏置为 0 V。`hw/generate_code.bat` 从共享
+BSC040N10NS5 预设读取 3.4 mΩ 典型导通电阻，并在生成时应用到六个 MOSFET
+沟道。体二极管和寄生电容沿用 TINA 近似值，门极时序由虚拟 ePWM 的死区决定。
+`hw/validate_generated_model.py` 会在编译前核对沟道电阻、七路模拟采样的
+直流增益和偏置，以及三相采样交叉耦合和 A→PWM1/2、B→PWM3/4、C→PWM5/6
+的桥臂路由。物理 A/B/C 下桥采样网络
 现在分别直接对应 `VADC_IA/IB/IC`，testbench 不再交换 A/C 通道。
 
 默认 Eigen 结果写入 `mcs_pmsm_nt_cctl.csv`，包含 PWM 比较值、三相电压电流、dq 电流、

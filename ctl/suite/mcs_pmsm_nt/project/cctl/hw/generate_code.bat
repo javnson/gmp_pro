@@ -54,8 +54,21 @@ if not exist "%GENERATED_DIR%" mkdir "%GENERATED_DIR%"
 set "CODEGEN_SCRIPT=euler_codegen.py"
 if /I "%DISCRETIZATION_METHOD%"=="rk4" set "CODEGEN_SCRIPT=rk_codegen.py"
 
+set "CCTL_SWITCH_OPTIONS="
+if /I not "%NETLIST_FILE%"=="PMSM.CIR" goto :export_circuit
+rem Keep the reduced channel resistance tied to the 2136SINV board's MOSFET preset.
+set "CCTL_SWITCH_RON="
+for /f "usebackq delims=" %%R in (`python -c "import json,sys; print(json.load(open(sys.argv[1], encoding='utf-8'))['parameters']['rdson_ohm'])" "%GMP_PRO_LOCATION%\ctl\hardware_preset\sdpe_src\power_switch\bsc040n10ns5.json"`) do set "CCTL_SWITCH_RON=%%R"
+if not defined CCTL_SWITCH_RON (
+    echo [ERROR] Cannot read BSC040N10NS5 channel resistance from the GMP hardware preset.
+    set "RESULT=1"
+    goto :failed_with_result
+)
+set "CCTL_SWITCH_OPTIONS=--device-param T1.Ron=%CCTL_SWITCH_RON% --device-param T2.Ron=%CCTL_SWITCH_RON% --device-param T3.Ron=%CCTL_SWITCH_RON% --device-param T4.Ron=%CCTL_SWITCH_RON% --device-param T5.Ron=%CCTL_SWITCH_RON% --device-param T6.Ron=%CCTL_SWITCH_RON%"
+
+:export_circuit
 echo [1/%TOTAL_STAGES%] Exporting portable PMSM-inverter circuit data...
-python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method "%DISCRETIZATION_METHOD%" --matrix-tolerance "%MATRIX_TOLERANCE%"
+python "%MNA_TOOL_DIR%\circuit_data.py" export "%NETLIST_PATH%" "%JSON_PATH%" --normal-dt 100N --short-dt 1N --method "%DISCRETIZATION_METHOD%" --matrix-tolerance "%MATRIX_TOLERANCE%" %CCTL_SWITCH_OPTIONS%
 if errorlevel 1 goto :failed
 
 if /I "%MATRIX_BACKEND%"=="all" goto :generate_all

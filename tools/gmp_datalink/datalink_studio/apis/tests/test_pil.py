@@ -8,10 +8,13 @@ import struct
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 from apis.pil import (
     MATLAB_INPUT_STRUCT,
+    MATLAB_OUTPUT_STRUCT,
     PilApi,
+    PilBridge,
     PilConfiguration,
     PilInput,
     PilOutput,
@@ -142,6 +145,34 @@ class PilApiTests(unittest.TestCase):
         header, row = stream.getvalue().splitlines()
         self.assertIn("encoder_digital_input", header)
         self.assertEqual(row.split(",")[3], "1234")
+
+    def test_framed_udp_handshake_runs_one_step_then_stops(self) -> None:
+        header = struct.Struct("!4sHHIQI")
+        peer = (self.config.udp_host, self.config.matlab_listen_port)
+        hello = struct.pack("!HHII16s", 1, 0, 264, 200, b"test-connection!")
+        done = struct.pack("!HHIQ", 1, 3, 0, 1)
+
+        def frame(kind: int, sequence: int, data: bytes) -> tuple[bytes, tuple[str, int]]:
+            return header.pack(b"GMPT", 1, kind, 0, sequence, len(data)) + data, peer
+
+        transport = FakeTransport(self.config)
+        bridge = PilBridge(PilApi(transport, self.config))
+        with patch("apis.pil.socket.socket") as open_socket:
+            channel = Mock()
+            open_socket.return_value.__enter__.return_value = channel
+            channel.recvfrom.side_effect = [
+                frame(10, 1, hello),
+                frame(1, 2, bytes(MATLAB_INPUT_STRUCT.size)),
+                frame(8, 1, done),
+            ]
+            self.assertEqual(bridge.run(framed_udp=True), 1)
+
+        frames = [call.args[0] for call in channel.sendto.call_args_list]
+        self.assertEqual(header.unpack_from(frames[0])[2:], (11, 0, 1, 28))
+        self.assertEqual(frames[0][header.size:], hello)
+        self.assertEqual(header.unpack_from(frames[1])[2:], (2, 0, 2, 200))
+        self.assertEqual(MATLAB_OUTPUT_STRUCT.unpack_from(frames[1], header.size)[:4], (1.0, 100, 200, 300))
+        self.assertEqual(len(transport.requests), 2)  # mask sync, then exactly one step
 
 
 if __name__ == "__main__":

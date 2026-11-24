@@ -1,1 +1,188 @@
-{"id":"gmp_3ph_2136sinv_dual","schema":"inverter_3ph","display_name":"GMP 3PH 2136SINV DUAL","vendor":"GMP","document_url":"ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h","macro_prefix":"GMP_3PH_2136SINV_DUAL","tags":["inverter","three_phase","gmp"],"components":{"power_stage":{"entity":"bsc040n10ns5"}},"parameters":{"board_name":"GMP 3PH 2136SINV DUAL","gate_driver":"IR2136S","power_stage_kind":"discrete_mosfet","vbus_min_v":10.0,"vbus_max_v":100.0,"current_max_rms_a":30.0,"current_max_peak_a":50.0,"pwm_input_count":6,"phase_current_channel_count":3,"phase_current_sense_type":"SENSOR_TYPE_SHUNT","phase_current_topology":"CS_TOPOLOGY_LOW_SIDE","phase_shunt_resistance_ohm":0.005,"phase_current_gain_v_v":15.0,"phase_current_bias_v":1.65,"bus_current_channel_count":0,"bus_current_sense_type":"SENSOR_NONE","bus_current_topology":"CS_TOPOLOGY_NONE","phase_voltage_channel_count":3,"phase_voltage_sense_type":"VS_TYPE_PHASE_GND","phase_voltage_gain_v_v":0.02083,"phase_voltage_bias_v":0.0,"bus_voltage_channel_count":1,"bus_voltage_sense_type":"VS_TYPE_PHASE_GND","bus_voltage_gain_v_v":0.02083,"bus_voltage_bias_v":0.0,"verification_status":"partial_internal_preset","source_reference":"GMP_3PH_2136SINV_DUAL_TMPL.h; confirm against board schematic"}}
+{
+  "id": "gmp_3ph_2136sinv_dual",
+  "schema": "inverter_3ph",
+  "display_name": "GMP 3PH 2136SINV DUAL",
+  "vendor": "GMP",
+  "document_url": "ctl/component/hardware_preset/inverter_3ph/GMP_3PH_2136SINV_DUAL_TMPL.h",
+  "macro_prefix": "GMP_3PH_2136SINV_DUAL",
+  "tags": [
+    "inverter",
+    "three_phase",
+    "gmp"
+  ],
+  "components": {
+    "power_stage": {
+      "entity": "bsc040n10ns5"
+    }
+  },
+  "parameters": {
+    "board_name": "GMP 3PH 2136SINV DUAL",
+    "gate_driver": "IR2136S",
+    "power_stage_kind": "discrete_mosfet",
+    "vbus_min_v": 10.0,
+    "vbus_max_v": 100.0,
+    "current_max_rms_a": 30.0,
+    "current_max_peak_a": 50.0,
+    "pwm_input_count": 6,
+    "phase_current_channel_count": 3,
+    "phase_current_sense_type": "SENSOR_TYPE_SHUNT",
+    "phase_current_topology": "CS_TOPOLOGY_LOW_SIDE",
+    "phase_shunt_resistance_ohm": 0.005,
+    "phase_current_gain_v_v": 11.0,
+    "phase_current_bias_v": 1.65,
+    "bus_current_channel_count": 0,
+    "bus_current_sense_type": "SENSOR_NONE",
+    "bus_current_topology": "CS_TOPOLOGY_NONE",
+    "phase_voltage_channel_count": 3,
+    "phase_voltage_sense_type": "VS_TYPE_PHASE_GND",
+    "phase_voltage_gain_v_v": 0.02083,
+    "phase_voltage_bias_v": 0.0,
+    "bus_voltage_channel_count": 1,
+    "bus_voltage_sense_type": "VS_TYPE_PHASE_GND",
+    "bus_voltage_gain_v_v": 0.02083,
+    "bus_voltage_bias_v": 0.0,
+    "verification_status": "partial_internal_preset",
+    "source_reference": "GMP_3PH_2136SINV_DUAL_TMPL.h; confirm against board schematic"
+  },
+  "description": "",
+  "datasheet_url": "",
+  "output_subdir": "",
+  "parameter_macros": {
+    "board_name": {
+      "enabled": true,
+      "weak": false
+    },
+    "gate_driver": {
+      "enabled": true,
+      "weak": false
+    },
+    "power_stage_kind": {
+      "enabled": true,
+      "weak": false
+    },
+    "vbus_min_v": {
+      "enabled": true,
+      "weak": false
+    },
+    "vbus_max_v": {
+      "enabled": true,
+      "weak": false
+    },
+    "current_max_rms_a": {
+      "enabled": true,
+      "weak": false
+    },
+    "current_max_peak_a": {
+      "enabled": true,
+      "weak": false
+    },
+    "pwm_input_count": {
+      "enabled": true,
+      "weak": false
+    },
+    "pwm_active_level": {
+      "enabled": true,
+      "weak": false
+    },
+    "pwm_polarity_verified": {
+      "enabled": true,
+      "weak": false
+    },
+    "enable_active_level": {
+      "enabled": true,
+      "weak": false
+    },
+    "phase_current_channel_count": {
+      "enabled": true,
+      "weak": false
+    },
+    "phase_current_sense_type": {
+      "enabled": true,
+      "weak": false
+    },
+    "phase_current_topology": {
+      "enabled": true,
+      "weak": false
+    },
+    "phase_shunt_resistance_ohm": {
+      "enabled": true,
+      "weak": false
+    },
+    "phase_current_gain_v_v": {
+      "enabled": true,
+      "weak": false
+    },
+    "phase_current_bias_v": {
+      "enabled": true,
+      "weak": false
+    },
+    "bus_current_channel_count": {
+      "enabled": true,
+      "weak": false
+    },
+    "bus_current_sense_type": {
+      "enabled": true,
+      "weak": false
+    },
+    "bus_current_topology": {
+      "enabled": true,
+      "weak": false
+    },
+    "bus_shunt_resistance_ohm": {
+      "enabled": true,
+      "weak": false
+    },
+    "phase_voltage_channel_count": {
+      "enabled": true,
+      "weak": false
+    },
+    "phase_voltage_sense_type": {
+      "enabled": true,
+      "weak": false
+    },
+    "phase_voltage_gain_v_v": {
+      "enabled": true,
+      "weak": false
+    },
+    "phase_voltage_bias_v": {
+      "enabled": true,
+      "weak": false
+    },
+    "bus_voltage_channel_count": {
+      "enabled": true,
+      "weak": false
+    },
+    "bus_voltage_sense_type": {
+      "enabled": true,
+      "weak": false
+    },
+    "bus_voltage_gain_v_v": {
+      "enabled": true,
+      "weak": false
+    },
+    "bus_voltage_bias_v": {
+      "enabled": true,
+      "weak": false
+    },
+    "bus_current_gain_v_a": {
+      "enabled": true,
+      "weak": false
+    },
+    "bus_current_bias_v": {
+      "enabled": true,
+      "weak": false
+    },
+    "thermal_channel_count": {
+      "enabled": true,
+      "weak": false
+    },
+    "verification_status": {
+      "enabled": true,
+      "weak": false
+    },
+    "source_reference": {
+      "enabled": true,
+      "weak": false
+    }
+  }
+}

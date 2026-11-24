@@ -23,7 +23,7 @@ extern "C"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID "mcs_pmsm_nt_common"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION "1.1.0"
-#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-08-15"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-11-24"
 
 //=================================================================================================
 /**
@@ -82,7 +82,7 @@ extern "C"
 
 //=================================================================================================
 /**
- * @brief Controller Options.
+ * @brief PIL Commissioning.
  */
 
 /**
@@ -90,7 +90,7 @@ extern "C"
  *        Options: (1), (2), (3), (4)
  */
 #ifndef BUILD_LEVEL
-#define BUILD_LEVEL (1)
+#define BUILD_LEVEL (4)
 #endif // BUILD_LEVEL
 
 //=================================================================================================
@@ -126,6 +126,18 @@ extern "C"
  * @brief Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current.
  */
 #define MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A real2param(0.05)
+
+/**
+ * @brief Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
+ */
+#define MCS_NOMINAL_DC_BUS_VOLTAGE_V real2param(80.0)
+
+/**
+ * @brief Mechanical speed base in rpm.
+ */
+#ifndef CTRL_SPEED_RPM_BASE
+#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
+#endif // CTRL_SPEED_RPM_BASE
 
 /**
  * @brief
@@ -191,13 +203,6 @@ extern "C"
 #endif // MOTOR_PARAM_MAX_SPEED
 
 /**
- * @brief Mechanical speed base in rpm.
- */
-#ifndef CTRL_SPEED_RPM_BASE
-#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
-#endif // CTRL_SPEED_RPM_BASE
-
-/**
  * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
  */
 #define MCS_MECH_SPEED_LIMIT_RPM real2param(3000.0)
@@ -210,22 +215,26 @@ extern "C"
 /**
  * @brief Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting.
  */
-#define MCS_MECH_CURRENT_LIMIT_A real2param(3.0)
+#ifndef MCS_MECH_CURRENT_LIMIT_A
+#define MCS_MECH_CURRENT_LIMIT_A real2param(5.0)
+#endif // MCS_MECH_CURRENT_LIMIT_A
 
 /**
  * @brief Rectangular saturation limit for d/q axes in V.
  */
+#ifndef MCS_MAX_RECT_SATURATION_VOLTAGE_V
 #define MCS_MAX_RECT_SATURATION_VOLTAGE_V real2param(10.0)
-
-/**
- * @brief Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
- */
-#define MCS_NOMINAL_DC_BUS_VOLTAGE_V real2param(80.0)
+#endif // MCS_MAX_RECT_SATURATION_VOLTAGE_V
 
 /**
  * @brief
  */
 #define MCS_MAX_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2f)
+
+/**
+ * @brief
+ */
+#define MCS_MIN_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2f)
 
 /**
  * @brief The current limit value at which the machine must be shut down.
@@ -237,7 +246,19 @@ extern "C"
 /**
  * @brief Circular saturation limit for voltage vector magnitude in V.
  */
+#ifndef MCS_MAX_CIR_SATURATION_VOLTAGE_V
 #define MCS_MAX_CIR_SATURATION_VOLTAGE_V real2param(10.0)
+#endif // MCS_MAX_CIR_SATURATION_VOLTAGE_V
+
+/**
+ * @brief Controller startup delay in milliseconds.
+ */
+#define CTRL_STARTUP_DELAY (100)
+
+/**
+ * @brief Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
+ */
+#define MCS_CIA402_OPERATION_ENABLE_DELAY_MS (100)
 
 /**
  * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
@@ -253,6 +274,28 @@ extern "C"
  * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
  */
 #define MCS_ADC_CALIBRATOR_Q real2param(0.707)
+
+/**
+ * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
+ */
+#define MCS_MECH_POSITION_KP_PU real2param(5.0)
+
+/**
+ * @brief Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ */
+#define MCS_MECH_POSITION_KI_PU_S real2param(1.0)
+
+/**
+ * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
+ */
+#define MCS_MECH_VELOCITY_KP_PU real2param(5.0)
+
+/**
+ * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ */
+#ifndef MCS_MECH_VELOCITY_KI_PU_S
+#define MCS_MECH_VELOCITY_KI_PU_S real2param(1.0)
+#endif // MCS_MECH_VELOCITY_KI_PU_S
 
 /**
  * @brief D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
@@ -278,41 +321,6 @@ extern "C"
  * @brief Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator.
  */
 #define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S real2param(20.0)
-
-/**
- * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
- */
-#define MCS_MECH_POSITION_KP_PU real2param(5.0)
-
-/**
- * @brief Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
- */
-#define MCS_MECH_POSITION_KI_PU_S real2param(1.0)
-
-/**
- * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
- */
-#define MCS_MECH_VELOCITY_KP_PU real2param(5.0)
-
-/**
- * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
- */
-#define MCS_MECH_VELOCITY_KI_PU_S real2param(1.0)
-
-/**
- * @brief Controller startup delay in milliseconds.
- */
-#define CTRL_STARTUP_DELAY (100)
-
-/**
- * @brief Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
- */
-#define MCS_CIA402_OPERATION_ENABLE_DELAY_MS (100)
-
-/**
- * @brief
- */
-#define MCS_MIN_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2f)
 
 // User project tail code
 /* Accept the historical misspelling while all source code uses the canonical switch. */

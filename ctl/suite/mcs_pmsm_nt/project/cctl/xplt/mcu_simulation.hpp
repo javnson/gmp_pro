@@ -54,7 +54,7 @@ class mcu_simulation
     const epwm_outputs &control_outputs(std::uint64_t absolute_tbclk_count);
 
     /**
-     * Service one SOC transaction: latch inputs, run the ISR, then write PWM.
+     * Service one SOC transaction: latch inputs and run the ISR, which writes PWM shadow values.
      * This function is called only after control_outputs() reports ADC SOC.
      * @return True when this call completed an ADC conversion and ISR.
      */
@@ -72,11 +72,11 @@ class mcu_simulation
 
   private:
     static bool verify_peripheral_models();
-    void write_epwm_outputs_after_isr() noexcept;
 
     adc_type adc_;
     eqep_type eqep_;
     std::array<epwm_type, 3U> epwm_;
+    std::uint64_t pwm_cycle_{};
     epwm_outputs outputs_{};
 };
 

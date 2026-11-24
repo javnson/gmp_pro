@@ -8,14 +8,14 @@
     "class_name": "PmsmCircuitFp",
     "source": {
       "file": "PMSM.CIR",
-      "sha256": "ec6ca113ace0bf79d6e1c865dc646e5c9e246b99540361f586292679199d8d23"
+      "sha256": "172eebf8b4eb1bcdf7f27ae7a1f56679be33f9a717f52ce00adca1c7ca4e49f5"
     }
   },
   "artifacts": {
     "header": {
       "path": "pmsmcircuit_fp.hpp",
-      "size_bytes": 33492088,
-      "sha256": "a14ee37f8924d94a41f835841aa214f7bcb7bae6813ed496c4357adb425cac1b"
+      "size_bytes": 33467612,
+      "sha256": "5daeec9020d1c7a3ef9c27a3e39ec40a8c7e47d5a7ea2cea8415839369089762"
     },
     "archive": null
   },
@@ -246,8 +246,8 @@
         32.0,
         8.0,
         8.0,
-        8.0,
         0.5,
+        8.0,
         32768.0,
         32768.0,
         65536.0,
@@ -258,11 +258,11 @@
         8.0,
         8.0,
         8.0,
+        8.0,
+        8.0,
         0.125,
-        8.0,
-        0.0625,
-        0.0625,
-        8.0,
+        0.5,
+        0.5,
         16.0,
         16.0,
         16.0
@@ -279,7 +279,7 @@
       "signal_scale": 16.0,
       "horizon_steps": 256,
       "maximum_scaled_coefficient": 500000.0,
-      "maximum_quantization_error": 9.350022764920141e-07
+      "maximum_quantization_error": 9.432642163358254e-07
     }
   },
   "dimensions": {

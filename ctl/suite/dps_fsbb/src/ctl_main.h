@@ -49,7 +49,8 @@ typedef enum _tag_fsbb_fault
     FSBB_FAULT_VOUT_OVERVOLTAGE = 1U << 2,
     FSBB_FAULT_IL_POSITIVE_OVERCURRENT = 1U << 3,
     FSBB_FAULT_IL_NEGATIVE_OVERCURRENT = 1U << 4,
-    FSBB_FAULT_IOUT_OVERCURRENT = 1U << 5
+    FSBB_FAULT_IOUT_OVERCURRENT = 1U << 5,
+    FSBB_FAULT_HARDWARE_OVERCURRENT = 1U << 6
 } fsbb_fault_t;
 
 extern volatile uint16_t g_fsbb_faults;

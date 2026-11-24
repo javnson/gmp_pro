@@ -47,8 +47,8 @@ echo [4/8] Regenerating the %MATRIX_BACKEND% main-circuit solver selection...
 call "%HW_DIR%\generate_code.bat" --no-pause
 if errorlevel 1 goto :failed
 
-echo [5/8] Verifying generated ADC transfer gains against private SDPE hardware...
-python "%HW_DIR%\validate_generated_model.py" "%HW_DIR%\generated\PMSM.json" "%SDPE_DIR%\private_hardware\inverter_3ph\mcs_pmsm_nt_cctl_inverter.json"
+echo [5/8] Verifying the generated circuit against the 2136SINV hardware preset...
+python "%HW_DIR%\validate_generated_model.py" "%HW_DIR%\generated\PMSM.json" "%GMP_PRO_LOCATION%\ctl\hardware_preset\sdpe_src\inverter_3ph\gmp_3ph_2136sinv_dual.json"
 if errorlevel 1 goto :failed
 
 if /I not "%GMP_ENV_MODE%"=="virtual" goto :system_environment

@@ -1,0 +1,160 @@
+{
+  "id": "dps_fsbb_f280049c",
+  "macro_prefix": "DPS_FSBB_F280049C",
+  "display_name": "DPS FSBB LaunchXL-F280049C",
+  "description": "FSBB binding for LVFB_100_2PH and LaunchXL-F280049C.",
+  "suite": "dps_fsbb",
+  "version": "1.0.0",
+  "output_header": "ctrl_settings.h",
+  "hardware": [],
+  "common_requirements": [
+    "../../../../sdpe_general/sdpe_requirement.json",
+    "../../../../../../../tools/SDPE_v2/common_requirements/gmp_suite_pil.json"
+  ],
+  "requirements": [
+    {
+      "role": "Data Link Scope Depth",
+      "macro": "GMP_DL_SCOPE_DEPTH",
+      "binding": {
+        "number": "100"
+      },
+      "description": "Samples per scope channel."
+    },
+    {
+      "role": "PWM Depth",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "binding": {
+        "number": "2500"
+      },
+      "description": "ePWM TBPRD at 100 MHz in up/down mode."
+    },
+    {
+      "role": "PWM Deadband Width",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "binding": {
+        "number": "60"
+      },
+      "description": "600 ns of MCU deadband at 100 MHz."
+    },
+    {
+      "role": "System Tick Divider",
+      "macro": "DSP_C2000_DSP_TIME_DIV",
+      "binding": {
+        "number": "20"
+      },
+      "description": "20 kHz ADC ISR to 1 kHz scheduler."
+    },
+    {
+      "role": "Fixed Input Voltage",
+      "macro": "FSBB_LAUNCHXL_FIXED_VIN",
+      "binding": {
+        "number": "12.0f"
+      },
+      "description": "Set to the measured bench input when Vin ADC is disabled."
+    },
+    {
+      "role": "Commissioning Voltage",
+      "macro": "FSBB_OPEN_LOOP_VOLTAGE_COMMAND",
+      "binding": {
+        "number": "3.0f"
+      },
+      "description": "Initial open-loop command in volts."
+    },
+    {
+      "role": "Output Overvoltage",
+      "macro": "FSBB_OUTPUT_VOLTAGE_MAX",
+      "binding": {
+        "number": "15.0f"
+      },
+      "description": "Commissioning output overvoltage limit in volts."
+    },
+    {
+      "role": "Positive Current Trip",
+      "macro": "FSBB_PROTECT_IL_MAX",
+      "binding": {
+        "number": "2.0f"
+      },
+      "description": "Commissioning positive inductor current trip in amps."
+    },
+    {
+      "role": "Negative Current Trip",
+      "macro": "FSBB_PROTECT_IL_MIN",
+      "binding": {
+        "number": "-2.0f"
+      },
+      "description": "Commissioning negative inductor current trip in amps."
+    },
+    {
+      "role": "Output Current Limit",
+      "macro": "FSBB_OUTPUT_CURRENT_LIM",
+      "binding": {
+        "number": "1.0f"
+      },
+      "description": "Controller current reference ceiling in amps."
+    },
+    {
+      "role": "Default Output Voltage",
+      "macro": "FSBB_DEFAULT_OUTPUT_VOLTAGE",
+      "binding": {
+        "number": "6.0f"
+      },
+      "description": "Level 3 default command in volts."
+    },
+    {
+      "role": "Default Current Limit",
+      "macro": "FSBB_DEFAULT_CURRENT_LIMIT",
+      "binding": {
+        "number": "0.5f"
+      },
+      "description": "Level 2/3 default current command in amps."
+    }
+  ],
+  "feature_macros": [
+    {
+      "group": "PIL Runtime",
+      "macro": "ENABLE_GMP_DL_PIL_SIM",
+      "enabled": false,
+      "value": "",
+      "description": "Execute control only on PIL STEP requests and hold both physical bridges in Trip."
+    },
+    {
+      "group": "Controller Settings",
+      "macro": "CIA402_CONFIG_DISABLE_CONTROL_WORD_DEFAULT",
+      "enabled": true,
+      "value": "",
+      "description": "Use explicit CiA402 commands from the FSBB CAN mailbox."
+    },
+    {
+      "group": "Controller Settings",
+      "macro": "CIA402_CONFIG_ENABLE_SEQUENCE_SWITCH",
+      "enabled": true,
+      "value": "",
+      "description": "Advance through the full startup sequence on an explicit Enable Operation command."
+    },
+    {
+      "group": "Sampling",
+      "macro": "FSBB_ENABLE_VIN_SAMPLE",
+      "enabled": false,
+      "value": "",
+      "description": "Enable optional isolated Vin feedback on BoosterPack pin 24 (ADCINB0)."
+    }
+  ],
+  "option_macros": [
+    {
+      "group": "Controller Settings",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "value": "(1)",
+      "options_preset": "",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)"
+      ],
+      "description": "1: open loop. 2: current loop. 3: cascaded voltage and current."
+    }
+  ],
+  "code_sections": {
+    "before_footer": "#if (BUILD_LEVEL < 1) || (BUILD_LEVEL > 3)\n#error \"BUILD_LEVEL must be 1, 2, or 3.\"\n#endif"
+  }
+}

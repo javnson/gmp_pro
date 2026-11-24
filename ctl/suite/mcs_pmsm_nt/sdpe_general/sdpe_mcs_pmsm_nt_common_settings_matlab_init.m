@@ -27,7 +27,7 @@ MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE = 'mcs_pmsm_nt';
 
 MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION = '1.1.0';
 
-MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-08-15';
+MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-11-24';
 
 %% Control Algorithm
 % PMSM_CTRL_USING_DISCRETE_CTRL is disabled in the SDPE project requirement.
@@ -56,10 +56,10 @@ PWM_MODULATOR_USING_NEGATIVE_LOGIC = 1;
 % USING_NPC_MODULATOR is disabled in the SDPE project requirement.
 % USING_NPC_MODULATOR = true;
 
-%% Controller Options
+%% PIL Commissioning
 % Incremental commissioning level. 1: V/f voltage open loop; 2: current loop with synthetic electrical angle; 3: current loop with encoder angle; 4: speed loop with encoder feedback.
 % Options: (1), (2), (3), (4)
-BUILD_LEVEL = 1;
+BUILD_LEVEL = 4;
 
 %% Requirement bindings
 % Enable the seven ADC slots used by the PMSM SIL input ABI.
@@ -76,6 +76,12 @@ MCS_PWM_DEADTIME_COMP_CURRENT_DEADBAND_A = real2param(0.2);
 
 % Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current.
 MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A = real2param(0.05);
+
+% Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
+MCS_NOMINAL_DC_BUS_VOLTAGE_V = real2param(80.0);
+
+% Mechanical speed base in rpm.
+CTRL_SPEED_RPM_BASE = MOTOR_PARAM_MAX_SPEED;
 
 MOTOR_PARAM_RS = real2param(0.165);
 
@@ -96,9 +102,6 @@ MOTOR_PARAM_FRICTION = real2param(755.0);
 % Maximum mechanical speed of the common reference motor in rpm.
 MOTOR_PARAM_MAX_SPEED = real2param(3000.0);
 
-% Mechanical speed base in rpm.
-CTRL_SPEED_RPM_BASE = MOTOR_PARAM_MAX_SPEED;
-
 % Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
 MCS_MECH_SPEED_LIMIT_RPM = real2param(3000.0);
 
@@ -106,21 +109,26 @@ MCS_MECH_SPEED_LIMIT_RPM = real2param(3000.0);
 MCS_MECH_SPEED_SLOPE_RPM_S = real2param(3000.0);
 
 % Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting.
-MCS_MECH_CURRENT_LIMIT_A = real2param(3.0);
+MCS_MECH_CURRENT_LIMIT_A = real2param(5.0);
 
 % Rectangular saturation limit for d/q axes in V.
 MCS_MAX_RECT_SATURATION_VOLTAGE_V = real2param(10.0);
 
-% Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
-MCS_NOMINAL_DC_BUS_VOLTAGE_V = real2param(80.0);
-
 MCS_MAX_DC_BUS_VOLTAGE_V = MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2;
+
+MCS_MIN_DC_BUS_VOLTAGE_V = MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2;
 
 % The current limit value at which the machine must be shut down.
 MCS_MAX_SHUTDOWN_CURRENT_A = real2param(10.0);
 
 % Circular saturation limit for voltage vector magnitude in V.
 MCS_MAX_CIR_SATURATION_VOLTAGE_V = real2param(10.0);
+
+% Controller startup delay in milliseconds.
+CTRL_STARTUP_DELAY = 100;
+
+% Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
+MCS_CIA402_OPERATION_ENABLE_DELAY_MS = 100;
 
 % Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
 MCS_ENCODER_SPEED_FILTER_FC_HZ = real2param(20.0);
@@ -130,6 +138,18 @@ MCS_ADC_CALIBRATOR_FC_HZ = real2param(20.0);
 
 % Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
 MCS_ADC_CALIBRATOR_Q = real2param(0.707);
+
+% Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
+MCS_MECH_POSITION_KP_PU = real2param(5.0);
+
+% Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+MCS_MECH_POSITION_KI_PU_S = real2param(1.0);
+
+% Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
+MCS_MECH_VELOCITY_KP_PU = real2param(5.0);
+
+% Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+MCS_MECH_VELOCITY_KI_PU_S = real2param(1.0);
 
 % D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
 MCS_COMMISSIONING_ID_REF_A = real2param(1.0);
@@ -145,26 +165,6 @@ MCS_OPEN_LOOP_FREQ_HZ = real2param(20.0);
 
 % Maximum electrical-frequency slew rate in hertz per second for the synthetic angle generator.
 MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S = real2param(20.0);
-
-% Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
-MCS_MECH_POSITION_KP_PU = real2param(5.0);
-
-% Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
-MCS_MECH_POSITION_KI_PU_S = real2param(1.0);
-
-% Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
-MCS_MECH_VELOCITY_KP_PU = real2param(5.0);
-
-% Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
-MCS_MECH_VELOCITY_KI_PU_S = real2param(1.0);
-
-% Controller startup delay in milliseconds.
-CTRL_STARTUP_DELAY = 100;
-
-% Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
-MCS_CIA402_OPERATION_ENABLE_DELAY_MS = 100;
-
-MCS_MIN_DC_BUS_VOLTAGE_V = MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2;
 
 %% SDPE project summary
 fprintf('\n============================================================\n');

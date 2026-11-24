@@ -21,6 +21,7 @@ def main() -> int:
     parser.add_argument("--port", required=True, help="Target Data Link serial port")
     parser.add_argument("--trace", type=Path, help="Optional output CSV trace")
     parser.add_argument("--maximum-steps", type=int, help="Stop after this many successful steps")
+    parser.add_argument("--framed-udp", action="store_true", help="Use the current GMP SIL MEX session protocol")
     args = parser.parse_args()
 
     config = PilConfiguration.from_sdpe(args.sdpe)
@@ -37,7 +38,7 @@ def main() -> int:
         ) as client:
             trace = PilTraceWriter(trace_stream, config) if trace_stream is not None else None
             bridge = PilBridge(PilApi(client.transport, config), trace=trace)
-            completed = bridge.run(maximum_steps=args.maximum_steps)
+            completed = bridge.run(maximum_steps=args.maximum_steps, framed_udp=args.framed_udp)
         print(f"Completed {completed} PIL steps at BUILD_LEVEL {config.build_level}.")
         return 0
     finally:

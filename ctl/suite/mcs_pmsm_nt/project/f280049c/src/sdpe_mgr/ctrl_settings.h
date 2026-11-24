@@ -7,7 +7,7 @@
 #ifndef _PROJECT_CTRL_SETTINGS_H_
 #define _PROJECT_CTRL_SETTINGS_H_
 
-#include <ctl/hardware_preset/inverter_3ph/ti_boostxl_3phganinv.h>
+#include <ctl/hardware_preset/inverter_3ph/gmp_3ph_2136sinv_dual.h>
 #include <ctl/hardware_preset/mcu_board/launchxl_f280049c.h>
 #include <ctl/hardware_preset/pmsm_motor/sm060r20b30mnad.h>
 
@@ -34,7 +34,7 @@ extern "C"
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_ID "mcs_pmsm_nt_f280049c"
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_F280049C_SDPE_PROJECT_VERSION "1.3.0"
-#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_UPDATED_AT "2026-08-15"
+#define MCS_PMSM_NT_F280049C_SDPE_PROJECT_UPDATED_AT "2026-11-24"
 
 //=================================================================================================
 /**
@@ -55,7 +55,7 @@ extern "C"
  * @brief Target-local incremental level used for both PIL deployment and physical commissioning.
  *        Options: (1), (2), (3), (4)
  */
-#define BUILD_LEVEL (1)
+#define BUILD_LEVEL (4)
 
 //=================================================================================================
 /**
@@ -248,11 +248,6 @@ extern "C"
  */
 
 /**
- * @brief Base Data Link command allocated to the PIL service.
- */
-#define GMP_PIL_DL_BASE_COMMAND (16)
-
-/**
  * @brief UART baud rate shared by the F280049C Data Link transport and the host PIL bridge. The standard 115200 baud rate avoids the XDS110 high-baud small-packet aggregation behavior.
  */
 #define GMP_DL_UART_BAUDRATE (115200)
@@ -291,16 +286,6 @@ extern "C"
  * @brief Transmit mask enabling three PWM compares and six controller monitor values.
  */
 #define GMP_PIL_TX_MASK (4128775)
-
-/**
- * @brief Maximum host wait for one target PIL transaction before the transport retries.
- */
-#define GMP_PIL_MCU_TIMEOUT_MS (200)
-
-/**
- * @brief Maximum idle time while waiting for the next Simulink input datagram.
- */
-#define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
 
 /**
  * @brief PIL ADC slot carrying DC-bus voltage feedback.
@@ -418,6 +403,11 @@ extern "C"
 #define CTRL_ADC_VOLTAGE_REF real2param(3.3)
 
 /**
+ * @brief Base Data Link command allocated to the PIL service.
+ */
+#define GMP_PIL_DL_BASE_COMMAND (16)
+
+/**
  * @brief Configured DC-bus voltage base.
  */
 #define CTRL_DCBUS_VOLTAGE real2param(80.0)
@@ -431,6 +421,16 @@ extern "C"
  * @brief Phase-current per-unit base in amperes.
  */
 #define CTRL_CURRENT_BASE real2param(10.0)
+
+/**
+ * @brief Rectangular saturation limit for the board's d/q axes in V.
+ */
+#define MCS_MAX_RECT_SATURATION_VOLTAGE_V real2param(36.0)
+
+/**
+ * @brief Circular saturation limit for the board's voltage vector magnitude in V.
+ */
+#define MCS_MAX_CIR_SATURATION_VOLTAGE_V real2param(36.0)
 
 /**
  * @brief
@@ -528,24 +528,34 @@ extern "C"
 #define MOTOR_PARAM_MAX_SPEED SM060R20B30MNAD_MAX_SPEED
 
 /**
+ * @brief Maximum host wait for one target PIL transaction before the transport retries.
+ */
+#define GMP_PIL_MCU_TIMEOUT_MS (200)
+
+/**
+ * @brief Maximum idle time while waiting for the next Simulink input datagram.
+ */
+#define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
+
+/**
  * @brief DC-bus voltage sensing gain in ADC volts per measured volt.
  */
-#define CTRL_DC_VOLTAGE_SENSITIVITY (TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_GAIN)
+#define CTRL_DC_VOLTAGE_SENSITIVITY (GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_GAIN)
 
 /**
  * @brief DC-bus voltage sensor bias in volts.
  */
-#define CTRL_DC_VOLTAGE_BIAS (TI_BOOSTXL_3PHGANINV_DCBUS_VOLTAGE_SENSE_BIAS_V)
+#define CTRL_DC_VOLTAGE_BIAS (GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_BIAS_V)
 
 /**
  * @brief Phase-voltage sensing gain in ADC volts per measured volt.
  */
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_GAIN)
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY (GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_GAIN)
 
 /**
  * @brief Phase-voltage sensor bias in volts.
  */
-#define CTRL_INVERTER_VOLTAGE_BIAS (TI_BOOSTXL_3PHGANINV_PH_VOLTAGE_SENSE_BIAS_V)
+#define CTRL_INVERTER_VOLTAGE_BIAS (GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_BIAS_V)
 
 /**
  * @brief Encoder counts per mechanical revolution.
@@ -565,22 +575,22 @@ extern "C"
 /**
  * @brief DC-bus current sensing gain. The selected inverter reports SENSOR_NONE for this path.
  */
-#define CTRL_DC_CURRENT_SENSITIVITY (TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_GAIN)
+#define CTRL_DC_CURRENT_SENSITIVITY (GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_GAIN)
 
 /**
  * @brief DC-bus current sensor bias.
  */
-#define CTRL_DC_CURRENT_BIAS (TI_BOOSTXL_3PHGANINV_DCBUS_CURRENT_SENSE_BIAS_V)
+#define CTRL_DC_CURRENT_BIAS (GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_BIAS_V)
 
 /**
  * @brief Phase-current sensor sensitivity in volts per ampere.
  */
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (TI_BOOSTXL_3PHGANINV_PH_SHUNT_RESISTANCE_OHM * TI_BOOSTXL_3PHGANINV_PH_CSA_GAIN_V_V)
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (GMP_3PH_2136SINV_DUAL_PH_SHUNT_RESISTANCE_OHM * GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V)
 
 /**
  * @brief Phase-current sensor zero-current bias in volts.
  */
-#define CTRL_INVERTER_CURRENT_BIAS (TI_BOOSTXL_3PHGANINV_PH_CSA_BIAS_V)
+#define CTRL_INVERTER_CURRENT_BIAS (GMP_3PH_2136SINV_DUAL_PH_CSA_BIAS_V)
 
 //=================================================================================================
 /**
@@ -644,7 +654,7 @@ extern "C"
 
 //=================================================================================================
 /**
- * @brief Controller Options.
+ * @brief PIL Commissioning.
  */
 
 /**
@@ -652,7 +662,7 @@ extern "C"
  *        Options: (1), (2), (3), (4)
  */
 #ifndef BUILD_LEVEL
-#define BUILD_LEVEL (1)
+#define BUILD_LEVEL (4)
 #endif // BUILD_LEVEL
 
 //=================================================================================================
@@ -688,6 +698,18 @@ extern "C"
  * @brief Phase-current hysteresis band in amperes used to prevent dead-time compensation direction chatter around zero current.
  */
 #define MCS_PWM_DEADTIME_COMP_CURRENT_HYSTERESIS_A real2param(0.05)
+
+/**
+ * @brief Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
+ */
+#define MCS_NOMINAL_DC_BUS_VOLTAGE_V real2param(80.0)
+
+/**
+ * @brief Mechanical speed base in rpm.
+ */
+#ifndef CTRL_SPEED_RPM_BASE
+#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
+#endif // CTRL_SPEED_RPM_BASE
 
 /**
  * @brief
@@ -753,13 +775,6 @@ extern "C"
 #endif // MOTOR_PARAM_MAX_SPEED
 
 /**
- * @brief Mechanical speed base in rpm.
- */
-#ifndef CTRL_SPEED_RPM_BASE
-#define CTRL_SPEED_RPM_BASE MOTOR_PARAM_MAX_SPEED
-#endif // CTRL_SPEED_RPM_BASE
-
-/**
  * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
  */
 #define MCS_MECH_SPEED_LIMIT_RPM real2param(3000.0)
@@ -772,22 +787,26 @@ extern "C"
 /**
  * @brief Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting.
  */
-#define MCS_MECH_CURRENT_LIMIT_A real2param(3.0)
+#ifndef MCS_MECH_CURRENT_LIMIT_A
+#define MCS_MECH_CURRENT_LIMIT_A real2param(5.0)
+#endif // MCS_MECH_CURRENT_LIMIT_A
 
 /**
  * @brief Rectangular saturation limit for d/q axes in V.
  */
+#ifndef MCS_MAX_RECT_SATURATION_VOLTAGE_V
 #define MCS_MAX_RECT_SATURATION_VOLTAGE_V real2param(10.0)
-
-/**
- * @brief Nominal DC-bus voltage used by common protection thresholds and target per-unit bases.
- */
-#define MCS_NOMINAL_DC_BUS_VOLTAGE_V real2param(80.0)
+#endif // MCS_MAX_RECT_SATURATION_VOLTAGE_V
 
 /**
  * @brief
  */
 #define MCS_MAX_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2f)
+
+/**
+ * @brief
+ */
+#define MCS_MIN_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2f)
 
 /**
  * @brief The current limit value at which the machine must be shut down.
@@ -799,7 +818,19 @@ extern "C"
 /**
  * @brief Circular saturation limit for voltage vector magnitude in V.
  */
+#ifndef MCS_MAX_CIR_SATURATION_VOLTAGE_V
 #define MCS_MAX_CIR_SATURATION_VOLTAGE_V real2param(10.0)
+#endif // MCS_MAX_CIR_SATURATION_VOLTAGE_V
+
+/**
+ * @brief Controller startup delay in milliseconds.
+ */
+#define CTRL_STARTUP_DELAY (100)
+
+/**
+ * @brief Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
+ */
+#define MCS_CIA402_OPERATION_ENABLE_DELAY_MS (100)
 
 /**
  * @brief Cutoff frequency in hertz of the low-pass filter applied to encoder-derived mechanical speed.
@@ -815,6 +846,28 @@ extern "C"
  * @brief Quality factor of the ADC calibration low-pass filter; 0.707 gives an approximately Butterworth second-order response.
  */
 #define MCS_ADC_CALIBRATOR_Q real2param(0.707)
+
+/**
+ * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
+ */
+#define MCS_MECH_POSITION_KP_PU real2param(5.0)
+
+/**
+ * @brief Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ */
+#define MCS_MECH_POSITION_KI_PU_S real2param(1.0)
+
+/**
+ * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
+ */
+#define MCS_MECH_VELOCITY_KP_PU real2param(5.0)
+
+/**
+ * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
+ */
+#ifndef MCS_MECH_VELOCITY_KI_PU_S
+#define MCS_MECH_VELOCITY_KI_PU_S real2param(1.0)
+#endif // MCS_MECH_VELOCITY_KI_PU_S
 
 /**
  * @brief D-axis current reference in amperes used by BUILD_LEVEL 2 and 3 commissioning. Converted to PU using CTRL_CURRENT_BASE.
@@ -841,41 +894,6 @@ extern "C"
  */
 #define MCS_OPEN_LOOP_FREQ_SLOPE_HZ_S real2param(20.0)
 
-/**
- * @brief Position-loop proportional gain. Input is mechanical position error in PU revolutions and output is speed reference in PU, so the gain is speed_pu/position_pu.
- */
-#define MCS_MECH_POSITION_KP_PU real2param(5.0)
-
-/**
- * @brief Position-loop integral gain in speed_pu/(position_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
- */
-#define MCS_MECH_POSITION_KI_PU_S real2param(1.0)
-
-/**
- * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
- */
-#define MCS_MECH_VELOCITY_KP_PU real2param(5.0)
-
-/**
- * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
- */
-#define MCS_MECH_VELOCITY_KI_PU_S real2param(1.0)
-
-/**
- * @brief Controller startup delay in milliseconds.
- */
-#define CTRL_STARTUP_DELAY (100)
-
-/**
- * @brief Minimum delay in milliseconds before the CiA402 state machine enters Operation Enabled. The project control tick is expressed in milliseconds.
- */
-#define MCS_CIA402_OPERATION_ENABLE_DELAY_MS (100)
-
-/**
- * @brief
- */
-#define MCS_MIN_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2f)
-
 //=================================================================================================
 /**
  * @brief Common fallbacks: GMP Suite PIL Common Transport.
@@ -897,13 +915,6 @@ extern "C"
 /**
  * @brief Requirement bindings.
  */
-
-/**
- * @brief Base command followed by mask, step, status, and abort subcommands.
- */
-#ifndef GMP_PIL_DL_BASE_COMMAND
-#define GMP_PIL_DL_BASE_COMMAND (16)
-#endif // GMP_PIL_DL_BASE_COMMAND
 
 /**
  * @brief Portable commissioning rate used unless a hardware project overrides it.
@@ -948,6 +959,20 @@ extern "C"
 #endif // GMP_PIL_MATLAB_COMMAND_RX_PORT
 
 /**
+ * @brief Digital input slot packed into the standard Data Link PIL request.
+ */
+#ifndef GMP_PIL_UDP_DIGITAL_INDEX
+#define GMP_PIL_UDP_DIGITAL_INDEX (0)
+#endif // GMP_PIL_UDP_DIGITAL_INDEX
+
+/**
+ * @brief Base command followed by mask, step, status, and abort subcommands.
+ */
+#ifndef GMP_PIL_DL_BASE_COMMAND
+#define GMP_PIL_DL_BASE_COMMAND (16)
+#endif // GMP_PIL_DL_BASE_COMMAND
+
+/**
  * @brief Maximum wait for one target Data Link response.
  */
 #ifndef GMP_PIL_MCU_TIMEOUT_MS
@@ -960,13 +985,6 @@ extern "C"
 #ifndef GMP_PIL_MATLAB_TIMEOUT_MS
 #define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
 #endif // GMP_PIL_MATLAB_TIMEOUT_MS
-
-/**
- * @brief Digital input slot packed into the standard Data Link PIL request.
- */
-#ifndef GMP_PIL_UDP_DIGITAL_INDEX
-#define GMP_PIL_UDP_DIGITAL_INDEX (0)
-#endif // GMP_PIL_UDP_DIGITAL_INDEX
 
 // Common tail code: MCS PMSM NT Common Controller Settings
 /* Accept the historical misspelling while all source code uses the canonical switch. */

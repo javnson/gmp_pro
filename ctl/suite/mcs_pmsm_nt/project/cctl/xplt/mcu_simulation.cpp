@@ -42,6 +42,7 @@ void mcu_simulation::initialize()
     eqep_.reset();
     for (epwm_type &module : epwm_)
         module.reset();
+    pwm_cycle_ = 0U;
     outputs_ = {};
 
     if (!verify_peripheral_models())
@@ -58,6 +59,16 @@ void mcu_simulation::set_adc_interrupt_handler(
 const epwm_outputs &mcu_simulation::control_outputs(
     std::uint64_t absolute_tbclk_count)
 {
+    constexpr std::uint64_t counts_per_cycle =
+        2ULL * (CCTL_SIM_EPWM_PERIOD_COUNT + 1ULL);
+    const std::uint64_t cycle = absolute_tbclk_count / counts_per_cycle;
+    if (cycle != pwm_cycle_)
+    {
+        /* Counter zero loads CMPA before this cycle's ADC-triggered ISR. */
+        for (std::size_t phase = 0U; phase < epwm_.size(); ++phase)
+            epwm_[phase].set_compare_a(cctl_pwm_compare[phase]);
+        pwm_cycle_ = cycle;
+    }
     outputs_ = {epwm_[0].sample_time_base_count(absolute_tbclk_count),
                 epwm_[1].sample_time_base_count(absolute_tbclk_count),
                 epwm_[2].sample_time_base_count(absolute_tbclk_count)};
@@ -84,8 +95,9 @@ bool mcu_simulation::control_inputs(const adc_pin_voltages &inputs,
     eqep_.sample_to(mechanical_angle_rad, cctl_encoder_position);
     adc_.trigger_and_transfer(cctl_adc_result, CCTL_ADC_COUNT);
 
-    /* gmp_base_ctl_step() has returned; publish its new PWM register values. */
-    write_epwm_outputs_after_isr();
+    const bool enabled = csp_cctl_output_is_enabled() != 0;
+    for (epwm_type &module : epwm_)
+        module.set_enabled(enabled);
     adc_.acknowledge_interrupt();
     return true;
 }
@@ -100,13 +112,6 @@ bool mcu_simulation::output_enabled() const noexcept
     return std::all_of(epwm_.begin(), epwm_.end(), [](const auto &module) {
         return module.enabled();
     });
-}
-
-void mcu_simulation::write_epwm_outputs_after_isr() noexcept
-{
-    const bool enabled = csp_cctl_output_is_enabled() != 0;
-    for (std::size_t phase = 0U; phase < epwm_.size(); ++phase)
-        epwm_[phase].apply_control(cctl_pwm_compare[phase], enabled);
 }
 
 bool mcu_simulation::all_low_sides_conducting(

@@ -252,6 +252,7 @@ static void ctl_apply_pil_input(const gmp_sim_rx_buf_t* rx)
 /** @brief Export one FSBB controller result using the established SIL ABI. */
 static void ctl_collect_pil_output(gmp_sim_tx_buf_t* tx)
 {
+    tx->digital_out = g_fsbb_output_enabled ? 1U : 0U;
     tx->pwm_cmp[0] = ctl_get_fsbb_buck_cmp(&fsbb_mod);
     tx->pwm_cmp[1] = CTRL_PWM_CMP_MAX - ctl_get_fsbb_boost_cmp(&fsbb_mod);
     tx->monitor[0] = ctrl2param(adc_v_in.control_port.value) * CTRL_VOLTAGE_BASE;

@@ -17,6 +17,17 @@ from .client import GmpDlProtocolError, TransactionTransport
 MATLAB_INPUT_STRUCT = struct.Struct("<d24I16d8i")
 MATLAB_OUTPUT_STRUCT = struct.Struct("<d8I8I16d")
 
+# Match tools/gmp_sil/sil_helper/gmp_sil_protocol.hpp. Only the frame envelope
+# is big-endian; the existing packed Simulink samples remain little-endian.
+SIL_HEADER = struct.Struct("!4sHHIQI")
+SIL_SESSION = struct.Struct("!HHII16s")
+SIL_STATE = struct.Struct("!HHIQ")
+SIL_MAGIC = b"GMPT"
+SIL_VERSION = 1
+SIL_DATA_REQUEST, SIL_DATA_RESPONSE = 1, 2
+SIL_SIMULATION_STATE = 8
+SIL_HELLO, SIL_HELLO_RESPONSE = 10, 11
+
 
 def _read_json(path: Path) -> dict[str, object]:
     with path.open("r", encoding="utf-8") as stream:
@@ -349,7 +360,7 @@ class PilBridge:
         self.trace = trace
         self.stop_event = stop_event or threading.Event()
 
-    def run(self, *, maximum_steps: int | None = None) -> int:
+    def run(self, *, maximum_steps: int | None = None, framed_udp: bool = False) -> int:
         """Serve until stopped, timed out, or the optional step limit is met."""
         completed = 0
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as channel:
@@ -357,6 +368,8 @@ class PilBridge:
             channel.settimeout(min(0.25, self.config.matlab_timeout_s))
             destination = (self.config.udp_host, self.config.matlab_listen_port)
             self.api.synchronize_masks()
+            if framed_udp:
+                return self._run_framed_udp(channel, destination, maximum_steps)
             initial_output = bytes(MATLAB_OUTPUT_STRUCT.size)
             channel.sendto(initial_output, destination)
             last_input = time.monotonic()
@@ -375,12 +388,72 @@ class PilBridge:
                         break
                     continue
                 last_input = time.monotonic()
-                sample = PilInput.from_matlab_datagram(payload)
-                started = time.perf_counter()
-                result = self.api.step(sample)
-                elapsed = time.perf_counter() - started
-                channel.sendto(result.to_matlab_datagram(), destination)
                 completed += 1
+                sample, result, elapsed = self._step(payload)
+                channel.sendto(result.to_matlab_datagram(), destination)
                 if self.trace is not None:
                     self.trace.write(completed, sample, result, elapsed)
+        return completed
+
+    def _step(self, payload: bytes) -> tuple[PilInput, PilOutput, float]:
+        sample = PilInput.from_matlab_datagram(payload)
+        started = time.perf_counter()
+        result = self.api.step(sample)
+        return sample, result, time.perf_counter() - started
+
+    def _run_framed_udp(
+        self, channel: socket.socket, destination: tuple[str, int], maximum_steps: int | None
+    ) -> int:
+        """Serve the session header used by the current GMP SIL MEX."""
+        peer = (socket.gethostbyname(destination[0]), destination[1])
+        completed = 0
+        last_sequence = None
+        deadline = None
+        max_datagram = SIL_HEADER.size + MATLAB_INPUT_STRUCT.size
+        while not self.stop_event.is_set() and (maximum_steps is None or completed < maximum_steps):
+            if deadline is not None and time.monotonic() >= deadline:
+                break
+            try:
+                datagram, source = channel.recvfrom(max_datagram + 1)
+            except socket.timeout:
+                continue
+            if source != peer:
+                continue
+            if not SIL_HEADER.size <= len(datagram) <= max_datagram:
+                raise GmpDlProtocolError("Invalid GMP SIL datagram length.")
+            magic, version, kind, flags, sequence, size = SIL_HEADER.unpack_from(datagram)
+            payload = datagram[SIL_HEADER.size:]
+            if (magic, version, flags, size) != (SIL_MAGIC, SIL_VERSION, 0, len(payload)):
+                raise GmpDlProtocolError("Invalid GMP SIL frame header.")
+
+            if last_sequence is None:
+                if kind != SIL_HELLO or size != SIL_SESSION.size:
+                    raise GmpDlProtocolError("Expected a GMP SIL session hello.")
+                abi = SIL_SESSION.unpack(payload)[:4]
+                if abi != (SIL_VERSION, 0, MATLAB_INPUT_STRUCT.size, MATLAB_OUTPUT_STRUCT.size):
+                    raise GmpDlProtocolError("GMP SIL session does not match the PIL packed ABI.")
+                response_kind, response = SIL_HELLO_RESPONSE, payload
+                last_sequence = sequence
+            elif kind == SIL_SIMULATION_STATE:
+                if size != SIL_STATE.size:
+                    raise GmpDlProtocolError("Invalid GMP SIL simulation state length.")
+                state_version, state, _, _ = SIL_STATE.unpack(payload)
+                if state_version != SIL_VERSION or state not in range(1, 6):
+                    raise GmpDlProtocolError("Invalid GMP SIL simulation state.")
+                if state >= 3:
+                    break
+                continue  # UDP simulation state is a one-way notification.
+            elif kind == SIL_DATA_REQUEST and sequence > last_sequence:
+                completed += 1
+                last_sequence = sequence
+                sample, result, elapsed = self._step(payload)
+                response_kind, response = SIL_DATA_RESPONSE, result.to_matlab_datagram()
+            else:
+                raise GmpDlProtocolError("Unexpected or repeated GMP SIL request.")
+
+            header = SIL_HEADER.pack(SIL_MAGIC, SIL_VERSION, response_kind, 0, sequence, len(response))
+            channel.sendto(header + response, peer)
+            deadline = time.monotonic() + self.config.matlab_timeout_s
+            if kind == SIL_DATA_REQUEST and self.trace is not None:
+                self.trace.write(completed, sample, result, elapsed)
         return completed

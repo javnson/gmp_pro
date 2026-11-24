@@ -1,4 +1,4 @@
-"""Verify the generated ADC front-end gains against the project-private SDPE entity."""
+"""Verify the generated PMSM circuit against the shared inverter preset."""
 
 from __future__ import annotations
 
@@ -11,6 +11,12 @@ from pathlib import Path
 import numpy as np
 
 
+def verify_value(label: str, actual: float, expected: float, *, atol: float = 1e-9) -> None:
+    if not np.isclose(actual, expected, rtol=1e-4, atol=atol):
+        raise RuntimeError(f"{label} mismatch: model={actual}, SDPE={expected}")
+    print(f"{label:<21} model={actual:.12g}  SDPE={expected:.12g}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("circuit_data", type=Path)
@@ -21,7 +27,18 @@ def main() -> int:
     import circuit_data as circuit_data_module
 
     document = circuit_data_module.load_circuit_data(args.circuit_data)
-    hardware = json.loads(args.hardware.read_text(encoding="utf-8"))["parameters"]
+    board = json.loads(args.hardware.read_text(encoding="utf-8"))
+    hardware = board["parameters"]
+    power_switch = board["components"]["power_stage"]["entity"]
+    power_switch_path = (
+        gmp_root / "ctl/hardware_preset/sdpe_src/power_switch" / f"{power_switch}.json"
+    )
+    switch_parameters = json.loads(power_switch_path.read_text(encoding="utf-8"))["parameters"]
+    for mosfet in document["devices"]["mosfets"]:
+        verify_value(f"{mosfet['public_name']} channel Ron",
+                     mosfet["reduced"]["channel_on_resistance_ohm"],
+                     switch_parameters["rdson_ohm"])
+
     simulator = circuit_data_module.CircuitDataSimulator(document)
     switches = document["switching"]["switches"]
     paths = [
@@ -32,10 +49,11 @@ def main() -> int:
     model = simulator.discrete_states[topology["calculation_state_index"]]["normal"]
     identity = np.eye(model["A"].shape[0])
     gain = model["C"] @ np.linalg.solve(identity - model["A"], model["B"]) + model["D"]
-    inputs = [
-        port["name"] for port in document["ports"]["inputs"]
+    analog_ports = [
+        port for port in document["ports"]["inputs"]
         if port["data_type"] == "double"
     ]
+    inputs = [port["name"] for port in analog_ports]
     signals = document["signals"]["names"]
 
     expected_current = (
@@ -54,9 +72,21 @@ def main() -> int:
     ) + (("DC bus voltage", "VS1", "V(VADC_VDC)", expected_voltage),)
     for label, source, output, expected in checks:
         actual = float(gain[signals.index(output), inputs.index(source)])
-        if not np.isclose(actual, expected, rtol=1e-4, atol=1e-9):
-            raise RuntimeError(f"{label} gain mismatch: model={actual}, SDPE={expected}")
-        print(f"{label:<18} model={actual:.12g}  SDPE={expected:.12g}")
+        verify_value(f"{label} gain", actual, expected)
+
+    zero_power = np.array([port["default"] for port in analog_ports])
+    zero_power[inputs.index("VS1")] = 0.0
+    zero_power[[inputs.index(f"IPMSM1_{phase}") for phase in "ABC"]] = 0.0
+    offsets = gain @ zero_power
+    for phase in "ABC":
+        verify_value(f"phase {phase} current bias",
+                     offsets[signals.index(f"V(VADC_I{phase})")], hardware["phase_current_bias_v"])
+        # The biased current front end couples a residual voltage through leakage.
+        verify_value(f"phase {phase} voltage bias",
+                     offsets[signals.index(f"V(VADC_V{phase})")], hardware["phase_voltage_bias_v"],
+                     atol=1e-6)
+    verify_value("DC bus voltage bias", offsets[signals.index("V(VADC_VDC)")],
+                 hardware["bus_voltage_bias_v"], atol=1e-6)
 
     for measured_phase in "ABC":
         for source_phase in "ABC":
@@ -111,6 +141,10 @@ def main() -> int:
             raise RuntimeError(
                 f"{phase}-phase PWM bridge routing mismatch: {responses}"
             )
+        # With zero injected motor current the motor neutral is at ground in DC.
+        adc_gain = float(phase_gain[signals.index(f"V(VADC_V{phase})"), inputs.index("VS1")])
+        verify_value(f"phase {phase} voltage gain", adc_gain / responses[phase],
+                     hardware["phase_voltage_gain_v_v"])
         print(f"phase {phase} PWM bridge routing: {responses}")
     return 0
 

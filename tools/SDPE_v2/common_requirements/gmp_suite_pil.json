@@ -5,7 +5,7 @@
   "description": "Hardware-independent Data Link and UDP transport defaults shared by modern GMP suite hardware projects.",
   "suite": "ctl_suite",
   "version": "1.0.0",
-  "updated_at": "2026-08-15",
+  "updated_at": "2026-11-24",
   "output_header": "sdpe_gmp_suite_pil_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -24,19 +24,13 @@
   "option_macros": [],
   "requirements": [
     {
-      "role": "PIL Data Link Base Command",
-      "macro": "GMP_PIL_DL_BASE_COMMAND",
-      "enabled": true,
-      "weak": true,
-      "binding": { "number": "16" },
-      "description": "Base command followed by mask, step, status, and abort subcommands."
-    },
-    {
       "role": "Data Link UART Baud Rate",
       "macro": "GMP_DL_UART_BAUDRATE",
       "enabled": true,
       "weak": true,
-      "binding": { "number": "115200" },
+      "binding": {
+        "number": "115200"
+      },
       "description": "Portable commissioning rate used unless a hardware project overrides it."
     },
     {
@@ -44,7 +38,9 @@
       "macro": "GMP_PIL_UDP_HOST",
       "enabled": true,
       "weak": true,
-      "binding": { "string": "127.0.0.1" },
+      "binding": {
+        "string": "127.0.0.1"
+      },
       "description": "Host running Simulink and the GMP PIL bridge."
     },
     {
@@ -52,7 +48,9 @@
       "macro": "GMP_PIL_BRIDGE_UDP_LISTEN_PORT",
       "enabled": true,
       "weak": true,
-      "binding": { "number": "12501" },
+      "binding": {
+        "number": "12501"
+      },
       "description": "Bridge port receiving plant samples from Simulink."
     },
     {
@@ -60,7 +58,9 @@
       "macro": "GMP_PIL_MATLAB_UDP_LISTEN_PORT",
       "enabled": true,
       "weak": true,
-      "binding": { "number": "12500" },
+      "binding": {
+        "number": "12500"
+      },
       "description": "Simulink port receiving controller results from the bridge."
     },
     {
@@ -68,7 +68,9 @@
       "macro": "GMP_PIL_MATLAB_COMMAND_TX_PORT",
       "enabled": true,
       "weak": true,
-      "binding": { "number": "12502" },
+      "binding": {
+        "number": "12502"
+      },
       "description": "Bridge port receiving out-of-band Simulink commands."
     },
     {
@@ -76,15 +78,39 @@
       "macro": "GMP_PIL_MATLAB_COMMAND_RX_PORT",
       "enabled": true,
       "weak": true,
-      "binding": { "number": "12503" },
+      "binding": {
+        "number": "12503"
+      },
       "description": "Simulink port receiving command acknowledgements."
+    },
+    {
+      "role": "PIL UDP Digital Input Index",
+      "macro": "GMP_PIL_UDP_DIGITAL_INDEX",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "number": "0"
+      },
+      "description": "Digital input slot packed into the standard Data Link PIL request."
+    },
+    {
+      "role": "PIL Data Link Base Command",
+      "macro": "GMP_PIL_DL_BASE_COMMAND",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "number": "16"
+      },
+      "description": "Base command followed by mask, step, status, and abort subcommands."
     },
     {
       "role": "PIL Target Timeout Milliseconds",
       "macro": "GMP_PIL_MCU_TIMEOUT_MS",
       "enabled": true,
       "weak": true,
-      "binding": { "number": "200" },
+      "binding": {
+        "number": "200"
+      },
       "description": "Maximum wait for one target Data Link response."
     },
     {
@@ -92,16 +118,10 @@
       "macro": "GMP_PIL_MATLAB_TIMEOUT_MS",
       "enabled": true,
       "weak": true,
-      "binding": { "number": "5000" },
+      "binding": {
+        "number": "5000"
+      },
       "description": "Maximum wait for the next Simulink plant sample."
-    },
-    {
-      "role": "PIL UDP Digital Input Index",
-      "macro": "GMP_PIL_UDP_DIGITAL_INDEX",
-      "enabled": true,
-      "weak": true,
-      "binding": { "number": "0" },
-      "description": "Digital input slot packed into the standard Data Link PIL request."
     }
   ],
   "requirement_groups": [
@@ -119,7 +139,9 @@
     },
     {
       "name": "Per-Unit Base Parameters",
-      "requirements": ["PIL Data Link Base Command"]
+      "requirements": [
+        "PIL Data Link Base Command"
+      ]
     },
     {
       "name": "Runtime Parameters",
@@ -129,6 +151,8 @@
       ]
     }
   ],
-  "feature_macro_groups": ["PIL Runtime"],
+  "feature_macro_groups": [
+    "PIL Runtime"
+  ],
   "option_macro_groups": []
 }
