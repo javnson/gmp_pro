@@ -5,7 +5,7 @@
   "description": "PMSM sensored-control settings and project bindings for the LaunchXL-F280049C. Board resources remain physical BOOSTXL connector resources and are assigned application roles here.",
   "suite": "mcs_pmsm_nt",
   "version": "1.3.0",
-  "updated_at": "2026-11-24",
+  "updated_at": "2026-11-26",
   "output_header": "ctrl_settings.h",
   "hardware": [
     {
@@ -53,7 +53,7 @@
       "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
       "enabled": true,
       "weak": false,
-      "value": "(3)",
+      "value": "(2)",
       "options_preset": "",
       "options": [
         "(2)",
@@ -964,20 +964,24 @@
       "description": "Phase-current per-unit base in amperes."
     },
     {
-      "role": "Max Voltage For Rect Saturation",
-      "macro": "MCS_MAX_RECT_SATURATION_VOLTAGE_V",
+      "role": "Mech Velocity Kp",
+      "macro": "MCS_MECH_VELOCITY_KP_PU",
+      "enabled": true,
+      "weak": false,
       "binding": {
-        "parameter": "36.0"
+        "parameter": "14.0"
       },
-      "description": "Rectangular saturation limit for the board's d/q axes in V."
+      "description": "Velocity-loop proportional gain selected in the 0.8 PU CCTL load-step experiment."
     },
     {
-      "role": "Max Voltage For Circular Saturation",
-      "macro": "MCS_MAX_CIR_SATURATION_VOLTAGE_V",
+      "role": "Mech Velocity Ki",
+      "macro": "MCS_MECH_VELOCITY_KI_PU_S",
+      "enabled": true,
+      "weak": false,
       "binding": {
-        "parameter": "36.0"
+        "parameter": "45.0"
       },
-      "description": "Circular saturation limit for the board's voltage vector magnitude in V."
+      "description": "Continuous velocity-loop integral gain selected in the 0.8 PU CCTL load-step experiment."
     },
     {
       "role": "Motor Rated Frequency",
@@ -1170,6 +1174,26 @@
       "description": ""
     },
     {
+      "role": "Max Voltage For Rect Saturation",
+      "macro": "MCS_MAX_RECT_SATURATION_VOLTAGE_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "36.0"
+      },
+      "description": "Rectangular saturation limit for the board's d/q axes in V."
+    },
+    {
+      "role": "Max Voltage For Circular Saturation",
+      "macro": "MCS_MAX_CIR_SATURATION_VOLTAGE_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "36.0"
+      },
+      "description": "Circular saturation limit for the board's voltage vector magnitude in V."
+    },
+    {
       "role": "PIL MCU Timeout",
       "macro": "GMP_PIL_MCU_TIMEOUT_MS",
       "enabled": true,
@@ -1345,6 +1369,13 @@
         "Phase Voltage Base",
         "Current Base",
         "Motor Rated Frequency"
+      ]
+    },
+    {
+      "name": "Control Loop / Speed Controller",
+      "requirements": [
+        "Mech Velocity Kp",
+        "Mech Velocity Ki"
       ]
     },
     {

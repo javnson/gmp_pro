@@ -27,7 +27,7 @@ MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE = 'mcs_pmsm_nt';
 
 MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION = '1.1.0';
 
-MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-11-24';
+MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT = '2026-11-26';
 
 %% Control Algorithm
 % PMSM_CTRL_USING_DISCRETE_CTRL is disabled in the SDPE project requirement.
@@ -102,6 +102,12 @@ MOTOR_PARAM_FRICTION = real2param(755.0);
 % Maximum mechanical speed of the common reference motor in rpm.
 MOTOR_PARAM_MAX_SPEED = real2param(3000.0);
 
+% Rectangular saturation limit for d/q axes in V.
+MCS_MAX_RECT_SATURATION_VOLTAGE_V = real2param(10.0);
+
+% Circular saturation limit for voltage vector magnitude in V.
+MCS_MAX_CIR_SATURATION_VOLTAGE_V = real2param(10.0);
+
 % Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
 MCS_MECH_SPEED_LIMIT_RPM = real2param(3000.0);
 
@@ -111,18 +117,12 @@ MCS_MECH_SPEED_SLOPE_RPM_S = real2param(3000.0);
 % Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting.
 MCS_MECH_CURRENT_LIMIT_A = real2param(5.0);
 
-% Rectangular saturation limit for d/q axes in V.
-MCS_MAX_RECT_SATURATION_VOLTAGE_V = real2param(10.0);
-
 MCS_MAX_DC_BUS_VOLTAGE_V = MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2;
 
 MCS_MIN_DC_BUS_VOLTAGE_V = MCS_NOMINAL_DC_BUS_VOLTAGE_V*0.2;
 
 % The current limit value at which the machine must be shut down.
 MCS_MAX_SHUTDOWN_CURRENT_A = real2param(10.0);
-
-% Circular saturation limit for voltage vector magnitude in V.
-MCS_MAX_CIR_SATURATION_VOLTAGE_V = real2param(10.0);
 
 % Controller startup delay in milliseconds.
 CTRL_STARTUP_DELAY = 100;

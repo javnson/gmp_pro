@@ -5,7 +5,7 @@
   "description": "Platform-independent controller contract shared by every mcs_pmsm_nt implementation. Hardware timing, sensing and peripheral bindings remain in each project SDPE requirement.",
   "suite": "mcs_pmsm_nt",
   "version": "1.1.0",
-  "updated_at": "2026-11-24",
+  "updated_at": "2026-11-26",
   "output_header": "sdpe_mcs_pmsm_nt_common_settings.h",
   "hardware": [],
   "code_sections": {
@@ -257,6 +257,26 @@
       "description": "Maximum mechanical speed of the common reference motor in rpm."
     },
     {
+      "role": "Max Voltage For Rect Saturation",
+      "macro": "MCS_MAX_RECT_SATURATION_VOLTAGE_V",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "parameter": "10.0"
+      },
+      "description": "Rectangular saturation limit for d/q axes in V."
+    },
+    {
+      "role": "Max Voltage For Circular Saturation",
+      "macro": "MCS_MAX_CIR_SATURATION_VOLTAGE_V",
+      "enabled": true,
+      "weak": true,
+      "binding": {
+        "parameter": "10.0"
+      },
+      "description": "Circular saturation limit for voltage vector magnitude in V."
+    },
+    {
       "role": "Mech Speed Limit",
       "macro": "MCS_MECH_SPEED_LIMIT_RPM",
       "enabled": true,
@@ -287,16 +307,6 @@
       "description": "Absolute q-axis current/torque command limit in amperes. It is divided by CTRL_CURRENT_BASE to obtain the controller PU limit; 3 A corresponds to the previous 0.3 PU setting."
     },
     {
-      "role": "Max Voltage For Rect Saturation",
-      "macro": "MCS_MAX_RECT_SATURATION_VOLTAGE_V",
-      "enabled": true,
-      "weak": true,
-      "binding": {
-        "parameter": "10.0"
-      },
-      "description": "Rectangular saturation limit for d/q axes in V."
-    },
-    {
       "role": "Max DC Bus Voltage",
       "macro": "MCS_MAX_DC_BUS_VOLTAGE_V",
       "enabled": true,
@@ -325,16 +335,6 @@
         "parameter": "10.0"
       },
       "description": "The current limit value at which the machine must be shut down."
-    },
-    {
-      "role": "Max Voltage For Circular Saturation",
-      "macro": "MCS_MAX_CIR_SATURATION_VOLTAGE_V",
-      "enabled": true,
-      "weak": true,
-      "binding": {
-        "parameter": "10.0"
-      },
-      "description": "Circular saturation limit for voltage vector magnitude in V."
     },
     {
       "role": "Startup Delay",
@@ -410,7 +410,7 @@
       "role": "Mech Velocity Kp",
       "macro": "MCS_MECH_VELOCITY_KP_PU",
       "enabled": true,
-      "weak": false,
+      "weak": true,
       "binding": {
         "parameter": "5.0"
       },
@@ -512,14 +512,14 @@
       "name": "Protection Parameters",
       "requirements": [
         "Motor Maximum Speed",
+        "Max Voltage For Rect Saturation",
+        "Max Voltage For Circular Saturation",
         "Mech Speed Limit",
         "Mech Speed Slope Limit",
         "Mech Current Limit",
-        "Max Voltage For Rect Saturation",
         "Max DC Bus Voltage",
         "Min DC Bus Voltage",
-        "Max Shutdown Current",
-        "Max Voltage For Circular Saturation"
+        "Max Shutdown Current"
       ]
     },
     {

@@ -5,7 +5,7 @@
   "description": "Hardware-independent Data Link and UDP transport defaults shared by modern GMP suite hardware projects.",
   "suite": "ctl_suite",
   "version": "1.0.0",
-  "updated_at": "2026-11-24",
+  "updated_at": "2026-11-26",
   "output_header": "sdpe_gmp_suite_pil_common_settings.h",
   "hardware": [],
   "code_sections": {

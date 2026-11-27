@@ -29,7 +29,7 @@ extern "C"
 #define MCS_PMSM_NT_CCTL_SDPE_PROJECT_ID "mcs_pmsm_nt_cctl"
 #define MCS_PMSM_NT_CCTL_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_CCTL_SDPE_PROJECT_VERSION "1.0.0"
-#define MCS_PMSM_NT_CCTL_SDPE_PROJECT_UPDATED_AT "2026-08-23"
+#define MCS_PMSM_NT_CCTL_SDPE_PROJECT_UPDATED_AT "2026-11-26"
 
 //=================================================================================================
 /**
@@ -50,7 +50,7 @@ extern "C"
  * @brief MC_CURRENT_SAMPLE_PHASE_MODE
  *        Options: (2), (3)
  */
-#define MC_CURRENT_SAMPLE_PHASE_MODE (3)
+#define MC_CURRENT_SAMPLE_PHASE_MODE (2)
 
 //=================================================================================================
 /**
@@ -69,137 +69,102 @@ extern "C"
  */
 
 /**
- * @brief PWM Compare Max
+ * @brief
  */
 #define CTRL_PWM_CMP_MAX (2499)
 
 /**
- * @brief PWM Deadband
+ * @brief
  */
 #define CTRL_PWM_DEADBAND_CMP (100)
 
 /**
- * @brief System Frequency
+ * @brief
  */
 #define CTRL_SYS_FREQUENCY real2param(100e6)
 
 /**
- * @brief ADC Voltage Reference
+ * @brief
  */
 #define CTRL_ADC_VOLTAGE_REF real2param(3.3)
 
 /**
- * @brief DC Bus Voltage Base
+ * @brief
  */
-#define CTRL_DCBUS_VOLTAGE real2param(48.0)
+#define CTRL_DCBUS_VOLTAGE real2param(80.0)
 
 /**
- * @brief Phase Voltage Base
+ * @brief
  */
 #define CTRL_VOLTAGE_BASE (CTRL_DCBUS_VOLTAGE / 1.73205081f)
 
 /**
- * @brief Current Base
+ * @brief
  */
 #define CTRL_CURRENT_BASE real2param(10.0)
 
 /**
- * @brief Encoder Full Scale
+ * @brief
  */
-#define CTRL_POS_ENC_FS (16384)
+#define CTRL_POS_ENC_FS (10000)
 
 /**
- * @brief Encoder Bias
+ * @brief
  */
 #define CTRL_POS_ENC_BIAS real2param(0.0)
 
 /**
- * @brief Mechanical Division
+ * @brief
  */
 #define CTRL_MECH_DIV (5)
 
 /**
- * @brief Mech Velocity Ki
+ * @brief Velocity-loop proportional gain used for the F280049C comparison.
  */
-#define MCS_MECH_VELOCITY_KI_PU_S real2param(150.0)
+#define MCS_MECH_VELOCITY_KP_PU real2param(14.0)
 
 /**
- * @brief Mech Current Limit
+ * @brief
  */
-#define MCS_MECH_CURRENT_LIMIT_A real2param(4.5)
+#define MCS_MECH_VELOCITY_KI_PU_S real2param(45.0)
 
 /**
- * @brief Phase Current Sensitivity
+ * @brief
  */
-#define CTRL_INVERTER_CURRENT_SENSITIVITY (GMP_3PH_2136SINV_DUAL_PH_SHUNT_RESISTANCE_OHM * GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V)
+#define MCS_MECH_CURRENT_LIMIT_A real2param(5.0)
 
 /**
- * @brief Phase Current Bias
- */
-#define CTRL_INVERTER_CURRENT_BIAS GMP_3PH_2136SINV_DUAL_PH_CSA_BIAS_V
-
-/**
- * @brief Phase Voltage Sensitivity
- */
-#define CTRL_INVERTER_VOLTAGE_SENSITIVITY GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_GAIN
-
-/**
- * @brief Phase Voltage Bias
- */
-#define CTRL_INVERTER_VOLTAGE_BIAS GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_BIAS_V
-
-/**
- * @brief DC Current Sensitivity
- */
-#define CTRL_DC_CURRENT_SENSITIVITY GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_GAIN
-
-/**
- * @brief DC Current Bias
- */
-#define CTRL_DC_CURRENT_BIAS GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_BIAS_V
-
-/**
- * @brief DC Voltage Sensitivity
- */
-#define CTRL_DC_VOLTAGE_SENSITIVITY GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_GAIN
-
-/**
- * @brief DC Voltage Bias
- */
-#define CTRL_DC_VOLTAGE_BIAS GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_BIAS_V
-
-/**
- * @brief Simulation ADC Resolution
+ * @brief
  */
 #define CCTL_SIM_ADC_RESOLUTION_BITS (12)
 
 /**
- * @brief Simulation ADC Reference
+ * @brief
  */
 #define CCTL_SIM_ADC_REFERENCE_V 3.3
 
 /**
- * @brief Simulation eQEP Counts
+ * @brief
  */
-#define CCTL_SIM_EQEP_COUNTS_PER_REV (16384)
+#define CCTL_SIM_EQEP_COUNTS_PER_REV (10000)
 
 /**
- * @brief Simulation ePWM Clock
+ * @brief
  */
 #define CCTL_SIM_EPWM_TBCLK_HZ 100.0e6
 
 /**
- * @brief Simulation ePWM Period
+ * @brief
  */
 #define CCTL_SIM_EPWM_PERIOD_COUNT (2499)
 
 /**
- * @brief Simulation ePWM Rising Deadband
+ * @brief
  */
 #define CCTL_SIM_EPWM_DBRED_COUNT (100)
 
 /**
- * @brief Simulation ePWM Falling Deadband
+ * @brief
  */
 #define CCTL_SIM_EPWM_DBFED_COUNT (100)
 
@@ -209,314 +174,364 @@ extern "C"
 #define CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT (0)
 
 /**
- * @brief Plant Step
+ * @brief
  */
 #define CCTL_SIM_PLANT_STEP_S 1.0e-7
 
 /**
- * @brief Control Frequency
+ * @brief
  */
 #define CCTL_SIM_CONTROL_FREQUENCY_HZ 20.0e3
 
 /**
- * @brief User Code Frequency
+ * @brief
  */
 #define CCTL_SIM_USER_CODE_FREQUENCY_HZ 33.0e3
 
 /**
- * @brief Simulation Duration
+ * @brief
  */
 #define CCTL_SIM_DURATION_S 4.0
 
 /**
- * @brief Simulation DC Bus
+ * @brief
  */
 #define CCTL_SIM_DC_BUS_V 48.0
 
 /**
- * @brief Load Torque Start
+ * @brief
  */
 #define CCTL_SIM_LOAD_TORQUE_START_S 0.5
 
 /**
- * @brief Load Torque
+ * @brief
  */
 #define CCTL_SIM_LOAD_TORQUE_NM 0.02
 
 /**
- * @brief Startup Short Steps
+ * @brief
  */
 #define CCTL_SIM_STARTUP_SHORT_STEPS (200)
 
 /**
- * @brief PMSM Integration Order
- */
-#define CCTL_SIM_PMSM_INTEGRATION_ORDER (1)
-
-/**
- * @brief Circuit Record Frequency
- */
-#define CCTL_SIM_CIRCUIT_RECORD_FREQUENCY_HZ 100.0e3
-
-/**
- * @brief Output Ring Bytes
+ * @brief
  */
 #define CCTL_SIM_OUTPUT_RING_BYTES (33554432)
 
 /**
- * @brief Output Batch Bytes
+ * @brief
+ */
+#define CCTL_SIM_PMSM_INTEGRATION_ORDER (1)
+
+/**
+ * @brief
  */
 #define CCTL_SIM_OUTPUT_BATCH_BYTES (1048576)
 
 /**
- * @brief Progress Interval
+ * @brief
  */
 #define CCTL_SIM_PROGRESS_INTERVAL_MS (1000)
 
 /**
- * @brief Simulation Chunk Steps
+ * @brief
  */
 #define CCTL_SIM_STEP_CHUNK_STEPS (4096)
 
 /**
- * @brief Realtime Priority
+ * @brief
  */
 #define CCTL_SIM_REALTIME_PRIORITY (1)
 
 /**
- * @brief Pause On Exit
+ * @brief
  */
 #define CCTL_SIM_PAUSE_ON_EXIT (1)
 
 /**
- * @brief Output Filename
+ * @brief
  */
 #define CCTL_SIM_OUTPUT_FILENAME "mcs_pmsm_nt_cctl.csv"
 
 /**
- * @brief PIL Data Link Base Command
+ * @brief
  */
 #define GMP_PIL_DL_BASE_COMMAND (16)
 
 /**
- * @brief Data Link UART Baud Rate
+ * @brief
  */
 #define GMP_DL_UART_BAUDRATE (921600)
 
 /**
- * @brief PIL UDP Host
+ * @brief
  */
 #define GMP_PIL_UDP_HOST "127.0.0.1"
 
 /**
- * @brief PIL Bridge UDP Listen Port
+ * @brief
  */
 #define GMP_PIL_BRIDGE_UDP_LISTEN_PORT (12501)
 
 /**
- * @brief PIL MATLAB UDP Listen Port
+ * @brief
  */
 #define GMP_PIL_MATLAB_UDP_LISTEN_PORT (12500)
 
 /**
- * @brief PIL MATLAB Command TX Port
+ * @brief
  */
 #define GMP_PIL_MATLAB_COMMAND_TX_PORT (12502)
 
 /**
- * @brief PIL MATLAB Command RX Port
+ * @brief
  */
 #define GMP_PIL_MATLAB_COMMAND_RX_PORT (12503)
 
 /**
- * @brief PIL MCU Timeout
+ * @brief
  */
 #define GMP_PIL_MCU_TIMEOUT_MS (200)
 
 /**
- * @brief PIL MATLAB Timeout
+ * @brief
  */
 #define GMP_PIL_MATLAB_TIMEOUT_MS (5000)
 
 /**
- * @brief PIL ADC DC Bus Index
+ * @brief
  */
 #define GMP_PIL_RX_ADC_UDC_INDEX (0)
 
 /**
- * @brief PIL ADC Phase U Voltage Index
+ * @brief
  */
 #define GMP_PIL_RX_ADC_UU_INDEX (1)
 
 /**
- * @brief PIL ADC Phase V Voltage Index
+ * @brief
  */
 #define GMP_PIL_RX_ADC_UV_INDEX (2)
 
 /**
- * @brief PIL ADC Phase W Voltage Index
+ * @brief
  */
 #define GMP_PIL_RX_ADC_UW_INDEX (3)
 
 /**
- * @brief PIL ADC Phase U Current Index
+ * @brief
  */
 #define GMP_PIL_RX_ADC_IU_INDEX (4)
 
 /**
- * @brief PIL ADC Phase V Current Index
+ * @brief
  */
 #define GMP_PIL_RX_ADC_IV_INDEX (5)
 
 /**
- * @brief PIL ADC Phase W Current Index
+ * @brief
  */
 #define GMP_PIL_RX_ADC_IW_INDEX (6)
 
 /**
- * @brief PIL UDP Encoder Index
+ * @brief
  */
 #define GMP_PIL_UDP_ENCODER_INDEX (0)
 
 /**
- * @brief PIL PWM Phase U Index
+ * @brief
  */
 #define GMP_PIL_TX_PWM_U_INDEX (0)
 
 /**
- * @brief PIL PWM Phase V Index
+ * @brief
  */
 #define GMP_PIL_TX_PWM_V_INDEX (1)
 
 /**
- * @brief PIL PWM Phase W Index
+ * @brief
  */
 #define GMP_PIL_TX_PWM_W_INDEX (2)
 
 /**
- * @brief PIL Monitor Phase U Current Index
+ * @brief
  */
 #define GMP_PIL_TX_MONITOR_IU_INDEX (0)
 
 /**
- * @brief PIL Monitor Phase V Current Index
+ * @brief
  */
 #define GMP_PIL_TX_MONITOR_IV_INDEX (1)
 
 /**
- * @brief PIL Monitor D Current Index
+ * @brief
  */
 #define GMP_PIL_TX_MONITOR_ID_INDEX (2)
 
 /**
- * @brief PIL Monitor Q Current Index
+ * @brief
  */
 #define GMP_PIL_TX_MONITOR_IQ_INDEX (3)
 
 /**
- * @brief PIL Monitor Electrical Position Index
+ * @brief
  */
 #define GMP_PIL_TX_MONITOR_POSITION_INDEX (4)
 
 /**
- * @brief PIL Monitor Speed Index
+ * @brief
  */
 #define GMP_PIL_TX_MONITOR_SPEED_INDEX (5)
 
 /**
- * @brief Motor Type
+ * @brief
  */
 #define MOTOR_TYPE SM060R20B30MNAD_MOTOR_TYPE
 
 /**
- * @brief Motor Stator Resistance
+ * @brief
  */
 #define MOTOR_PARAM_RS SM060R20B30MNAD_RS
 
 /**
- * @brief Motor Stator Inductance
+ * @brief
  */
 #define MOTOR_PARAM_LS SM060R20B30MNAD_LD
 
 /**
- * @brief Motor D-axis Inductance
+ * @brief
  */
 #define MOTOR_PARAM_LD SM060R20B30MNAD_LD
 
 /**
- * @brief Motor Q-axis Inductance
+ * @brief
  */
 #define MOTOR_PARAM_LQ SM060R20B30MNAD_LQ
 
 /**
- * @brief Motor Flux Linkage
+ * @brief
  */
 #define MOTOR_PARAM_FLUX SM060R20B30MNAD_FLUX
 
 /**
- * @brief Motor Pole Pairs
+ * @brief
  */
 #define MOTOR_PARAM_POLE_PAIRS SM060R20B30MNAD_POLE_PAIRS
 
 /**
- * @brief Motor Inertia
+ * @brief
  */
 #define MOTOR_PARAM_INERTIA SM060R20B30MNAD_INERTIA
 
 /**
- * @brief Motor Friction
+ * @brief Equivalent rotational drag of the coupled PMSM and unloaded dynamometer at 2400 rpm, identified from the measured A-phase current fundamental, in uN*m*s/rad.
  */
-#define MOTOR_PARAM_FRICTION SM060R20B30MNAD_FRICTION
+#define MOTOR_PARAM_FRICTION real2param(247.3)
 
 /**
- * @brief Motor Velocity Constant
+ * @brief
  */
 #define MOTOR_PARAM_KV SM060R20B30MNAD_KV
 
 /**
- * @brief Motor Back EMF
+ * @brief
  */
 #define MOTOR_PARAM_EMF SM060R20B30MNAD_EMF
 
 /**
- * @brief Motor Rated Voltage
+ * @brief
  */
 #define MOTOR_PARAM_RATED_VOLTAGE SM060R20B30MNAD_RATED_VOLTAGE
 
 /**
- * @brief Motor Rated Current
+ * @brief
  */
 #define MOTOR_PARAM_RATED_CURRENT SM060R20B30MNAD_RATED_CURRENT
 
 /**
- * @brief Motor No-load Current
+ * @brief
  */
 #define MOTOR_PARAM_NO_LOAD_CURRENT SM060R20B30MNAD_NO_LOAD_CURRENT
 
 /**
- * @brief Motor Rated Frequency
+ * @brief
  */
 #define MOTOR_PARAM_RATED_FREQUENCY SM060R20B30MNAD_RATED_FREQUENCY
 
 /**
- * @brief Motor Maximum Speed
+ * @brief
  */
 #define MOTOR_PARAM_MAX_SPEED SM060R20B30MNAD_MAX_SPEED
 
 /**
- * @brief Motor Maximum Torque
+ * @brief
  */
 #define MOTOR_PARAM_MAX_TORQUE SM060R20B30MNAD_MAX_TORQUE
 
 /**
- * @brief Motor Maximum DC Voltage
+ * @brief
  */
 #define MOTOR_PARAM_MAX_DC_VOLTAGE SM060R20B30MNAD_MAX_DC_VOLTAGE
 
 /**
- * @brief Motor Maximum Phase Current
+ * @brief
  */
 #define MOTOR_PARAM_MAX_PH_CURRENT SM060R20B30MNAD_MAX_PH_CURRENT
+
+/**
+ * @brief
+ */
+#define CTRL_INVERTER_CURRENT_SENSITIVITY (GMP_3PH_2136SINV_DUAL_PH_SHUNT_RESISTANCE_OHM * GMP_3PH_2136SINV_DUAL_PH_CSA_GAIN_V_V)
+
+/**
+ * @brief
+ */
+#define CTRL_INVERTER_CURRENT_BIAS GMP_3PH_2136SINV_DUAL_PH_CSA_BIAS_V
+
+/**
+ * @brief
+ */
+#define CTRL_INVERTER_VOLTAGE_SENSITIVITY GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_GAIN
+
+/**
+ * @brief
+ */
+#define CTRL_INVERTER_VOLTAGE_BIAS GMP_3PH_2136SINV_DUAL_PH_VOLTAGE_SENSE_BIAS_V
+
+/**
+ * @brief
+ */
+#define CTRL_DC_CURRENT_SENSITIVITY GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_GAIN
+
+/**
+ * @brief
+ */
+#define CTRL_DC_CURRENT_BIAS GMP_3PH_2136SINV_DUAL_DCBUS_CURRENT_SENSE_BIAS_V
+
+/**
+ * @brief
+ */
+#define CTRL_DC_VOLTAGE_SENSITIVITY GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_GAIN
+
+/**
+ * @brief
+ */
+#define CTRL_DC_VOLTAGE_BIAS GMP_3PH_2136SINV_DUAL_DCBUS_VOLTAGE_SENSE_BIAS_V
+
+/**
+ * @brief
+ */
+#define CCTL_SIM_CIRCUIT_RECORD_FREQUENCY_HZ 100.0e3
+
+/**
+ * @brief Rectangular saturation limit for d/q axes in V.
+ */
+#define MCS_MAX_RECT_SATURATION_VOLTAGE_V real2param(36.0)
+
+/**
+ * @brief Circular saturation limit for voltage vector magnitude in V.
+ */
+#define MCS_MAX_CIR_SATURATION_VOLTAGE_V real2param(36.0)
 
 //=================================================================================================
 /**
@@ -701,6 +716,20 @@ extern "C"
 #endif // MOTOR_PARAM_MAX_SPEED
 
 /**
+ * @brief Rectangular saturation limit for d/q axes in V.
+ */
+#ifndef MCS_MAX_RECT_SATURATION_VOLTAGE_V
+#define MCS_MAX_RECT_SATURATION_VOLTAGE_V real2param(10.0)
+#endif // MCS_MAX_RECT_SATURATION_VOLTAGE_V
+
+/**
+ * @brief Circular saturation limit for voltage vector magnitude in V.
+ */
+#ifndef MCS_MAX_CIR_SATURATION_VOLTAGE_V
+#define MCS_MAX_CIR_SATURATION_VOLTAGE_V real2param(10.0)
+#endif // MCS_MAX_CIR_SATURATION_VOLTAGE_V
+
+/**
  * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
  */
 #define MCS_MECH_SPEED_LIMIT_RPM real2param(3000.0)
@@ -718,13 +747,6 @@ extern "C"
 #endif // MCS_MECH_CURRENT_LIMIT_A
 
 /**
- * @brief Rectangular saturation limit for d/q axes in V.
- */
-#ifndef MCS_MAX_RECT_SATURATION_VOLTAGE_V
-#define MCS_MAX_RECT_SATURATION_VOLTAGE_V real2param(10.0)
-#endif // MCS_MAX_RECT_SATURATION_VOLTAGE_V
-
-/**
  * @brief
  */
 #define MCS_MAX_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2f)
@@ -740,13 +762,6 @@ extern "C"
 #ifndef MCS_MAX_SHUTDOWN_CURRENT_A
 #define MCS_MAX_SHUTDOWN_CURRENT_A real2param(10.0)
 #endif // MCS_MAX_SHUTDOWN_CURRENT_A
-
-/**
- * @brief Circular saturation limit for voltage vector magnitude in V.
- */
-#ifndef MCS_MAX_CIR_SATURATION_VOLTAGE_V
-#define MCS_MAX_CIR_SATURATION_VOLTAGE_V real2param(10.0)
-#endif // MCS_MAX_CIR_SATURATION_VOLTAGE_V
 
 /**
  * @brief Controller startup delay in milliseconds.
@@ -786,7 +801,9 @@ extern "C"
 /**
  * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
  */
+#ifndef MCS_MECH_VELOCITY_KP_PU
 #define MCS_MECH_VELOCITY_KP_PU real2param(5.0)
+#endif // MCS_MECH_VELOCITY_KP_PU
 
 /**
  * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.

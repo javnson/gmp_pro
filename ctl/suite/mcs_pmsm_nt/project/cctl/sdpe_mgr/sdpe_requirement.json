@@ -5,187 +5,1136 @@
   "description": "Direct host bindings for the controller, TI-style peripherals, generated MNA inverter, PMSM plant, and the CCTL host CSP.",
   "suite": "mcs_pmsm_nt",
   "version": "1.0.0",
-  "updated_at": "2026-08-23",
+  "updated_at": "2026-11-26",
   "output_header": "ctrl_settings.h",
-  "common_requirements": ["../../../sdpe_general/sdpe_requirement.json"],
+  "common_requirements": [
+    "../../../sdpe_general/sdpe_requirement.json"
+  ],
   "hardware": [
-    { "entity": "sm060r20b30mnad" },
-    { "entity": "gmp_3ph_2136sinv_dual" }
+    {
+      "entity": "sm060r20b30mnad"
+    },
+    {
+      "entity": "gmp_3ph_2136sinv_dual"
+    }
   ],
   "requirement_groups": [
     {
       "name": "Controller Hardware",
       "requirements": [
-        "PWM Compare Max", "PWM Deadband", "System Frequency", "ADC Voltage Reference",
-        "DC Bus Voltage Base", "Phase Voltage Base", "Current Base", "Encoder Full Scale",
-        "Encoder Bias", "Mechanical Division"
+        "PWM Compare Max",
+        "PWM Deadband",
+        "System Frequency",
+        "ADC Voltage Reference",
+        "DC Bus Voltage Base",
+        "Phase Voltage Base",
+        "Current Base",
+        "Encoder Full Scale",
+        "Encoder Bias",
+        "Mechanical Division"
       ]
     },
     {
       "name": "Velocity Controller",
-      "requirements": ["Mech Velocity Ki", "Mech Current Limit"]
+      "requirements": [
+        "Mech Velocity Kp",
+        "Mech Velocity Ki",
+        "Mech Current Limit"
+      ]
     },
     {
       "name": "Simulation Peripherals",
       "requirements": [
-        "Simulation ADC Resolution", "Simulation ADC Reference", "Simulation eQEP Counts",
-        "Simulation ePWM Clock", "Simulation ePWM Period", "Simulation ePWM Rising Deadband",
-        "Simulation ePWM Falling Deadband", "Simulation ADC Trigger Compare"
+        "Simulation ADC Resolution",
+        "Simulation ADC Reference",
+        "Simulation EQEP Counts",
+        "Simulation EPWM Clock",
+        "Simulation EPWM Period",
+        "Simulation EPWM Rising Deadband",
+        "Simulation EPWM Falling Deadband",
+        "Simulation ADC Trigger Compare"
       ]
     },
     {
       "name": "Simulation Runtime",
       "requirements": [
-        "Plant Step", "Control Frequency", "User Code Frequency", "Simulation Duration", "Simulation DC Bus",
-        "Load Torque Start", "Load Torque", "Startup Short Steps", "Output Ring Bytes",
-        "PMSM Integration Order", "Output Batch Bytes", "Progress Interval", "Simulation Chunk Steps",
-        "Realtime Priority", "Pause On Exit", "Output Filename", "PIL Data Link Base Command"
+        "Plant Step",
+        "Control Frequency",
+        "User Code Frequency",
+        "Simulation Duration",
+        "Simulation DC Bus",
+        "Load Torque Start",
+        "Load Torque",
+        "Startup Short Steps",
+        "Output Ring Bytes",
+        "PMSM Integration Order",
+        "Output Batch Bytes",
+        "Progress Interval",
+        "Simulation Chunk Steps",
+        "Realtime Priority",
+        "Pause On Exit",
+        "Output Filename",
+        "PIL Data Link Base Command"
       ]
     },
     {
       "name": "Hosted PIL Bridge",
       "requirements": [
-        "Data Link UART Baud Rate", "PIL UDP Host", "PIL Bridge UDP Listen Port",
-        "PIL MATLAB UDP Listen Port", "PIL MATLAB Command TX Port", "PIL MATLAB Command RX Port",
-        "PIL MCU Timeout", "PIL MATLAB Timeout", "PIL ADC DC Bus Index",
-        "PIL ADC Phase U Voltage Index", "PIL ADC Phase V Voltage Index",
-        "PIL ADC Phase W Voltage Index", "PIL ADC Phase U Current Index",
-        "PIL ADC Phase V Current Index", "PIL ADC Phase W Current Index",
-        "PIL UDP Encoder Index", "PIL PWM Phase U Index", "PIL PWM Phase V Index",
-        "PIL PWM Phase W Index", "PIL Monitor Phase U Current Index",
-        "PIL Monitor Phase V Current Index", "PIL Monitor D Current Index",
-        "PIL Monitor Q Current Index", "PIL Monitor Electrical Position Index",
+        "Data Link UART Baud Rate",
+        "PIL UDP Host",
+        "PIL Bridge UDP Listen Port",
+        "PIL MATLAB UDP Listen Port",
+        "PIL MATLAB Command TX Port",
+        "PIL MATLAB Command RX Port",
+        "PIL MCU Timeout",
+        "PIL MATLAB Timeout",
+        "PIL ADC DC Bus Index",
+        "PIL ADC Phase U Voltage Index",
+        "PIL ADC Phase V Voltage Index",
+        "PIL ADC Phase W Voltage Index",
+        "PIL ADC Phase U Current Index",
+        "PIL ADC Phase V Current Index",
+        "PIL ADC Phase W Current Index",
+        "PIL UDP Encoder Index",
+        "PIL PWM Phase U Index",
+        "PIL PWM Phase V Index",
+        "PIL PWM Phase W Index",
+        "PIL Monitor Phase U Current Index",
+        "PIL Monitor Phase V Current Index",
+        "PIL Monitor D Current Index",
+        "PIL Monitor Q Current Index",
+        "PIL Monitor Electrical Position Index",
         "PIL Monitor Speed Index"
       ]
     },
     {
       "name": "Motor Model",
       "requirements": [
-        "Motor Type", "Motor Stator Resistance", "Motor Stator Inductance",
-        "Motor D-axis Inductance", "Motor Q-axis Inductance", "Motor Flux Linkage",
-        "Motor Pole Pairs", "Motor Inertia", "Motor Friction", "Motor Velocity Constant",
-        "Motor Back EMF", "Motor Rated Voltage", "Motor Rated Current", "Motor No-load Current",
-        "Motor Rated Frequency", "Motor Maximum Speed", "Motor Maximum Torque",
-        "Motor Maximum DC Voltage", "Motor Maximum Phase Current"
+        "Motor Type",
+        "Motor Stator Resistance",
+        "Motor Stator Inductance",
+        "Motor D-axis Inductance",
+        "Motor Q-axis Inductance",
+        "Motor Flux Linkage",
+        "Motor Pole Pairs",
+        "Motor Inertia",
+        "Motor Friction",
+        "Motor Velocity Constant",
+        "Motor Back EMF",
+        "Motor Rated Voltage",
+        "Motor Rated Current",
+        "Motor No-load Current",
+        "Motor Rated Frequency",
+        "Motor Maximum Speed",
+        "Motor Maximum Torque",
+        "Motor Maximum DC Voltage",
+        "Motor Maximum Phase Current"
+      ]
+    },
+    {
+      "name": "Ungrouped",
+      "requirements": [
+        "Phase Current Sensitivity",
+        "Phase Current Bias",
+        "Phase Voltage Sensitivity",
+        "Phase Voltage Bias",
+        "DC Current Sensitivity",
+        "DC Current Bias",
+        "DC Voltage Sensitivity",
+        "DC Voltage Bias",
+        "Circuit Record Frequency"
+      ]
+    },
+    {
+      "name": "Protection Parameters",
+      "requirements": [
+        "Max Voltage For Rect Saturation",
+        "Max Voltage For Circular Saturation"
       ]
     }
   ],
   "requirements": [
-    { "role": "PWM Compare Max", "macro": "CTRL_PWM_CMP_MAX", "binding": { "number": "2499" } },
-    { "role": "PWM Deadband", "macro": "CTRL_PWM_DEADBAND_CMP", "binding": { "number": "100" } },
-    { "role": "System Frequency", "macro": "CTRL_SYS_FREQUENCY", "binding": { "parameter": "100e6" } },
-    { "role": "ADC Voltage Reference", "macro": "CTRL_ADC_VOLTAGE_REF", "binding": { "parameter": "3.3" } },
-    { "role": "DC Bus Voltage Base", "macro": "CTRL_DCBUS_VOLTAGE", "binding": { "parameter": "48.0" } },
-    { "role": "Phase Voltage Base", "macro": "CTRL_VOLTAGE_BASE", "binding": { "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)" } },
-    { "role": "Current Base", "macro": "CTRL_CURRENT_BASE", "binding": { "parameter": "10.0" } },
-    { "role": "Encoder Full Scale", "macro": "CTRL_POS_ENC_FS", "binding": { "number": "16384" } },
-    { "role": "Encoder Bias", "macro": "CTRL_POS_ENC_BIAS", "binding": { "parameter": "0.0" } },
-    { "role": "Mechanical Division", "macro": "CTRL_MECH_DIV", "binding": { "number": "5" } },
-    { "role": "Mech Velocity Ki", "macro": "MCS_MECH_VELOCITY_KI_PU_S", "binding": { "parameter": "150.0" } },
-    { "role": "Mech Current Limit", "macro": "MCS_MECH_CURRENT_LIMIT_A", "binding": { "parameter": "4.5" } },
-
-    { "role": "Phase Current Sensitivity", "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY", "binding": { "expr": "(${gmp_3ph_2136sinv_dual.phase_shunt_resistance_ohm} * ${gmp_3ph_2136sinv_dual.phase_current_gain_v_v})" } },
-    { "role": "Phase Current Bias", "macro": "CTRL_INVERTER_CURRENT_BIAS", "binding": { "export": "gmp_3ph_2136sinv_dual.phase_current_bias_v" } },
-    { "role": "Phase Voltage Sensitivity", "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY", "binding": { "export": "gmp_3ph_2136sinv_dual.phase_voltage_gain_v_v" } },
-    { "role": "Phase Voltage Bias", "macro": "CTRL_INVERTER_VOLTAGE_BIAS", "binding": { "export": "gmp_3ph_2136sinv_dual.phase_voltage_bias_v" } },
-    { "role": "DC Current Sensitivity", "macro": "CTRL_DC_CURRENT_SENSITIVITY", "binding": { "export": "gmp_3ph_2136sinv_dual.bus_current_gain_v_a" } },
-    { "role": "DC Current Bias", "macro": "CTRL_DC_CURRENT_BIAS", "binding": { "export": "gmp_3ph_2136sinv_dual.bus_current_bias_v" } },
-    { "role": "DC Voltage Sensitivity", "macro": "CTRL_DC_VOLTAGE_SENSITIVITY", "binding": { "export": "gmp_3ph_2136sinv_dual.bus_voltage_gain_v_v" } },
-    { "role": "DC Voltage Bias", "macro": "CTRL_DC_VOLTAGE_BIAS", "binding": { "export": "gmp_3ph_2136sinv_dual.bus_voltage_bias_v" } },
-
-    { "role": "Simulation ADC Resolution", "macro": "CCTL_SIM_ADC_RESOLUTION_BITS", "binding": { "number": "12" } },
-    { "role": "Simulation ADC Reference", "macro": "CCTL_SIM_ADC_REFERENCE_V", "binding": { "literal": "3.3" } },
-    { "role": "Simulation eQEP Counts", "macro": "CCTL_SIM_EQEP_COUNTS_PER_REV", "binding": { "number": "16384" } },
-    { "role": "Simulation ePWM Clock", "macro": "CCTL_SIM_EPWM_TBCLK_HZ", "binding": { "literal": "100.0e6" } },
-    { "role": "Simulation ePWM Period", "macro": "CCTL_SIM_EPWM_PERIOD_COUNT", "binding": { "number": "2499" } },
-    { "role": "Simulation ePWM Rising Deadband", "macro": "CCTL_SIM_EPWM_DBRED_COUNT", "binding": { "number": "100" } },
-    { "role": "Simulation ePWM Falling Deadband", "macro": "CCTL_SIM_EPWM_DBFED_COUNT", "binding": { "number": "100" } },
-    { "role": "Simulation ADC Trigger Compare", "macro": "CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT", "binding": { "number": "0" }, "description": "ADC SOC on the up-count at this TBCLK count. Zero matches the F280049C counter-zero SOC." },
-
-    { "role": "Plant Step", "macro": "CCTL_SIM_PLANT_STEP_S", "binding": { "literal": "1.0e-7" } },
-    { "role": "Control Frequency", "macro": "CCTL_SIM_CONTROL_FREQUENCY_HZ", "binding": { "literal": "20.0e3" } },
-    { "role": "User Code Frequency", "macro": "CCTL_SIM_USER_CODE_FREQUENCY_HZ", "binding": { "literal": "33.0e3" } },
-    { "role": "Simulation Duration", "macro": "CCTL_SIM_DURATION_S", "binding": { "literal": "4.0" } },
-    { "role": "Simulation DC Bus", "macro": "CCTL_SIM_DC_BUS_V", "binding": { "literal": "48.0" } },
-    { "role": "Load Torque Start", "macro": "CCTL_SIM_LOAD_TORQUE_START_S", "binding": { "literal": "0.5" } },
-    { "role": "Load Torque", "macro": "CCTL_SIM_LOAD_TORQUE_NM", "binding": { "literal": "0.02" } },
-    { "role": "Startup Short Steps", "macro": "CCTL_SIM_STARTUP_SHORT_STEPS", "binding": { "number": "200" } },
-    { "role": "PMSM Integration Order", "macro": "CCTL_SIM_PMSM_INTEGRATION_ORDER", "binding": { "number": "1" } },
-    { "role": "Circuit Record Frequency", "macro": "CCTL_SIM_CIRCUIT_RECORD_FREQUENCY_HZ", "binding": { "literal": "100.0e3" } },
-    { "role": "Output Ring Bytes", "macro": "CCTL_SIM_OUTPUT_RING_BYTES", "binding": { "number": "33554432" } },
-    { "role": "Output Batch Bytes", "macro": "CCTL_SIM_OUTPUT_BATCH_BYTES", "binding": { "number": "1048576" } },
-    { "role": "Progress Interval", "macro": "CCTL_SIM_PROGRESS_INTERVAL_MS", "binding": { "number": "1000" } },
-    { "role": "Simulation Chunk Steps", "macro": "CCTL_SIM_STEP_CHUNK_STEPS", "binding": { "number": "4096" } },
-    { "role": "Realtime Priority", "macro": "CCTL_SIM_REALTIME_PRIORITY", "binding": { "number": "1" } },
-    { "role": "Pause On Exit", "macro": "CCTL_SIM_PAUSE_ON_EXIT", "binding": { "number": "1" } },
-    { "role": "Output Filename", "macro": "CCTL_SIM_OUTPUT_FILENAME", "binding": { "string": "mcs_pmsm_nt_cctl.csv" } },
-    { "role": "PIL Data Link Base Command", "macro": "GMP_PIL_DL_BASE_COMMAND", "binding": { "number": "16" } },
-    { "role": "Data Link UART Baud Rate", "macro": "GMP_DL_UART_BAUDRATE", "binding": { "number": "921600" } },
-    { "role": "PIL UDP Host", "macro": "GMP_PIL_UDP_HOST", "binding": { "string": "127.0.0.1" } },
-    { "role": "PIL Bridge UDP Listen Port", "macro": "GMP_PIL_BRIDGE_UDP_LISTEN_PORT", "binding": { "number": "12501" } },
-    { "role": "PIL MATLAB UDP Listen Port", "macro": "GMP_PIL_MATLAB_UDP_LISTEN_PORT", "binding": { "number": "12500" } },
-    { "role": "PIL MATLAB Command TX Port", "macro": "GMP_PIL_MATLAB_COMMAND_TX_PORT", "binding": { "number": "12502" } },
-    { "role": "PIL MATLAB Command RX Port", "macro": "GMP_PIL_MATLAB_COMMAND_RX_PORT", "binding": { "number": "12503" } },
-    { "role": "PIL MCU Timeout", "macro": "GMP_PIL_MCU_TIMEOUT_MS", "binding": { "number": "200" } },
-    { "role": "PIL MATLAB Timeout", "macro": "GMP_PIL_MATLAB_TIMEOUT_MS", "binding": { "number": "5000" } },
-    { "role": "PIL ADC DC Bus Index", "macro": "GMP_PIL_RX_ADC_UDC_INDEX", "binding": { "number": "0" } },
-    { "role": "PIL ADC Phase U Voltage Index", "macro": "GMP_PIL_RX_ADC_UU_INDEX", "binding": { "number": "1" } },
-    { "role": "PIL ADC Phase V Voltage Index", "macro": "GMP_PIL_RX_ADC_UV_INDEX", "binding": { "number": "2" } },
-    { "role": "PIL ADC Phase W Voltage Index", "macro": "GMP_PIL_RX_ADC_UW_INDEX", "binding": { "number": "3" } },
-    { "role": "PIL ADC Phase U Current Index", "macro": "GMP_PIL_RX_ADC_IU_INDEX", "binding": { "number": "4" } },
-    { "role": "PIL ADC Phase V Current Index", "macro": "GMP_PIL_RX_ADC_IV_INDEX", "binding": { "number": "5" } },
-    { "role": "PIL ADC Phase W Current Index", "macro": "GMP_PIL_RX_ADC_IW_INDEX", "binding": { "number": "6" } },
-    { "role": "PIL UDP Encoder Index", "macro": "GMP_PIL_UDP_ENCODER_INDEX", "binding": { "number": "0" } },
-    { "role": "PIL PWM Phase U Index", "macro": "GMP_PIL_TX_PWM_U_INDEX", "binding": { "number": "0" } },
-    { "role": "PIL PWM Phase V Index", "macro": "GMP_PIL_TX_PWM_V_INDEX", "binding": { "number": "1" } },
-    { "role": "PIL PWM Phase W Index", "macro": "GMP_PIL_TX_PWM_W_INDEX", "binding": { "number": "2" } },
-    { "role": "PIL Monitor Phase U Current Index", "macro": "GMP_PIL_TX_MONITOR_IU_INDEX", "binding": { "number": "0" } },
-    { "role": "PIL Monitor Phase V Current Index", "macro": "GMP_PIL_TX_MONITOR_IV_INDEX", "binding": { "number": "1" } },
-    { "role": "PIL Monitor D Current Index", "macro": "GMP_PIL_TX_MONITOR_ID_INDEX", "binding": { "number": "2" } },
-    { "role": "PIL Monitor Q Current Index", "macro": "GMP_PIL_TX_MONITOR_IQ_INDEX", "binding": { "number": "3" } },
-    { "role": "PIL Monitor Electrical Position Index", "macro": "GMP_PIL_TX_MONITOR_POSITION_INDEX", "binding": { "number": "4" } },
-    { "role": "PIL Monitor Speed Index", "macro": "GMP_PIL_TX_MONITOR_SPEED_INDEX", "binding": { "number": "5" } },
-
-    { "role": "Motor Type", "macro": "MOTOR_TYPE", "binding": { "export": "sm060r20b30mnad.motor_type" } },
-    { "role": "Motor Stator Resistance", "macro": "MOTOR_PARAM_RS", "binding": { "export": "sm060r20b30mnad.rs" } },
-    { "role": "Motor Stator Inductance", "macro": "MOTOR_PARAM_LS", "binding": { "export": "sm060r20b30mnad.ld" } },
-    { "role": "Motor D-axis Inductance", "macro": "MOTOR_PARAM_LD", "binding": { "export": "sm060r20b30mnad.ld" } },
-    { "role": "Motor Q-axis Inductance", "macro": "MOTOR_PARAM_LQ", "binding": { "export": "sm060r20b30mnad.lq" } },
-    { "role": "Motor Flux Linkage", "macro": "MOTOR_PARAM_FLUX", "binding": { "export": "sm060r20b30mnad.flux" } },
-    { "role": "Motor Pole Pairs", "macro": "MOTOR_PARAM_POLE_PAIRS", "binding": { "export": "sm060r20b30mnad.pole_pairs" } },
-    { "role": "Motor Inertia", "macro": "MOTOR_PARAM_INERTIA", "binding": { "export": "sm060r20b30mnad.inertia" } },
-    { "role": "Motor Friction", "macro": "MOTOR_PARAM_FRICTION", "binding": { "export": "sm060r20b30mnad.friction" } },
-    { "role": "Motor Velocity Constant", "macro": "MOTOR_PARAM_KV", "binding": { "export": "sm060r20b30mnad.kv" } },
-    { "role": "Motor Back EMF", "macro": "MOTOR_PARAM_EMF", "binding": { "export": "sm060r20b30mnad.emf" } },
-    { "role": "Motor Rated Voltage", "macro": "MOTOR_PARAM_RATED_VOLTAGE", "binding": { "export": "sm060r20b30mnad.rated_voltage" } },
-    { "role": "Motor Rated Current", "macro": "MOTOR_PARAM_RATED_CURRENT", "binding": { "export": "sm060r20b30mnad.rated_current" } },
-    { "role": "Motor No-load Current", "macro": "MOTOR_PARAM_NO_LOAD_CURRENT", "binding": { "export": "sm060r20b30mnad.no_load_current" } },
-    { "role": "Motor Rated Frequency", "macro": "MOTOR_PARAM_RATED_FREQUENCY", "binding": { "export": "sm060r20b30mnad.rated_frequency" } },
-    { "role": "Motor Maximum Speed", "macro": "MOTOR_PARAM_MAX_SPEED", "binding": { "export": "sm060r20b30mnad.max_speed" } },
-    { "role": "Motor Maximum Torque", "macro": "MOTOR_PARAM_MAX_TORQUE", "binding": { "export": "sm060r20b30mnad.max_torque" } },
-    { "role": "Motor Maximum DC Voltage", "macro": "MOTOR_PARAM_MAX_DC_VOLTAGE", "binding": { "export": "sm060r20b30mnad.max_dc_voltage" } },
-    { "role": "Motor Maximum Phase Current", "macro": "MOTOR_PARAM_MAX_PH_CURRENT", "binding": { "export": "sm060r20b30mnad.max_ph_current" } }
+    {
+      "role": "PWM Compare Max",
+      "macro": "CTRL_PWM_CMP_MAX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "2499"
+      },
+      "description": ""
+    },
+    {
+      "role": "PWM Deadband",
+      "macro": "CTRL_PWM_DEADBAND_CMP",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": ""
+    },
+    {
+      "role": "System Frequency",
+      "macro": "CTRL_SYS_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "100e6"
+      },
+      "description": ""
+    },
+    {
+      "role": "ADC Voltage Reference",
+      "macro": "CTRL_ADC_VOLTAGE_REF",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "3.3"
+      },
+      "description": ""
+    },
+    {
+      "role": "DC Bus Voltage Base",
+      "macro": "CTRL_DCBUS_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "80.0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Phase Voltage Base",
+      "macro": "CTRL_VOLTAGE_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "(CTRL_DCBUS_VOLTAGE / 1.73205081f)"
+      },
+      "description": ""
+    },
+    {
+      "role": "Current Base",
+      "macro": "CTRL_CURRENT_BASE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "10.0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Encoder Full Scale",
+      "macro": "CTRL_POS_ENC_FS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "10000"
+      },
+      "description": ""
+    },
+    {
+      "role": "Encoder Bias",
+      "macro": "CTRL_POS_ENC_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "0.0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Mechanical Division",
+      "macro": "CTRL_MECH_DIV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "5"
+      },
+      "description": ""
+    },
+    {
+      "role": "Mech Velocity Kp",
+      "macro": "MCS_MECH_VELOCITY_KP_PU",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "14.0"
+      },
+      "description": "Velocity-loop proportional gain used for the F280049C comparison."
+    },
+    {
+      "role": "Mech Velocity Ki",
+      "macro": "MCS_MECH_VELOCITY_KI_PU_S",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "45.0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Mech Current Limit",
+      "macro": "MCS_MECH_CURRENT_LIMIT_A",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "5.0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Simulation ADC Resolution",
+      "macro": "CCTL_SIM_ADC_RESOLUTION_BITS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "12"
+      },
+      "description": ""
+    },
+    {
+      "role": "Simulation ADC Reference",
+      "macro": "CCTL_SIM_ADC_REFERENCE_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "3.3"
+      },
+      "description": ""
+    },
+    {
+      "role": "Simulation EQEP Counts",
+      "macro": "CCTL_SIM_EQEP_COUNTS_PER_REV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "10000"
+      },
+      "description": ""
+    },
+    {
+      "role": "Simulation EPWM Clock",
+      "macro": "CCTL_SIM_EPWM_TBCLK_HZ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "100.0e6"
+      },
+      "description": ""
+    },
+    {
+      "role": "Simulation EPWM Period",
+      "macro": "CCTL_SIM_EPWM_PERIOD_COUNT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "2499"
+      },
+      "description": ""
+    },
+    {
+      "role": "Simulation EPWM Rising Deadband",
+      "macro": "CCTL_SIM_EPWM_DBRED_COUNT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": ""
+    },
+    {
+      "role": "Simulation EPWM Falling Deadband",
+      "macro": "CCTL_SIM_EPWM_DBFED_COUNT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "100"
+      },
+      "description": ""
+    },
+    {
+      "role": "Simulation ADC Trigger Compare",
+      "macro": "CCTL_SIM_ADC_TRIGGER_COMPARE_COUNT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "0"
+      },
+      "description": "ADC SOC on the up-count at this TBCLK count. Zero matches the F280049C counter-zero SOC."
+    },
+    {
+      "role": "Plant Step",
+      "macro": "CCTL_SIM_PLANT_STEP_S",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "1.0e-7"
+      },
+      "description": ""
+    },
+    {
+      "role": "Control Frequency",
+      "macro": "CCTL_SIM_CONTROL_FREQUENCY_HZ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "20.0e3"
+      },
+      "description": ""
+    },
+    {
+      "role": "User Code Frequency",
+      "macro": "CCTL_SIM_USER_CODE_FREQUENCY_HZ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "33.0e3"
+      },
+      "description": ""
+    },
+    {
+      "role": "Simulation Duration",
+      "macro": "CCTL_SIM_DURATION_S",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "4.0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Simulation DC Bus",
+      "macro": "CCTL_SIM_DC_BUS_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "48.0"
+      },
+      "description": ""
+    },
+    {
+      "role": "Load Torque Start",
+      "macro": "CCTL_SIM_LOAD_TORQUE_START_S",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "0.5"
+      },
+      "description": ""
+    },
+    {
+      "role": "Load Torque",
+      "macro": "CCTL_SIM_LOAD_TORQUE_NM",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "0.02"
+      },
+      "description": ""
+    },
+    {
+      "role": "Startup Short Steps",
+      "macro": "CCTL_SIM_STARTUP_SHORT_STEPS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "200"
+      },
+      "description": ""
+    },
+    {
+      "role": "Output Ring Bytes",
+      "macro": "CCTL_SIM_OUTPUT_RING_BYTES",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "33554432"
+      },
+      "description": ""
+    },
+    {
+      "role": "PMSM Integration Order",
+      "macro": "CCTL_SIM_PMSM_INTEGRATION_ORDER",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1"
+      },
+      "description": ""
+    },
+    {
+      "role": "Output Batch Bytes",
+      "macro": "CCTL_SIM_OUTPUT_BATCH_BYTES",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1048576"
+      },
+      "description": ""
+    },
+    {
+      "role": "Progress Interval",
+      "macro": "CCTL_SIM_PROGRESS_INTERVAL_MS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1000"
+      },
+      "description": ""
+    },
+    {
+      "role": "Simulation Chunk Steps",
+      "macro": "CCTL_SIM_STEP_CHUNK_STEPS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "4096"
+      },
+      "description": ""
+    },
+    {
+      "role": "Realtime Priority",
+      "macro": "CCTL_SIM_REALTIME_PRIORITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1"
+      },
+      "description": ""
+    },
+    {
+      "role": "Pause On Exit",
+      "macro": "CCTL_SIM_PAUSE_ON_EXIT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1"
+      },
+      "description": ""
+    },
+    {
+      "role": "Output Filename",
+      "macro": "CCTL_SIM_OUTPUT_FILENAME",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "string": "mcs_pmsm_nt_cctl.csv"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL Data Link Base Command",
+      "macro": "GMP_PIL_DL_BASE_COMMAND",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "16"
+      },
+      "description": ""
+    },
+    {
+      "role": "Data Link UART Baud Rate",
+      "macro": "GMP_DL_UART_BAUDRATE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "921600"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL UDP Host",
+      "macro": "GMP_PIL_UDP_HOST",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "string": "127.0.0.1"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL Bridge UDP Listen Port",
+      "macro": "GMP_PIL_BRIDGE_UDP_LISTEN_PORT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "12501"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL MATLAB UDP Listen Port",
+      "macro": "GMP_PIL_MATLAB_UDP_LISTEN_PORT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "12500"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL MATLAB Command TX Port",
+      "macro": "GMP_PIL_MATLAB_COMMAND_TX_PORT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "12502"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL MATLAB Command RX Port",
+      "macro": "GMP_PIL_MATLAB_COMMAND_RX_PORT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "12503"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL MCU Timeout",
+      "macro": "GMP_PIL_MCU_TIMEOUT_MS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "200"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL MATLAB Timeout",
+      "macro": "GMP_PIL_MATLAB_TIMEOUT_MS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "5000"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL ADC DC Bus Index",
+      "macro": "GMP_PIL_RX_ADC_UDC_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL ADC Phase U Voltage Index",
+      "macro": "GMP_PIL_RX_ADC_UU_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL ADC Phase V Voltage Index",
+      "macro": "GMP_PIL_RX_ADC_UV_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "2"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL ADC Phase W Voltage Index",
+      "macro": "GMP_PIL_RX_ADC_UW_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "3"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL ADC Phase U Current Index",
+      "macro": "GMP_PIL_RX_ADC_IU_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "4"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL ADC Phase V Current Index",
+      "macro": "GMP_PIL_RX_ADC_IV_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "5"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL ADC Phase W Current Index",
+      "macro": "GMP_PIL_RX_ADC_IW_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "6"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL UDP Encoder Index",
+      "macro": "GMP_PIL_UDP_ENCODER_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL PWM Phase U Index",
+      "macro": "GMP_PIL_TX_PWM_U_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL PWM Phase V Index",
+      "macro": "GMP_PIL_TX_PWM_V_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL PWM Phase W Index",
+      "macro": "GMP_PIL_TX_PWM_W_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "2"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL Monitor Phase U Current Index",
+      "macro": "GMP_PIL_TX_MONITOR_IU_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "0"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL Monitor Phase V Current Index",
+      "macro": "GMP_PIL_TX_MONITOR_IV_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "1"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL Monitor D Current Index",
+      "macro": "GMP_PIL_TX_MONITOR_ID_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "2"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL Monitor Q Current Index",
+      "macro": "GMP_PIL_TX_MONITOR_IQ_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "3"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL Monitor Electrical Position Index",
+      "macro": "GMP_PIL_TX_MONITOR_POSITION_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "4"
+      },
+      "description": ""
+    },
+    {
+      "role": "PIL Monitor Speed Index",
+      "macro": "GMP_PIL_TX_MONITOR_SPEED_INDEX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "number": "5"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Type",
+      "macro": "MOTOR_TYPE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.motor_type"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Stator Resistance",
+      "macro": "MOTOR_PARAM_RS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.rs"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Stator Inductance",
+      "macro": "MOTOR_PARAM_LS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.ld"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor D-axis Inductance",
+      "macro": "MOTOR_PARAM_LD",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.ld"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Q-axis Inductance",
+      "macro": "MOTOR_PARAM_LQ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.lq"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Flux Linkage",
+      "macro": "MOTOR_PARAM_FLUX",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.flux"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Pole Pairs",
+      "macro": "MOTOR_PARAM_POLE_PAIRS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.pole_pairs"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Inertia",
+      "macro": "MOTOR_PARAM_INERTIA",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.inertia"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Friction",
+      "macro": "MOTOR_PARAM_FRICTION",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "247.3"
+      },
+      "description": "Equivalent rotational drag of the coupled PMSM and unloaded dynamometer at 2400 rpm, identified from the measured A-phase current fundamental, in uN*m*s/rad."
+    },
+    {
+      "role": "Motor Velocity Constant",
+      "macro": "MOTOR_PARAM_KV",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.kv"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Back EMF",
+      "macro": "MOTOR_PARAM_EMF",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.emf"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Rated Voltage",
+      "macro": "MOTOR_PARAM_RATED_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.rated_voltage"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Rated Current",
+      "macro": "MOTOR_PARAM_RATED_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.rated_current"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor No-load Current",
+      "macro": "MOTOR_PARAM_NO_LOAD_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.no_load_current"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Rated Frequency",
+      "macro": "MOTOR_PARAM_RATED_FREQUENCY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.rated_frequency"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Maximum Speed",
+      "macro": "MOTOR_PARAM_MAX_SPEED",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.max_speed"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Maximum Torque",
+      "macro": "MOTOR_PARAM_MAX_TORQUE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.max_torque"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Maximum DC Voltage",
+      "macro": "MOTOR_PARAM_MAX_DC_VOLTAGE",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.max_dc_voltage"
+      },
+      "description": ""
+    },
+    {
+      "role": "Motor Maximum Phase Current",
+      "macro": "MOTOR_PARAM_MAX_PH_CURRENT",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "sm060r20b30mnad.max_ph_current"
+      },
+      "description": ""
+    },
+    {
+      "role": "Phase Current Sensitivity",
+      "macro": "CTRL_INVERTER_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "expr": "(${gmp_3ph_2136sinv_dual.phase_shunt_resistance_ohm} * ${gmp_3ph_2136sinv_dual.phase_current_gain_v_v})"
+      },
+      "description": ""
+    },
+    {
+      "role": "Phase Current Bias",
+      "macro": "CTRL_INVERTER_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_3ph_2136sinv_dual.phase_current_bias_v"
+      },
+      "description": ""
+    },
+    {
+      "role": "Phase Voltage Sensitivity",
+      "macro": "CTRL_INVERTER_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_3ph_2136sinv_dual.phase_voltage_gain_v_v"
+      },
+      "description": ""
+    },
+    {
+      "role": "Phase Voltage Bias",
+      "macro": "CTRL_INVERTER_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_3ph_2136sinv_dual.phase_voltage_bias_v"
+      },
+      "description": ""
+    },
+    {
+      "role": "DC Current Sensitivity",
+      "macro": "CTRL_DC_CURRENT_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_3ph_2136sinv_dual.bus_current_gain_v_a"
+      },
+      "description": ""
+    },
+    {
+      "role": "DC Current Bias",
+      "macro": "CTRL_DC_CURRENT_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_3ph_2136sinv_dual.bus_current_bias_v"
+      },
+      "description": ""
+    },
+    {
+      "role": "DC Voltage Sensitivity",
+      "macro": "CTRL_DC_VOLTAGE_SENSITIVITY",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_3ph_2136sinv_dual.bus_voltage_gain_v_v"
+      },
+      "description": ""
+    },
+    {
+      "role": "DC Voltage Bias",
+      "macro": "CTRL_DC_VOLTAGE_BIAS",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "export": "gmp_3ph_2136sinv_dual.bus_voltage_bias_v"
+      },
+      "description": ""
+    },
+    {
+      "role": "Circuit Record Frequency",
+      "macro": "CCTL_SIM_CIRCUIT_RECORD_FREQUENCY_HZ",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "literal": "100.0e3"
+      },
+      "description": ""
+    },
+    {
+      "role": "Max Voltage For Rect Saturation",
+      "macro": "MCS_MAX_RECT_SATURATION_VOLTAGE_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "36.0"
+      },
+      "description": "Rectangular saturation limit for d/q axes in V."
+    },
+    {
+      "role": "Max Voltage For Circular Saturation",
+      "macro": "MCS_MAX_CIR_SATURATION_VOLTAGE_V",
+      "enabled": true,
+      "weak": false,
+      "binding": {
+        "parameter": "36.0"
+      },
+      "description": "Circular saturation limit for voltage vector magnitude in V."
+    }
   ],
   "feature_macros": [
     {
-      "group": "PIL Runtime", "macro": "ENABLE_GMP_DL_PIL_SERVER",
-      "enabled": true, "weak": false, "value": "",
+      "group": "PIL Runtime",
+      "macro": "ENABLE_GMP_DL_PIL_SERVER",
+      "enabled": true,
+      "weak": false,
+      "value": "",
       "description": "Expose standard Data Link PIL and online-debug facilities through the supervised CCTL Viewer transport without selecting PIL-only controller mode."
     }
   ],
   "option_macros": [
     {
-      "group": "ADC", "macro": "MC_CURRENT_SAMPLE_PHASE_MODE", "enabled": true,
-      "value": "(3)", "options": ["(2)", "(3)"]
+      "group": "ADC",
+      "macro": "MC_CURRENT_SAMPLE_PHASE_MODE",
+      "enabled": true,
+      "weak": false,
+      "value": "(2)",
+      "options_preset": "",
+      "options": [
+        "(2)",
+        "(3)"
+      ],
+      "description": ""
     },
     {
-      "group": "Commissioning", "macro": "BUILD_LEVEL", "enabled": true,
-      "weak": false, "value": "(4)", "options": ["(1)", "(2)", "(3)", "(4)"]
+      "group": "Commissioning",
+      "macro": "BUILD_LEVEL",
+      "enabled": true,
+      "weak": false,
+      "value": "(4)",
+      "options_preset": "",
+      "options": [
+        "(1)",
+        "(2)",
+        "(3)",
+        "(4)"
+      ],
+      "description": ""
     }
   ],
   "code_sections": {
     "after_extern_open": "/* Peripheral and simulation constants are generated from this target requirement. */",
     "before_footer": "/* The direct plant already supplies physical sensor biases. */\n#undef SPECIFY_ENABLE_ADC_CALIBRATE"
   },
-  "option_macro_groups": ["ADC", "Commissioning"]
+  "option_macro_groups": [
+    "ADC",
+    "Commissioning",
+    "PIL Commissioning"
+  ],
+  "feature_macro_groups": [
+    "PIL Runtime"
+  ]
 }

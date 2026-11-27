@@ -23,7 +23,7 @@ extern "C"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_ID "mcs_pmsm_nt_common"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_SUITE "mcs_pmsm_nt"
 #define MCS_PMSM_NT_COMMON_SDPE_PROJECT_VERSION "1.1.0"
-#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-11-24"
+#define MCS_PMSM_NT_COMMON_SDPE_PROJECT_UPDATED_AT "2026-11-26"
 
 //=================================================================================================
 /**
@@ -203,6 +203,20 @@ extern "C"
 #endif // MOTOR_PARAM_MAX_SPEED
 
 /**
+ * @brief Rectangular saturation limit for d/q axes in V.
+ */
+#ifndef MCS_MAX_RECT_SATURATION_VOLTAGE_V
+#define MCS_MAX_RECT_SATURATION_VOLTAGE_V real2param(10.0)
+#endif // MCS_MAX_RECT_SATURATION_VOLTAGE_V
+
+/**
+ * @brief Circular saturation limit for voltage vector magnitude in V.
+ */
+#ifndef MCS_MAX_CIR_SATURATION_VOLTAGE_V
+#define MCS_MAX_CIR_SATURATION_VOLTAGE_V real2param(10.0)
+#endif // MCS_MAX_CIR_SATURATION_VOLTAGE_V
+
+/**
  * @brief Absolute mechanical speed-command limit in rpm. It is divided by MOTOR_PARAM_MAX_SPEED to obtain the controller PU limit.
  */
 #define MCS_MECH_SPEED_LIMIT_RPM real2param(3000.0)
@@ -220,13 +234,6 @@ extern "C"
 #endif // MCS_MECH_CURRENT_LIMIT_A
 
 /**
- * @brief Rectangular saturation limit for d/q axes in V.
- */
-#ifndef MCS_MAX_RECT_SATURATION_VOLTAGE_V
-#define MCS_MAX_RECT_SATURATION_VOLTAGE_V real2param(10.0)
-#endif // MCS_MAX_RECT_SATURATION_VOLTAGE_V
-
-/**
  * @brief
  */
 #define MCS_MAX_DC_BUS_VOLTAGE_V (MCS_NOMINAL_DC_BUS_VOLTAGE_V*1.2f)
@@ -242,13 +249,6 @@ extern "C"
 #ifndef MCS_MAX_SHUTDOWN_CURRENT_A
 #define MCS_MAX_SHUTDOWN_CURRENT_A real2param(10.0)
 #endif // MCS_MAX_SHUTDOWN_CURRENT_A
-
-/**
- * @brief Circular saturation limit for voltage vector magnitude in V.
- */
-#ifndef MCS_MAX_CIR_SATURATION_VOLTAGE_V
-#define MCS_MAX_CIR_SATURATION_VOLTAGE_V real2param(10.0)
-#endif // MCS_MAX_CIR_SATURATION_VOLTAGE_V
 
 /**
  * @brief Controller startup delay in milliseconds.
@@ -288,7 +288,9 @@ extern "C"
 /**
  * @brief Velocity-loop proportional gain. Input is speed error in PU and output is q-axis current/torque reference in PU, so the gain is current_pu/speed_pu.
  */
+#ifndef MCS_MECH_VELOCITY_KP_PU
 #define MCS_MECH_VELOCITY_KP_PU real2param(5.0)
+#endif // MCS_MECH_VELOCITY_KP_PU
 
 /**
  * @brief Velocity-loop integral gain in current_pu/(speed_pu*s). The continuous gain is divided by the mechanical-loop sampling frequency internally.
